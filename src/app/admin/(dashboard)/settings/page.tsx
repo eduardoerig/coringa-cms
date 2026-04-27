@@ -136,7 +136,7 @@ export default function SettingsAdmin() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-red" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -145,8 +145,8 @@ export default function SettingsAdmin() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-display font-black text-ink-900 tracking-tight">Configurações</h1>
-          <p className="text-ink-500 mt-1">Gerencie as informações globais e o conteúdo das seções.</p>
+          <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Configurações</h1>
+          <p className="text-text-500 mt-1">Gerencie as informações globais e o conteúdo das seções.</p>
         </div>
         <div className="flex items-center gap-3">
           {hasUnsavedChanges && (
@@ -158,7 +158,7 @@ export default function SettingsAdmin() {
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-2 bg-brand-red text-white px-6 py-2.5 rounded-xl font-bold hover:bg-brand-red/90 transition-all disabled:opacity-50 shadow-lg shadow-brand-red/20 active:scale-95"
+            className="flex items-center gap-2 bg-primary text-white px-6 py-2.5 rounded-xl font-bold hover:bg-primary/90 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 active:scale-95"
           >
             {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
             {isSaving ? 'Salvando...' : 'Salvar Alterações'}
@@ -171,7 +171,7 @@ export default function SettingsAdmin() {
         <div className="w-full md:w-64 flex-shrink-0 space-y-5">
           {tabGroups.map((group) => (
             <div key={group.groupLabel}>
-              <p className="text-[10px] font-bold text-ink-400 uppercase tracking-[0.15em] px-4 mb-2">{group.groupLabel}</p>
+              <p className="text-[10px] font-bold text-text-400 uppercase tracking-[0.15em] px-4 mb-2">{group.groupLabel}</p>
               <div className="space-y-1">
                 {group.tabs.map((tab) => (
                   <button
@@ -180,8 +180,8 @@ export default function SettingsAdmin() {
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left",
                       activeTab === tab.id 
-                        ? "bg-white text-brand-red shadow-sm border border-ink-100" 
-                        : "text-ink-500 hover:bg-white/50 hover:text-brand-red"
+                        ? "bg-white text-primary shadow-sm border border-text-100" 
+                        : "text-text-500 hover:bg-white/50 hover:text-primary"
                     )}
                   >
                     <tab.icon className="w-5 h-5 flex-shrink-0" />
@@ -197,7 +197,7 @@ export default function SettingsAdmin() {
         <div className="flex-1 flex flex-col gap-6 min-w-0">
 
           {/* Form Area */}
-          <div className="bg-white border border-ink-100 rounded-2xl shadow-sm overflow-hidden min-h-[400px]">
+          <div className="bg-white border border-text-100 rounded-2xl shadow-sm overflow-hidden min-h-[400px]">
             <div className="p-8">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -208,8 +208,8 @@ export default function SettingsAdmin() {
                   transition={{ duration: 0.2 }}
                   className="space-y-6"
                 >
-                  <div className="border-b border-ink-100 pb-4 mb-6">
-                    <h3 className="text-xl font-display font-black text-ink-900 capitalize">
+                  <div className="border-b border-text-100 pb-4 mb-6">
+                    <h3 className="text-xl font-display font-black text-text-900 capitalize">
                       {allTabs.find(t => t.id === activeTab)?.label}
                     </h3>
                   </div>
@@ -218,8 +218,8 @@ export default function SettingsAdmin() {
                     {groupedSettings.map((setting) => (
                       <div key={setting.key} className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <label className="text-sm font-bold text-ink-700">{setting.label}</label>
-                          <span className="text-[10px] text-ink-300 font-mono hidden sm:inline">{setting.key}</span>
+                          <label className="text-sm font-bold text-text-700">{setting.label}</label>
+                          <span className="text-[10px] text-text-300 font-mono hidden sm:inline">{setting.key}</span>
                         </div>
                         
                         {setting.type === 'switch' ? (
@@ -227,8 +227,8 @@ export default function SettingsAdmin() {
                             <button
                               onClick={() => handleUpdateValue(setting.key, setting.value === 'true' ? 'false' : 'true')}
                               className={cn(
-                                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-red/20",
-                                setting.value === 'true' ? "bg-brand-red" : "bg-ink-200"
+                                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20",
+                                setting.value === 'true' ? "bg-primary" : "bg-text-200"
                               )}
                             >
                               <span
@@ -238,20 +238,20 @@ export default function SettingsAdmin() {
                                 )}
                               />
                             </button>
-                            <span className="text-sm text-ink-500">{setting.value === 'true' ? 'Ativado' : 'Desativado'}</span>
+                            <span className="text-sm text-text-500">{setting.value === 'true' ? 'Ativado' : 'Desativado'}</span>
                           </div>
                         ) : setting.type === 'textarea' ? (
                           <textarea
                             value={setting.value || ""}
                             onChange={e => handleUpdateValue(setting.key, e.target.value)}
-                            className="w-full px-4 py-3 border border-ink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red min-h-[120px] text-sm resize-none transition-all"
+                            className="w-full px-4 py-3 border border-text-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-h-[120px] text-sm resize-none transition-all"
                           />
                         ) : (
                           <input
                             type={setting.type === 'url' ? 'url' : 'text'}
                             value={setting.value || ""}
                             onChange={e => handleUpdateValue(setting.key, e.target.value)}
-                            className="w-full px-4 py-2.5 border border-ink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-red/20 focus:border-brand-red text-sm transition-all"
+                            className="w-full px-4 py-2.5 border border-text-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all"
                           />
                         )}
                       </div>
@@ -259,7 +259,7 @@ export default function SettingsAdmin() {
                   </div>
 
                   {groupedSettings.length === 0 && (
-                    <div className="text-center py-12 text-ink-400">
+                    <div className="text-center py-12 text-text-400">
                       Nenhuma configuração neste grupo.
                     </div>
                   )}

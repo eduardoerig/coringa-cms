@@ -1,28 +1,31 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-brand-red: #A8151F;
-  --color-brand-dark: #8C1019;
-  --color-brand-light: #C42030;
-  --color-brand-soft: #F9E8E9;
-  --color-brand-bg: #FEF5F5;
+  --color-primary: var(--theme-primary, #2563EB);
+  --color-primary-dark: var(--theme-primary-dark, #1E40AF);
+  --color-primary-light: var(--theme-primary-light, #3B82F6);
+  --color-primary-soft: var(--theme-primary-soft, #DBEAFE);
+  --color-primary-bg: var(--theme-primary-bg, #EFF6FF);
 
-  --color-cream-50: #FFFCF9;
-  --color-cream-100: #FFF7F0;
-  --color-cream-200: #F2E8E0;
+  --color-surface-50: var(--theme-surface-50, #FAFAFA);
+  --color-surface-100: var(--theme-surface-100, #F5F5F5);
+  --color-surface-200: var(--theme-surface-200, #E5E5E5);
 
-  --color-ink-900: #1A1008;
-  --color-ink-500: #5C4B3F;
-  --color-ink-400: #7A6556;
-  --color-ink-300: #A89587;
-  --color-ink-100: #E6DCD5;
-  --color-ink-50: #F4EFEB;
+  --color-text-900: #18181B;
+  --color-text-700: #3F3F46;
+  --color-text-600: #52525B;
+  --color-text-500: #71717A;
+  --color-text-400: #A1A1AA;
+  --color-text-300: #D4D4D8;
+  --color-text-200: #E4E4E7;
+  --color-text-100: #F4F4F5;
+  --color-text-50: #FAFAFA;
 
-  --font-sans: var(--font-dm-sans);
-  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-space-grotesk);
 
-  --shadow-card: 0 4px 12px rgba(26,16,8,0.06), 0 16px 36px rgba(26,16,8,0.08);
-  --shadow-brand: 0 8px 24px rgba(168,21,31,0.25);
+  --shadow-card: 0 4px 12px rgba(0,0,0,0.05), 0 16px 36px rgba(0,0,0,0.06);
+  --shadow-primary: 0 8px 24px color-mix(in srgb, var(--theme-primary, #2563EB) 25%, transparent);
 }
 
 *, *::before, *::after {
@@ -37,23 +40,23 @@ html {
 }
 
 body {
-  background-color: var(--color-cream-50);
-  color: var(--color-ink-900);
+  background-color: var(--color-surface-50);
+  color: var(--color-text-900);
 }
 
 ::selection {
-  background: var(--color-brand-soft);
-  color: var(--color-brand-red);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 ::-webkit-scrollbar {
   width: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-cream-100);
+  background: var(--color-surface-100);
 }
 ::-webkit-scrollbar-thumb {
-  background: #D4C8C0;
+  background: #D4D4D8;
   border-radius: 999px;
 }
 

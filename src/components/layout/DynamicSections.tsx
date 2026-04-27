@@ -1,9 +1,9 @@
 "use client";
 
 import { Hero } from "@/components/sections/Hero";
-import { Destaques } from "@/components/sections/Destaques";
+import { Highlights } from "@/components/sections/Highlights";
 import { MenuSection } from "@/components/sections/MenuSection";
-import { Sobre } from "@/components/sections/Sobre";
+import { About } from "@/components/sections/About";
 import { Franchise } from "@/components/sections/Franchise";
 import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
 import { Gallery } from "@/components/sections/Gallery";
@@ -26,9 +26,9 @@ interface DynamicSectionsProps {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const componentMap: Record<string, React.ComponentType<any>> = {
   hero: Hero,
-  highlights: Destaques,
+  highlights: Highlights,
   menu: MenuSection,
-  about: Sobre,
+  about: About,
   franchise: Franchise,
   divider: ScrollIndicator,
   gallery: Gallery,
@@ -43,9 +43,9 @@ export function DynamicSections({ sections, settings }: DynamicSectionsProps) {
       <>
         <Hero settings={settings} />
         <ScrollIndicator />
-        <Destaques settings={settings} />
+        <Highlights settings={settings} />
         <MenuSection settings={settings} />
-        <Sobre settings={settings} />
+        <About settings={settings} />
         <Franchise settings={settings} />
       </>
     );

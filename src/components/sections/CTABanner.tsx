@@ -54,7 +54,7 @@ export function CTABanner({ props }: CTABannerProps) {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="inline-flex items-center gap-2 bg-white text-ink-900 font-bold px-8 py-3.5 rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300"
+          className="inline-flex items-center gap-2 bg-white text-text-900 font-bold px-8 py-3.5 rounded-full hover:shadow-xl hover:scale-105 transition-all duration-300"
         >
           {buttonText}
         </motion.a>

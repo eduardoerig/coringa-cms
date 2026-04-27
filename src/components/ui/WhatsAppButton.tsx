@@ -9,8 +9,8 @@ interface WhatsAppButtonProps {
 }
 
 export function WhatsAppButton({ 
-  phone = "551732118200", 
-  message = "Olá! Gostaria de saber mais sobre a Chiquinho Sorvetes." 
+  phone = "5511999999999", 
+  message = "Olá! Gostaria de saber mais informações." 
 }: WhatsAppButtonProps) {
   const [visible, setVisible] = useState(false);
   const [tooltip, setTooltip] = useState(true);
@@ -43,10 +43,10 @@ export function WhatsAppButton({
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl shadow-lg px-4 py-2.5 text-sm font-medium text-ink-900 border border-ink-100 max-w-[180px] leading-snug hidden sm:block"
+                className="bg-white rounded-2xl shadow-lg px-4 py-2.5 text-sm font-medium text-text-900 border border-text-100 max-w-[180px] leading-snug hidden sm:block"
               >
                 Fale conosco pelo WhatsApp! 💬
-                <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-r border-b border-ink-100 rotate-[-45deg]" />
+                <div className="absolute right-[-6px] top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-r border-b border-text-100 rotate-[-45deg]" />
               </motion.div>
             )}
           </AnimatePresence>

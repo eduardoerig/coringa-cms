@@ -62,13 +62,13 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
   return (
     <div className="space-y-2">
       {label && (
-        <label className="text-xs font-bold uppercase tracking-wider text-ink-500">
+        <label className="text-xs font-bold uppercase tracking-wider text-text-500">
           {label}
         </label>
       )}
 
       {value ? (
-        <div className="relative group rounded-xl overflow-hidden border border-ink-100 bg-cream-50">
+        <div className="relative group rounded-xl overflow-hidden border border-text-100 bg-surface-50">
           <Image
             src={value}
             alt="Preview"
@@ -79,7 +79,7 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
           <button
             type="button"
             onClick={() => onChange("")}
-            className="absolute top-2 right-2 p-1.5 bg-ink-900/70 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+            className="absolute top-2 right-2 p-1.5 bg-text-900/70 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
           >
             <X className="w-4 h-4" />
           </button>
@@ -92,16 +92,16 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
           onDrop={handleDrop}
           className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver
-              ? "border-brand-red bg-brand-red/5"
-              : "border-ink-200 bg-cream-50/50 hover:border-brand-red/50 hover:bg-cream-50"
+              ? "border-primary bg-primary/5"
+              : "border-text-200 bg-surface-50/50 hover:border-primary/50 hover:bg-surface-50"
           }`}
         >
           {uploading ? (
-            <Loader2 className="w-6 h-6 text-brand-red animate-spin" />
+            <Loader2 className="w-6 h-6 text-primary animate-spin" />
           ) : (
             <>
-              <Upload className="w-6 h-6 text-ink-300" />
-              <span className="text-xs text-ink-400">
+              <Upload className="w-6 h-6 text-text-300" />
+              <span className="text-xs text-text-400">
                 Clique ou arraste uma imagem
               </span>
             </>

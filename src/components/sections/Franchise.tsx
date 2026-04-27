@@ -26,9 +26,9 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
   const isHtml = description.includes("<");
 
   return (
-    <section id="franquia" className="py-24 bg-brand-soft/20 relative overflow-hidden">
+    <section id="franquia" className="py-24 bg-primary-soft/20 relative overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-brand-red/10">
+        <div className="bg-white rounded-[40px] shadow-2xl overflow-hidden border border-primary/10">
           <div className="grid grid-cols-1 lg:grid-cols-2">
             
             <motion.div 
@@ -38,14 +38,14 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               transition={{ duration: 0.8 }}
               className="p-10 md:p-16 lg:p-20 flex flex-col justify-center"
             >
-              <span className="text-brand-red text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Expansão</span>
-              <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-ink-900 tracking-tight mb-8">
+              <span className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Expansão</span>
+              <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-text-900 tracking-tight mb-8">
                 {title}
               </h2>
               {isHtml ? (
-                <div className="text-ink-500 text-lg leading-relaxed mb-10" dangerouslySetInnerHTML={{ __html: description }} />
+                <div className="text-text-500 text-lg leading-relaxed mb-10" dangerouslySetInnerHTML={{ __html: description }} />
               ) : (
-                <p className="text-ink-500 text-lg leading-relaxed mb-10">
+                <p className="text-text-500 text-lg leading-relaxed mb-10">
                   {description}
                 </p>
               )}
@@ -53,15 +53,15 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               <div className="grid grid-cols-2 gap-6 mb-12">
                 {stats.map((stat, i) => (
                   <div key={i}>
-                    <div className="text-brand-red font-display font-black text-3xl mb-1">{stat.value}</div>
-                    <div className="text-ink-400 text-xs uppercase font-bold tracking-widest">{stat.label}</div>
+                    <div className="text-primary font-display font-black text-3xl mb-1">{stat.value}</div>
+                    <div className="text-text-400 text-xs uppercase font-bold tracking-widest">{stat.label}</div>
                   </div>
                 ))}
               </div>
 
               <button 
                 onClick={openModal}
-                className="group w-full sm:w-auto bg-brand-red text-white font-bold px-10 py-5 rounded-2xl shadow-brand hover:bg-brand-dark transition-all duration-300 flex items-center justify-center gap-3"
+                className="group w-full sm:w-auto bg-primary text-white font-bold px-10 py-5 rounded-2xl shadow-primary hover:bg-primary-dark transition-all duration-300 flex items-center justify-center gap-3"
               >
                 <span>{buttonText}</span>
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
@@ -77,7 +77,7 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               <div className="relative w-full h-full min-h-[240px] lg:min-h-[360px] rounded-2xl overflow-hidden">
                 <Image 
                   src={imageSrc} 
-                  alt="Mapa de unidades Chiquinho" 
+                  alt="Mapa de unidades" 
                   fill
                   className="object-contain object-center" 
                 />

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { sectionRegistry } from "@/components/editor/sections/registry";
 
 // ---- Types ----
 
@@ -40,11 +41,7 @@ function generateId(): string {
   return `sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/** Importa os defaults do registry para o tipo de seção */
 function getDefaultPropsForType(type: string): SectionProps {
-  // Importado lazy para evitar circular dependency
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { sectionRegistry } = require("@/components/editor/sections/registry");
   const entry = sectionRegistry[type];
   return entry ? JSON.parse(JSON.stringify(entry.defaultProps)) : {};
 }

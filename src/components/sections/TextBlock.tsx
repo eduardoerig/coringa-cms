@@ -20,7 +20,7 @@ export function TextBlock({ props }: TextBlockProps) {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-display font-black text-ink-900 mb-6"
+            className="text-3xl md:text-4xl font-display font-black text-text-900 mb-6"
           >
             {title}
           </motion.h2>
@@ -32,7 +32,7 @@ export function TextBlock({ props }: TextBlockProps) {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="prose prose-lg max-w-none text-ink-600 prose-headings:text-ink-900 prose-a:text-brand-red"
+            className="prose prose-lg max-w-none text-text-600 prose-headings:text-text-900 prose-a:text-primary"
             dangerouslySetInnerHTML={{ __html: content }}
           />
         )}

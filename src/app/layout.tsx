@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DM_Sans, Fraunces } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { Preloader } from "@/components/ui/Preloader";
 import "./globals.css";
 import { getSettings } from "@/utils/settings";
@@ -8,31 +8,46 @@ import Script from "next/script";
 
 export const dynamic = "force-dynamic";
 
-const dmSans = DM_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-dm-sans",
+  variable: "--font-inter",
 });
 
-const fraunces = Fraunces({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["opsz", "SOFT", "WONK"],
+  variable: "--font-space-grotesk",
 });
+
+/**
+ * Gera uma paleta de cores derivadas a partir de uma cor hexadecimal primária.
+ */
+function generatePalette(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+
+  const dark = `rgb(${Math.round(r * 0.7)}, ${Math.round(g * 0.7)}, ${Math.round(b * 0.7)})`;
+  const light = `rgb(${Math.min(255, Math.round(r * 1.15))}, ${Math.min(255, Math.round(g * 1.15))}, ${Math.min(255, Math.round(b * 1.15))})`;
+  const soft = `rgba(${r}, ${g}, ${b}, 0.12)`;
+  const bg = `rgba(${r}, ${g}, ${b}, 0.06)`;
+
+  return { primary: hex, dark, light, soft, bg };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
-  const siteName = settings.general_site_name || "Chiquinho Sorvetes";
-  const siteDescription = settings.seo_description || "Com receita exclusiva, mais de 100 opções no cardápio e mais de 1000 lojas pelo Brasil.";
+  const siteName = settings.general_site_name || "Meu Site";
+  const siteDescription = settings.seo_description || "Bem-vindo ao nosso site. Confira nossos produtos e serviços.";
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://chiquinho.com.br"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://example.com"),
     title: {
       default: siteName,
       template: `%s | ${siteName}`,
     },
     description: siteDescription,
     icons: {
-      icon: "/imagens_originais/cropped-chiquinho-icone-1-270x270.png",
+      icon: settings.theme_favicon_url || "/favicon.ico",
     },
     openGraph: {
       title: siteName,
@@ -40,26 +55,26 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: siteName,
       locale: "pt_BR",
       type: "website",
-      images: [
+      images: settings.theme_logo_url ? [
         {
-          url: "/imagens_originais/chiquinho-logo-horizontal.png",
+          url: settings.theme_logo_url,
           width: 1200,
           height: 630,
           alt: siteName,
         },
-      ],
+      ] : [],
     },
     twitter: {
       card: "summary_large_image",
       title: siteName,
       description: siteDescription,
-      images: ["/imagens_originais/chiquinho-logo-horizontal.png"],
+      images: settings.theme_logo_url ? [settings.theme_logo_url] : [],
     },
   };
 }
 
 export const viewport = {
-  themeColor: "#A8151F",
+  themeColor: "#2563EB",
 };
 
 export default async function RootLayout({
@@ -71,8 +86,27 @@ export default async function RootLayout({
   const gaId = settings.marketing_ga_id;
   const pixelId = settings.marketing_pixel_id;
 
+  // Gerar paleta de cores dinâmica
+  const primaryColor = settings.theme_primary_color || "#2563EB";
+  const surfaceBg = settings.theme_bg_color || "#FAFAFA";
+  const palette = generatePalette(primaryColor);
+
+  const themeStyles = `
+    :root {
+      --theme-primary: ${palette.primary};
+      --theme-primary-dark: ${palette.dark};
+      --theme-primary-light: ${palette.light};
+      --theme-primary-soft: ${palette.soft};
+      --theme-primary-bg: ${palette.bg};
+      --theme-surface-50: ${surfaceBg};
+    }
+  `;
+
   return (
-    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${dmSans.variable} ${fraunces.variable}`}>
+    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: themeStyles }} />
+      </head>
       <body className="antialiased font-sans">
         {/* Google Analytics */}
         {gaId && (

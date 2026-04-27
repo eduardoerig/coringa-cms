@@ -28,7 +28,7 @@ export function Gallery({ props }: GalleryProps) {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-display font-black text-ink-900 text-center mb-12"
+            className="text-3xl md:text-4xl font-display font-black text-text-900 text-center mb-12"
           >
             {title}
           </motion.h2>
@@ -42,7 +42,7 @@ export function Gallery({ props }: GalleryProps) {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="group relative overflow-hidden rounded-2xl aspect-square bg-cream-50"
+              className="group relative overflow-hidden rounded-2xl aspect-square bg-surface-50"
             >
               <Image
                 src={img.url}

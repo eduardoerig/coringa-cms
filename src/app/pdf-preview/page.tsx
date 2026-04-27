@@ -4,11 +4,11 @@ import { PremiumMenuTemplate } from "@/components/ui/PremiumMenuTemplate";
 export const dynamic = "force-dynamic";
 
 const mockItems = [
-  { id: 1, category: "shake-mix", title: "Shake Mix Clássico", desc: "Camadas de sorvete, calda e toppings", img: "/imagens_originais/produtos_capa_shakemix_01.png" },
-  { id: 2, category: "casquinha", title: "Cascão Recheado", desc: "Crocante, recheado com sorvete e cobertura", img: "/imagens_originais/cardapio_1.png" },
-  { id: 3, category: "sundae", title: "Sundae", desc: "Sorvete Chiquinho com calda quente", img: "/imagens_originais/cardapio_4.png" },
-  { id: 4, category: "top-mix", title: "Milkshake Chocotino", desc: "Sabor exclusivo", img: "/imagens_originais/chiquinho_milkshake_chocotino.png" },
-  { id: 5, category: "shake-mix", title: "Shake Mix KitKat", desc: "A pausa perfeita com KitKat", img: "/imagens_originais/chiquinho-banner-kitkat-selo-02-1.png" }
+  { id: 1, category: "shake-mix", title: "Produto Principal", desc: "Descrição atraente do produto principal", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+1" },
+  { id: 2, category: "casquinha", title: "Produto Clássico", desc: "Clássico que todos adoram", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+2" },
+  { id: 3, category: "sundae", title: "Sobremesa Especial", desc: "Uma delícia refrescante", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+3" },
+  { id: 4, category: "top-mix", title: "Produto Exclusivo", desc: "Sabor inconfundível", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+4" },
+  { id: 5, category: "shake-mix", title: "Lançamento", desc: "A novidade do momento", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+5" }
 ];
 
 export default function PDFPreview() {

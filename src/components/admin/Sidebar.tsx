@@ -41,12 +41,12 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
-      <div className="h-20 flex items-center px-8 border-b border-ink-100 justify-between">
-        <span className="text-xl font-display font-black text-brand-red tracking-tight">Chiquinho <span className="text-ink-900">Admin</span></span>
+      <div className="h-20 flex items-center px-8 border-b border-text-100 justify-between">
+        <span className="text-xl font-display font-black text-primary tracking-tight">Coringa <span className="text-text-900">Admin</span></span>
         {/* Botão fechar apenas no mobile */}
         <button
           onClick={() => setMobileOpen(false)}
-          className="md:hidden p-2 rounded-lg text-ink-400 hover:bg-cream-50 hover:text-ink-900 transition-colors"
+          className="md:hidden p-2 rounded-lg text-text-400 hover:bg-surface-50 hover:text-text-900 transition-colors"
           aria-label="Fechar menu"
         >
           <X className="w-5 h-5" />
@@ -63,30 +63,30 @@ export function Sidebar() {
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-medium text-sm",
                 isActive 
-                  ? "bg-brand-red text-white shadow-md shadow-brand-red/20" 
-                  : "text-ink-500 hover:bg-cream-50 hover:text-brand-red"
+                  ? "bg-primary text-white shadow-md shadow-primary/20" 
+                  : "text-text-500 hover:bg-surface-50 hover:text-primary"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-ink-400 group-hover:text-brand-red")} />
+              <item.icon className={cn("w-5 h-5", isActive ? "text-white" : "text-text-400 group-hover:text-primary")} />
               {item.name}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-ink-100 space-y-1">
+      <div className="p-4 border-t border-text-100 space-y-1">
         <a 
           href="/" 
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-ink-500 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm font-medium"
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-500 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm font-medium"
         >
           <ExternalLink className="w-5 h-5" />
           Ver Site
         </a>
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-ink-500 hover:bg-red-50 hover:text-brand-red transition-colors text-sm font-medium"
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-500 hover:bg-red-50 hover:text-primary transition-colors text-sm font-medium"
         >
           <LogOut className="w-5 h-5" />
           Sair do Sistema
@@ -100,14 +100,14 @@ export function Sidebar() {
       {/* Hamburger button — visible only on mobile */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-[60] p-2.5 bg-white border border-ink-100 rounded-xl shadow-sm text-ink-900 hover:bg-cream-50 transition-colors"
+        className="md:hidden fixed top-4 left-4 z-[60] p-2.5 bg-white border border-text-100 rounded-xl shadow-sm text-text-900 hover:bg-surface-50 transition-colors"
         aria-label="Abrir menu"
       >
         <Menu className="w-5 h-5" />
       </button>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-ink-100 min-h-screen flex-col">
+      <aside className="hidden md:flex w-64 bg-white border-r border-text-100 min-h-screen flex-col">
         {sidebarContent}
       </aside>
 

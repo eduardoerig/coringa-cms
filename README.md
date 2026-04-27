@@ -1,186 +1,73 @@
-<p align="center">
-  <img src="public/imagens_originais/chiquinho-logo-horizontal.png" alt="Chiquinho Sorvetes" width="280" />
-</p>
+# Coringa CMS Boilerplate
 
-<h1 align="center">Chiquinho Sorvetes — Web App</h1>
+Uma base sólida, moderna e totalmente dinâmica para criar Landing Pages profissionais com um poderoso Dashboard Administrativo (CMS) integrado. Desenvolvido com foco em alta performance, branding *white-label* e excelente experiência de usuário (UX).
 
-<p align="center">
-  <strong>Site institucional + Painel Administrativo</strong><br/>
-  Desenvolvido com Next.js 16, React 19, Supabase e Tailwind CSS 4
-</p>
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![React](https://img.shields.io/badge/React-18-blue)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38B2AC)
+![Supabase](https://img.shields.io/badge/Supabase-Database_&_Auth-3ECF8E)
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16.2-black?logo=next.js" alt="Next.js" />
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react" alt="React" />
-  <img src="https://img.shields.io/badge/Supabase-Backend-3FCF8E?logo=supabase" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Framer_Motion-12-FF0050?logo=framer" alt="Framer Motion" />
-</p>
+## 🚀 Funcionalidades Principais
 
----
+- **Landing Page Dinâmica**: Toda a estrutura da página principal (ordem das seções, textos, imagens e visibilidade) pode ser configurada sem tocar no código.
+- **Dashboard Administrativo**: Um painel restrito e responsivo (`/admin`) para gestão do conteúdo.
+- **Editor Visual "Drag & Drop"**: Ferramenta premium para edição da página principal, contendo biblioteca de blocos (Hero, About, Highlights, Gallery, CTA) e painel de propriedades. Reordenação otimizada tanto para desktop quanto para dispositivos móveis.
+- **Autenticação Segura**: Gerenciamento de login de administradores utilizando o Supabase Auth.
+- **Gestão de Entidades**: Gerencie produtos, categorias, estatísticas de destaque e captação de leads.
+- **Design Premium**: Interface fluida animada com `framer-motion`, utilizando cores neutras e sistema de paletas semântico, facilmente adaptável a qualquer marca comercial (White Label).
 
-## 📋 Sobre o Projeto
+## 🛠 Tecnologias Utilizadas
 
-Aplicação web completa para a **Chiquinho Sorvetes**, a maior rede de sorveterias do Brasil. O projeto inclui um site público institucional de alta performance com animações premium e um painel administrativo robusto para gerenciamento de conteúdo.
+- **Front-end**: [Next.js](https://nextjs.org/) (App Router), [React](https://reactjs.org/), [Tailwind CSS](https://tailwindcss.com/)
+- **Animações & Ícones**: [Framer Motion](https://www.framer.com/motion/), [Lucide React](https://lucide.dev/)
+- **Back-end & Banco de Dados**: [Supabase](https://supabase.com/) (PostgreSQL)
+- **Editor Rico**: [Tiptap](https://tiptap.dev/) para edição de textos
+- **Validação de Dados**: [Zod](https://zod.dev/)
 
-### ✨ Destaques
-
-- 🎨 **Design Premium** — UI moderna com glassmorphism, micro-animações e identidade visual fiel à marca
-- ⚡ **Performance** — Server Components, React.cache(), lazy loading e otimização de imagens
-- 📱 **Responsivo** — Layout adaptável para desktop, tablet e mobile
-- 🔒 **Admin Seguro** — Autenticação via Supabase Auth com painel completo de gestão
-- 🛠️ **Modo Manutenção** — Ativável pelo admin para exibir tela de manutenção aos visitantes
-
----
-
-## 🏗️ Arquitetura
-
-```
-src/
-├── app/
-│   ├── page.tsx                    # Página principal (pública)
-│   ├── layout.tsx                  # Layout raiz com SEO dinâmico
-│   └── admin/
-│       ├── login/                  # Autenticação
-│       └── (dashboard)/
-│           ├── page.tsx            # Visão geral
-│           ├── products/           # CRUD de produtos
-│           ├── categories/         # Gerenciamento de categorias
-│           ├── leads/              # Leads de franquia + export CSV
-│           └── settings/           # Configurações do site com preview
-├── components/
-│   ├── admin/                      # Sidebar responsiva
-│   ├── layout/                     # Navbar, Footer, FranchiseModal
-│   ├── sections/                   # Hero, Destaques, Menu, Sobre, Franchise
-│   └── ui/                         # WhatsApp, Skeletons, ScrollIndicator
-├── context/                        # FranchiseContext (modal global)
-├── utils/
-│   ├── settings.ts                 # getSettings() com React.cache()
-│   └── supabase/                   # Client, Server, Middleware
-└── lib/
-    └── utils.ts                    # cn() helper (clsx + tailwind-merge)
-```
-
----
-
-## 🌐 Site Público
-
-| Seção | Descrição |
-|-------|-----------|
-| **Hero** | Vídeo de fundo, animações escalonadas com Framer Motion e scroll indicator |
-| **Destaques** | Carrossel horizontal com navegação por setas e dots indicadores |
-| **Cardápio** | Grid filtrável por categoria com skeleton loading e geração de PDF premium |
-| **Sobre Nós** | História da marca com imagens e dados dinâmicos do admin |
-| **Franquia** | Formulário de leads com modal elegante |
-| **WhatsApp** | Botão flutuante com tooltip e animação pulse |
-
----
-
-## 🔧 Painel Administrativo
-
-| Funcionalidade | Detalhes |
-|----------------|----------|
-| **Dashboard** | Visão geral com métricas (produtos, categorias, leads) |
-| **Produtos** | CRUD completo com upload de imagem e categorização |
-| **Categorias** | Gerenciamento de categorias com slug automático |
-| **Leads** | Tabela com busca, filtros por status, dropdown de status (novo/contatado/convertido/descartado) e export CSV |
-| **Configurações** | Abas agrupadas com preview em tempo real, indicador de alterações não salvas e modo manutenção |
-| **Sidebar** | Navegação responsiva com drawer mobile (hamburger + overlay) |
-
----
-
-## 🚀 Começando
+## 📦 Como rodar o projeto localmente
 
 ### Pré-requisitos
-
-- **Node.js** 18+
-- **npm** ou **yarn**
-- Conta no **Supabase** (projeto configurado)
+- Node.js versão 18+ ou superior.
+- Um projeto criado no [Supabase](https://supabase.com/).
 
 ### Instalação
 
+1. Clone o repositório:
 ```bash
-# Clone o repositório
-git clone https://github.com/eduardoerig/chiquinho-webapp.git
-cd chiquinho-webapp
+git clone https://github.com/seu-usuario/coringa-cms.git
+cd coringa-cms
+```
 
-# Instale as dependências
+2. Instale as dependências:
+```bash
 npm install
-
-# Configure as variáveis de ambiente
-cp .env.example .env.local
 ```
 
-### Variáveis de Ambiente
-
-Crie um arquivo `.env.local` na raiz do projeto:
-
+3. Configure as variáveis de ambiente:
+Crie um arquivo `.env.local` na raiz do projeto com as chaves do seu Supabase:
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key
-NEXT_PUBLIC_SITE_URL=https://seudominio.com.br
+NEXT_PUBLIC_SUPABASE_URL=sua_url_aqui
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_anon_key_aqui
 ```
 
-### Banco de Dados
+4. Inicialize o Banco de Dados:
+Vá até a aba *SQL Editor* no Supabase e rode o script unificado presente no arquivo `supabase/init-db.sql`.
 
-Execute os scripts SQL no Supabase SQL Editor:
-
+5. Inicie o servidor local:
 ```bash
-# 1. Configurações do site
-supabase/settings-setup.sql
-
-# 2. Configuração de storage
-supabase/storage-setup.sql
-```
-
-### Rodando
-
-```bash
-# Desenvolvimento
 npm run dev
-
-# Build de produção
-npm run build
-npm start
 ```
 
----
+Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver a Landing Page ou acesse `/admin` para configurar seu CMS.
 
-## 🧰 Stack Tecnológica
+## 📁 Estrutura do Projeto
 
-| Tecnologia | Uso |
-|------------|-----|
-| [Next.js 16](https://nextjs.org/) | Framework React com App Router e Turbopack |
-| [React 19](https://react.dev/) | UI com Server Components e `React.cache()` |
-| [Supabase](https://supabase.com/) | Auth, Database (PostgreSQL) e Storage |
-| [Tailwind CSS 4](https://tailwindcss.com/) | Estilização utility-first |
-| [Framer Motion](https://www.framer.com/motion/) | Animações e transições |
-| [Lucide React](https://lucide.dev/) | Ícones |
-| [jsPDF](https://github.com/parallax/jsPDF) | Geração de cardápio em PDF |
-| [TypeScript](https://www.typescriptlang.org/) | Tipagem estática |
+- `src/app`: Rotas da aplicação (Front-end público e rotas `/admin`).
+- `src/components/sections`: Blocos de conteúdo da Landing Page (ex: Hero, Galeria).
+- `src/components/editor`: Todo o ecossistema do construtor de páginas (Canvas, Properties, Library).
+- `src/stores`: Gerenciamento de estado global com Zustand.
+- `supabase/`: Scripts SQL unificados.
 
----
+## 📄 Licença
 
-## 📁 Scripts
-
-| Comando | Descrição |
-|---------|-----------|
-| `npm run dev` | Inicia o servidor de desenvolvimento (Turbopack) |
-| `npm run build` | Gera o build de produção |
-| `npm start` | Inicia o servidor de produção |
-| `npm run lint` | Executa o ESLint |
-
----
-
-## 👨‍💻 Autor
-
-**Eduardo Erig** — [@eduardoerig](https://github.com/eduardoerig)
-
-Desenvolvido por [PrimoDev](https://primodev.com.br)
-
----
-
-<p align="center">
-  <sub>Feito com ❤️ e muito sorvete 🍦</sub>
-</p>
+Este projeto foi desenhado como um *Boilerplate* genérico para criar aplicações e sites gerenciáveis rapidamente.

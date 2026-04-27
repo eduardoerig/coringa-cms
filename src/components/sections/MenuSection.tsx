@@ -27,19 +27,19 @@ interface MenuSectionProps {
 }
 
 const defaultMenuItems: MenuItem[] = [
-  { id: "1", category: "shake-mix", title: "Shake Mix Clássico", desc: "Camadas de sorvete, calda e toppings", img: "/imagens_originais/produtos_capa_shakemix_01.png" },
-  { id: "2", category: "casquinha", title: "Cascão Recheado", desc: "Crocante, recheado com sorvete e cobertura", img: "/imagens_originais/cardapio_1.png" },
-  { id: "3", category: "sundae", title: "Sundae", desc: "Sorvete Chiquinho com calda quente", img: "/imagens_originais/cardapio_4.png" },
-  { id: "4", category: "top-mix", title: "Milkshake Chocotino", desc: "Sabor exclusivo", img: "/imagens_originais/chiquinho_milkshake_chocotino.png" },
-  { id: "5", category: "shake-mix", title: "Shake Mix KitKat", desc: "A pausa perfeita com KitKat", img: "/imagens_originais/chiquinho-banner-kitkat-selo-02-1.png" }
+  { id: "1", category: "shake-mix", title: "Produto Principal", desc: "Descrição atraente do produto principal", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+1" },
+  { id: "2", category: "casquinha", title: "Produto Clássico", desc: "Clássico que todos adoram", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+2" },
+  { id: "3", category: "sundae", title: "Sobremesa Especial", desc: "Uma delícia refrescante", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+3" },
+  { id: "4", category: "top-mix", title: "Produto Exclusivo", desc: "Sabor inconfundível", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+4" },
+  { id: "5", category: "shake-mix", title: "Lançamento", desc: "A novidade do momento", img: "https://placehold.co/400x400/eeeeee/999999?text=Produto+5" }
 ];
 
 const defaultCategories: CategoryItem[] = [
   { id: "all", label: "Todos" },
-  { id: "shake-mix", label: "Shake Mix" },
-  { id: "casquinha", label: "Casquinha e Cascão" },
-  { id: "sundae", label: "Sundae" },
-  { id: "top-mix", label: "Top Mix" }
+  { id: "shake-mix", label: "Categoria 1" },
+  { id: "casquinha", label: "Categoria 2" },
+  { id: "sundae", label: "Categoria 3" },
+  { id: "top-mix", label: "Categoria 4" }
 ];
 
 export function MenuSection({ settings, props: editorProps }: MenuSectionProps) {
@@ -74,7 +74,7 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
             category: (p.categories as { slug: string } | null)?.slug || 'geral',
             title: p.title as string,
             desc: (p.description as string) || '',
-            img: (p.image_url as string) || '/imagens_originais/cardapio_1.png'
+            img: (p.image_url as string) || 'https://placehold.co/400x400/eeeeee/999999?text=Produto'
           })));
         }
       } finally {
@@ -112,7 +112,7 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
       const pdfHeight = (1131 * pdfWidth) / 800;
 
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save("cardapio-chiquinho-premium.pdf");
+      pdf.save("cardapio-premium.pdf");
       
     } catch (error) {
       console.error("Erro ao gerar PDF", error);
@@ -123,16 +123,16 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
   };
 
   return (
-    <section id="cardapio" className="py-24 bg-cream-50 relative">
+    <section id="cardapio" className="py-24 bg-surface-50 relative">
       <div className="max-w-6xl mx-auto px-6 relative z-10">
         
         <div className="text-center mb-12">
-          <span className="text-brand-red text-xs font-bold uppercase tracking-[0.2em] mb-3 block">Cardápio</span>
-          <h2 className="text-3xl md:text-5xl font-display font-black text-ink-900 tracking-tight">
+          <span className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3 block">Cardápio</span>
+          <h2 className="text-3xl md:text-5xl font-display font-black text-text-900 tracking-tight">
             {title}
           </h2>
           {subtitle && (
-            <p className="text-ink-400 mt-4 max-w-md mx-auto">{subtitle}</p>
+            <p className="text-text-400 mt-4 max-w-md mx-auto">{subtitle}</p>
           )}
         </div>
 
@@ -145,8 +145,8 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
               className={cn(
                 "whitespace-nowrap flex-shrink-0 snap-start text-xs md:text-sm font-medium px-5 py-2 rounded-full border transition-all duration-200",
                 activeFilter === cat.id 
-                  ? "bg-brand-red text-white border-brand-red" 
-                  : "bg-white text-ink-500 border-ink-100 hover:border-brand-red hover:text-brand-red"
+                  ? "bg-primary text-white border-primary" 
+                  : "bg-white text-text-500 border-text-100 hover:border-primary hover:text-primary"
               )}
             >
               {cat.label}
@@ -163,13 +163,13 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-6 bg-cream-100 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-ink-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <div className="w-20 h-20 mx-auto mb-6 bg-surface-100 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-text-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
             </div>
-            <h3 className="text-ink-900 font-display font-bold text-xl mb-2">Nenhum produto encontrado</h3>
-            <p className="text-ink-400 text-sm">Tente alterar o filtro de categoria.</p>
+            <h3 className="text-text-900 font-display font-bold text-xl mb-2">Nenhum produto encontrado</h3>
+            <p className="text-text-400 text-sm">Tente alterar o filtro de categoria.</p>
           </div>
         ) : (
           <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
@@ -182,15 +182,15 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
-                  className="group bg-white border border-ink-100/50 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_12px_30px_rgba(26,16,8,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                  className="group bg-white border border-text-100/50 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_12px_30px_rgba(26,16,8,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
                 >
-                  <div className="h-[120px] md:h-[180px] flex items-center justify-center p-3 md:p-6 bg-cream-50 group-hover:bg-brand-bg transition-colors duration-300">
+                  <div className="h-[120px] md:h-[180px] flex items-center justify-center p-3 md:p-6 bg-surface-50 group-hover:bg-primary-bg transition-colors duration-300">
                     <Image src={item.img} alt={item.title} width={150} height={150} className="max-h-20 md:max-h-32 w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105" />
                   </div>
                   <div className="p-3 md:p-4 flex-1 flex flex-col">
-                    <span className="text-brand-red text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{item.category.replace("-", " ")}</span>
-                    <h3 className="font-display font-bold text-ink-900 mt-1 mb-1 text-sm md:text-base leading-tight md:leading-snug line-clamp-2">{item.title}</h3>
-                    <p className="text-ink-400 text-[10px] md:text-xs leading-relaxed line-clamp-2 md:line-clamp-none mt-auto pt-1">{item.desc}</p>
+                    <span className="text-primary text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{item.category.replace("-", " ")}</span>
+                    <h3 className="font-display font-bold text-text-900 mt-1 mb-1 text-sm md:text-base leading-tight md:leading-snug line-clamp-2">{item.title}</h3>
+                    <p className="text-text-400 text-[10px] md:text-xs leading-relaxed line-clamp-2 md:line-clamp-none mt-auto pt-1">{item.desc}</p>
                   </div>
                 </motion.div>
               ))}
@@ -202,7 +202,7 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
           <button 
             onClick={handleDownloadPDF} 
             disabled={isGeneratingPDF}
-            className="inline-block border border-ink-100 bg-white text-ink-900 font-bold px-8 py-4 rounded-full shadow-sm hover:shadow-md hover:border-brand-red hover:text-brand-red transition-all duration-300 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
+            className="inline-block border border-text-100 bg-white text-text-900 font-bold px-8 py-4 rounded-full shadow-sm hover:shadow-md hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
           >
             {isGeneratingPDF ? "Montando Revista..." : "Baixar Cardápio Premium"}
           </button>

@@ -4,20 +4,20 @@ import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 
-interface SobreProps {
+interface AboutProps {
   settings?: Record<string, string>;
   props?: Record<string, unknown>;
 }
 
-export function Sobre({ settings, props: editorProps }: SobreProps) {
+export function About({ settings, props: editorProps }: AboutProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   const title = (editorProps?.title as string) || "Nossa História";
-  const text = (editorProps?.content as string) || "A Chiquinho Sorvetes nasceu em 1980, em Frutal/MG, com o sonho de levar alegria através do sorvete mais saboroso e cremoso.";
+  const text = (editorProps?.content as string) || "Nascemos com o sonho de oferecer o melhor para nossos clientes. Com dedicação e paixão, construímos uma trajetória de sucesso e tradição no mercado.";
   const buttonText = (editorProps?.buttonText as string) || "Conheça a história completa";
-  const buttonLink = (editorProps?.buttonLink as string) || "https://chiquinho.com.br/a-chiquinho/";
-  const imageSrc = (editorProps?.image as string) || "/imagens_originais/sobre-a-marca-primeira-chiquinho-01.png";
+  const buttonLink = (editorProps?.buttonLink as string) || "#";
+  const imageSrc = (editorProps?.image as string) || "https://placehold.co/800x800/eeeeee/999999?text=Nossa+Historia";
   const isHtml = text.includes("<");
 
   return (
@@ -32,12 +32,12 @@ export function Sobre({ settings, props: editorProps }: SobreProps) {
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="text-brand-red text-xs font-bold uppercase tracking-[0.2em] mb-4 block">A Nossa História</span>
-            <h2 className="text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black text-ink-900 tracking-tight mb-8">
+            <span className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">A Nossa História</span>
+            <h2 className="text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black text-text-900 tracking-tight mb-8">
               {title}
             </h2>
             
-            <div className="space-y-6 text-ink-500 text-lg leading-relaxed mb-10">
+            <div className="space-y-6 text-text-500 text-lg leading-relaxed mb-10">
               {isHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: text }} />
               ) : (
@@ -48,7 +48,7 @@ export function Sobre({ settings, props: editorProps }: SobreProps) {
             </div>
 
             <div className="flex gap-4">
-              <a href={buttonLink} target="_blank" rel="noreferrer" className="group rounded-full bg-brand-bg text-brand-red font-bold px-8 py-4 flex items-center gap-2 hover:bg-brand-red hover:text-white transition-colors duration-300">
+              <a href={buttonLink} target="_blank" rel="noreferrer" className="group rounded-full bg-primary-bg text-primary font-bold px-8 py-4 flex items-center gap-2 hover:bg-primary hover:text-white transition-colors duration-300">
                 <span>{buttonText}</span>
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </a>
@@ -61,11 +61,11 @@ export function Sobre({ settings, props: editorProps }: SobreProps) {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative"
           >
-            <div className="absolute inset-0 bg-cream-100 rounded-[30px] rotate-3 scale-105 z-0" />
+            <div className="absolute inset-0 bg-surface-100 rounded-[30px] rotate-3 scale-105 z-0" />
             <div className="relative z-10 w-full overflow-hidden rounded-[40px] shadow-2xl flex flex-col items-center border-[8px] border-white">
               <Image 
                 src={imageSrc} 
-                alt="História da Chiquinho" 
+                alt="Nossa História"
                 width={800} 
                 height={800} 
                 className="w-full object-cover object-center max-h-[500px]" 
@@ -73,10 +73,10 @@ export function Sobre({ settings, props: editorProps }: SobreProps) {
             </div>
             {/* Decal */}
             <div className="absolute -bottom-4 -left-2 md:-bottom-6 md:-left-6 bg-white p-3 md:p-4 rounded-2xl md:rounded-3xl shadow-xl z-20 flex items-center gap-3 md:gap-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-brand-red rounded-full flex items-center justify-center text-white font-bold text-lg md:text-xl">80</div>
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-lg md:text-xl">80</div>
               <div>
-                <div className="text-[10px] md:text-xs text-ink-400 font-bold uppercase tracking-widest leading-none">Década</div>
-                <div className="font-display font-bold text-ink-900 text-base md:text-lg">De Origem</div>
+                <div className="text-[10px] md:text-xs text-text-400 font-bold uppercase tracking-widest leading-none">Década</div>
+                <div className="font-display font-bold text-text-900 text-base md:text-lg">De Origem</div>
               </div>
             </div>
           </motion.div>

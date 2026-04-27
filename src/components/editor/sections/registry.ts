@@ -65,16 +65,16 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     ],
     defaultProps: {
       badge: "Qualidade Premium",
-      title: "O sabor que conquista o Brasil",
-      subtitle: "Desde 1980, transformando sorvetes em momentos de felicidade.",
+      title: "A solução que conquista o mercado",
+      subtitle: "Transformando ideias em resultados extraordinários.",
       ctaText: "Ver Cardápio",
       ctaLink: "#cardapio",
       ctaSecondaryText: "Mais Pedidos",
       ctaSecondaryLink: "#destaques",
       products: [
-        { src: "/imagens_originais/cardapio_2.png", alt: "Açaí Premium", description: "Açaí cremoso com frutas frescas." },
-        { src: "/imagens_originais/produtos_capa_shakemix_01.png", alt: "Shake Mix", description: "Sorvete, frutas e toppings." },
-        { src: "/imagens_originais/cardapio_1.png", alt: "Sorvete Premium", description: "Ingredientes selecionados desde 1980." },
+        { src: "https://placehold.co/600x400/png", alt: "Produto A", description: "Qualidade garantida e excelência." },
+        { src: "https://placehold.co/600x400/png", alt: "Produto B", description: "Inovação e performance." },
+        { src: "https://placehold.co/600x400/png", alt: "Produto C", description: "Feito para a sua melhor experiência." },
       ],
     },
   },
@@ -91,7 +91,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     ],
     defaultProps: {
       title: "Nossos Queridinhos",
-      subtitle: "Descubra os sabores que fazem a fama da Chiquinho em todo o país.",
+      subtitle: "Descubra os sabores que fazem a fama da nossa marca em todo o país.",
     },
   },
 
@@ -155,9 +155,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     ],
     defaultProps: {
       title: "Seja um Franqueado",
-      description: "<p>Faça parte da maior rede de sorveterias do Brasil.</p>",
+      description: "<p>Faça parte da nossa rede de parceiros.</p>",
       buttonText: "Quero Abrir uma Unidade",
-      image: "/imagens_originais/img_mapa-unidades.png.webp",
+      image: "https://placehold.co/800x600/png",
       stats: [
         { value: "700+", label: "Unidades" },
         { value: "40+", label: "Anos de Sucesso" },

@@ -74,14 +74,14 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-display font-black text-ink-900 tracking-tight">Visão Geral</h1>
-          <p className="text-ink-500 mt-2">Bem-vindo ao painel de controle do site Chiquinho Sorvetes.</p>
+          <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Visão Geral</h1>
+          <p className="text-text-500 mt-2">Bem-vindo ao painel de controle do site.</p>
         </div>
         <a 
           href="/" 
           target="_blank"
           rel="noreferrer"
-          className="hidden sm:flex items-center gap-2 text-sm text-ink-500 hover:text-brand-red transition-colors font-medium"
+          className="hidden sm:flex items-center gap-2 text-sm text-text-500 hover:text-primary transition-colors font-medium"
         >
           <ExternalLink className="w-4 h-4" />
           Ver site
@@ -98,14 +98,14 @@ export default function AdminDashboard() {
           >
             <Link 
               href={stat.href}
-              className="bg-white p-6 rounded-2xl border border-ink-100 shadow-sm flex items-center gap-6 hover:shadow-md hover:border-brand-red/20 transition-all duration-200 group block"
+              className="bg-white p-6 rounded-2xl border border-text-100 shadow-sm flex items-center gap-6 hover:shadow-md hover:border-primary/20 transition-all duration-200 group block"
             >
               <div className={`w-14 h-14 rounded-full flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform`}>
                 <stat.icon className="w-7 h-7" />
               </div>
               <div>
-                <p className="text-ink-400 text-sm font-medium">{stat.title}</p>
-                <h3 className="text-3xl font-display font-bold text-ink-900 mt-1">{stat.value}</h3>
+                <p className="text-text-400 text-sm font-medium">{stat.title}</p>
+                <h3 className="text-3xl font-display font-bold text-text-900 mt-1">{stat.value}</h3>
               </div>
             </Link>
           </motion.div>
@@ -114,23 +114,23 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Últimos Produtos */}
-        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-ink-100">
+        <div className="bg-white rounded-2xl border border-text-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-text-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
                 <IceCream className="w-5 h-5" />
               </div>
-              <h2 className="text-lg font-display font-bold text-ink-900">Últimos Produtos</h2>
+              <h2 className="text-lg font-display font-bold text-text-900">Últimos Produtos</h2>
             </div>
-            <Link href="/admin/products" className="text-xs text-brand-red font-bold hover:underline">Ver todos →</Link>
+            <Link href="/admin/products" className="text-xs text-primary font-bold hover:underline">Ver todos →</Link>
           </div>
 
           {recentProducts.length > 0 ? (
-            <ul className="divide-y divide-ink-100">
+            <ul className="divide-y divide-text-100">
               {recentProducts.map(product => (
-                <li key={product.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-cream-50/50 transition-colors">
-                  <span className="text-sm font-medium text-ink-900 truncate max-w-[200px]">{product.title}</span>
-                  <span className="text-xs text-ink-400 flex items-center gap-1.5 whitespace-nowrap">
+                <li key={product.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50/50 transition-colors">
+                  <span className="text-sm font-medium text-text-900 truncate max-w-[200px]">{product.title}</span>
+                  <span className="text-xs text-text-400 flex items-center gap-1.5 whitespace-nowrap">
                     <Clock className="w-3 h-3" />
                     {timeAgo(product.created_at)}
                   </span>
@@ -138,33 +138,33 @@ export default function AdminDashboard() {
               ))}
             </ul>
           ) : (
-            <div className="p-8 text-center text-ink-400 text-sm">
+            <div className="p-8 text-center text-text-400 text-sm">
               Nenhum produto cadastrado.
             </div>
           )}
         </div>
 
         {/* Últimos Leads */}
-        <div className="bg-white rounded-2xl border border-ink-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-ink-100">
+        <div className="bg-white rounded-2xl border border-text-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-text-100">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
                 <Users className="w-5 h-5" />
               </div>
-              <h2 className="text-lg font-display font-bold text-ink-900">Últimos Leads</h2>
+              <h2 className="text-lg font-display font-bold text-text-900">Últimos Leads</h2>
             </div>
-            <Link href="/admin/leads" className="text-xs text-brand-red font-bold hover:underline">Ver todos →</Link>
+            <Link href="/admin/leads" className="text-xs text-primary font-bold hover:underline">Ver todos →</Link>
           </div>
 
           {recentLeads.length > 0 ? (
-            <ul className="divide-y divide-ink-100">
+            <ul className="divide-y divide-text-100">
               {recentLeads.map(lead => (
-                <li key={lead.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-cream-50/50 transition-colors">
+                <li key={lead.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50/50 transition-colors">
                   <div className="min-w-0">
-                    <span className="text-sm font-medium text-ink-900 block truncate">{lead.name}</span>
-                    <span className="text-xs text-ink-400 block truncate">{lead.email}</span>
+                    <span className="text-sm font-medium text-text-900 block truncate">{lead.name}</span>
+                    <span className="text-xs text-text-400 block truncate">{lead.email}</span>
                   </div>
-                  <span className="text-xs text-ink-400 flex items-center gap-1.5 whitespace-nowrap ml-4">
+                  <span className="text-xs text-text-400 flex items-center gap-1.5 whitespace-nowrap ml-4">
                     <Clock className="w-3 h-3" />
                     {timeAgo(lead.created_at)}
                   </span>
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
               ))}
             </ul>
           ) : (
-            <div className="p-8 text-center text-ink-400 text-sm">
+            <div className="p-8 text-center text-text-400 text-sm">
               Nenhum lead recebido.
             </div>
           )}

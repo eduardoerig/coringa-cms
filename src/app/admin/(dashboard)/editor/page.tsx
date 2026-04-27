@@ -107,44 +107,44 @@ export default function EditorPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-cream-50">
-        <Loader2 className="w-8 h-8 text-brand-red animate-spin" />
+      <div className="flex items-center justify-center h-screen bg-surface-50">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen bg-white overflow-hidden">
+    <div className="flex flex-col min-h-[calc(100vh-80px)] md:h-[calc(100vh-64px)] lg:h-screen bg-white md:overflow-hidden rounded-2xl md:rounded-none shadow-sm md:shadow-none border border-text-100 md:border-none md:m-0">
       {/* Toolbar */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b border-ink-100 bg-white z-10">
+      <div className="flex flex-wrap items-center gap-3 md:gap-4 px-4 py-3 border-b border-text-100 bg-white z-10 sticky top-0">
         <Link
           href="/admin"
-          className="flex items-center gap-2 text-ink-500 hover:text-ink-900 transition-colors text-sm font-medium"
+          className="flex items-center gap-2 text-text-500 hover:text-text-900 transition-colors text-sm font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Voltar</span>
         </Link>
 
-        <div className="flex-1 flex items-center gap-3">
-          <h1 className="font-display font-bold text-ink-900 text-lg">Editor da Página</h1>
+        <div className="flex-1 flex items-center flex-wrap gap-2 md:gap-3 min-w-[200px]">
+          <h1 className="font-display font-black text-primary text-lg md:text-xl">Editor da Página</h1>
           {isDirty && (
-            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full whitespace-nowrap">
               Não salvo
             </span>
           )}
           {showSaved && (
-            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
               <Check className="w-3 h-3" /> Salvo
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
           <a
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="text-ink-400 hover:text-ink-900 p-2 rounded-xl hover:bg-cream-50 transition-colors"
+            className="text-text-400 hover:text-text-900 p-2 rounded-xl hover:bg-surface-50 transition-colors hidden sm:flex"
             title="Ver site"
           >
             <Globe className="w-5 h-5" />
@@ -154,10 +154,10 @@ export default function EditorPage() {
             onClick={() => handleSave()}
             disabled={isSaving || !isDirty}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+              "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all",
               isDirty
-                ? "bg-ink-900 text-white hover:bg-ink-800 shadow-sm"
-                : "bg-ink-100 text-ink-400 cursor-not-allowed"
+                ? "bg-text-900 text-white hover:bg-ink-800 shadow-sm"
+                : "bg-text-100 text-text-400 cursor-not-allowed"
             )}
           >
             {isSaving ? (
@@ -172,10 +172,10 @@ export default function EditorPage() {
             onClick={() => handleSave(true)}
             disabled={isSaving}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all",
+              "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-bold transition-all",
               isPublished
                 ? "bg-green-600 text-white hover:bg-green-700"
-                : "bg-brand-red text-white hover:bg-brand-dark shadow-brand"
+                : "bg-primary text-white hover:bg-primary-dark shadow-primary"
             )}
           >
             {isPublished ? "Publicado ✓" : "Publicar"}
@@ -184,7 +184,7 @@ export default function EditorPage() {
       </div>
 
       {/* 3-panel layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden">
         <SectionLibrary />
         <EditorCanvas />
         <PropertiesPanel />

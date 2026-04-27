@@ -22,7 +22,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
       }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: { class: "text-brand-red underline" },
+        HTMLAttributes: { class: "text-primary underline" },
       }),
       Placeholder.configure({
         placeholder: placeholder || "Escreva aqui...",
@@ -35,7 +35,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[120px] px-4 py-3 text-ink-900",
+        class: "prose prose-sm max-w-none focus:outline-none min-h-[120px] px-4 py-3 text-text-900",
       },
     },
   });
@@ -59,9 +59,9 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   if (!editor) return null;
 
   return (
-    <div className="border border-ink-200 rounded-xl overflow-hidden bg-white focus-within:border-brand-red/50 focus-within:ring-2 focus-within:ring-brand-red/10 transition-all">
+    <div className="border border-text-200 rounded-xl overflow-hidden bg-white focus-within:border-primary/50 focus-within:ring-2 focus-within:ring-primary/10 transition-all">
       {/* Toolbar */}
-      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-ink-100 bg-cream-50/50">
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-text-100 bg-surface-50/50">
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBold().run()}
           active={editor.isActive("bold")}
@@ -77,7 +77,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
           <Italic className="w-4 h-4" />
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-ink-200 mx-1" />
+        <div className="w-px h-5 bg-text-200 mx-1" />
 
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBulletList().run()}
@@ -94,7 +94,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
           <ListOrdered className="w-4 h-4" />
         </ToolbarButton>
 
-        <div className="w-px h-5 bg-ink-200 mx-1" />
+        <div className="w-px h-5 bg-text-200 mx-1" />
 
         <ToolbarButton onClick={setLink} active={editor.isActive("link")} title="Link">
           <LinkIcon className="w-4 h-4" />
@@ -146,8 +146,8 @@ function ToolbarButton({
       className={cn(
         "p-1.5 rounded-lg transition-colors",
         active
-          ? "bg-brand-red/10 text-brand-red"
-          : "text-ink-400 hover:bg-ink-100 hover:text-ink-900",
+          ? "bg-primary/10 text-primary"
+          : "text-text-400 hover:bg-text-100 hover:text-text-900",
         disabled && "opacity-30 cursor-not-allowed"
       )}
     >

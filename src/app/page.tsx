@@ -14,12 +14,12 @@ export default async function Home() {
 
   if (isMaintenanceMode) {
     return (
-      <main className="min-h-screen bg-cream-50 flex items-center justify-center p-6 selection:bg-brand-red selection:text-white">
+      <main className="min-h-screen bg-surface-50 flex items-center justify-center p-6 selection:bg-primary selection:text-white">
         <div className="text-center max-w-lg">
           <div className="mb-8">
             <Image
-              src="/imagens_originais/chiquinho-logo-horizontal.png"
-              alt="Chiquinho Sorvetes"
+              src="https://placehold.co/440x120/eeeeee/999999?text=LOGO"
+              alt="Logo da Marca"
               width={220}
               height={60}
               className="mx-auto opacity-80"
@@ -27,19 +27,19 @@ export default async function Home() {
           </div>
 
           <div className="w-20 h-20 mx-auto mb-8 bg-white rounded-full shadow-sm flex items-center justify-center">
-            <svg className="w-10 h-10 text-brand-red" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg className="w-10 h-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
             </svg>
           </div>
 
-          <h1 className="text-3xl md:text-4xl font-display font-black text-ink-900 tracking-tight mb-4">
+          <h1 className="text-3xl md:text-4xl font-display font-black text-text-900 tracking-tight mb-4">
             Estamos em manutenção
           </h1>
-          <p className="text-ink-500 text-lg leading-relaxed mb-8">
+          <p className="text-text-500 text-lg leading-relaxed mb-8">
             Nosso site está passando por uma atualização rápida para ficar ainda melhor. Voltamos em breve!
           </p>
 
-          <div className="flex items-center justify-center gap-2 text-ink-300 text-sm">
+          <div className="flex items-center justify-center gap-2 text-text-300 text-sm">
             <span className="w-2 h-2 bg-amber-400 rounded-full animate-pulse" />
             Trabalhando nisso agora
           </div>
@@ -59,7 +59,7 @@ export default async function Home() {
   const sections = layout?.is_published ? layout.sections : null;
 
   return (
-    <main className="min-h-screen bg-cream-50 selection:bg-brand-red selection:text-white">
+    <main className="min-h-screen bg-surface-50 selection:bg-primary selection:text-white">
       <Navbar settings={settings} />
       
       <DynamicSections sections={sections} settings={settings} />
