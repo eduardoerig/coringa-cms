@@ -42,7 +42,7 @@ export function FooterClient({ settings }: FooterClientProps) {
               )}
               {tiktok && tiktok !== "#" && (
                 <a href={tiktok} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white border border-text-100 flex items-center justify-center text-text-900 hover:bg-primary hover:text-white hover:border-primary transition-all duration-200">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12.525.023C5.29.273 0 5.862 0 12.511c0 3.135 1.25 5.977 3.284 8.067.42.43 1.05.474 1.58.125l.43-.284c.333-.22.42-.663.2-.991-1.636-2.438-2.593-5.367-2.593-8.528 0-7.397 6.002-13.4 13.398-13.4 7.397 0 13.4 6.002 13.4 13.399 0 7.396-6.003 13.398-13.4 13.398-1.528 0-2.988-.258-4.354-.73-.418-.145-.884.01-1.125.378l-.242.368c-.244.372-.15.864.218 1.12.364.254.757.472 1.168.654 1.4.619 2.943.958 4.568.958 6.294 0 11.4-5.105 11.4-11.4 0-6.294-5.106-11.4-11.4-11.4-.047 0-.094 0-.14.001z"/></svg>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/></svg>
                 </a>
               )}
             </div>

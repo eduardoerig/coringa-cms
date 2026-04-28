@@ -11,7 +11,7 @@ import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 
 export default function EditorPage() {
-  const { sections, setSections, isDirty, isSaving, setSaving } = useEditorStore();
+  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme } = useEditorStore();
   const [isPublished, setIsPublished] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,16 +20,32 @@ export default function EditorPage() {
   // Load layout
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      // Carregar layout da página
+      const { data: layoutData } = await supabase
         .from("page_layouts")
         .select("*")
         .eq("id", "home")
         .single();
 
-      if (data) {
-        setSections(data.sections || []);
-        setIsPublished(data.is_published ?? false);
+      if (layoutData) {
+        setSections(layoutData.sections || []);
+        setIsPublished(layoutData.is_published ?? false);
       }
+
+      // Carregar cores do tema
+      const { data: themeData } = await supabase
+        .from("site_settings")
+        .select("key, value")
+        .eq("group", "aparencia");
+      
+      if (themeData) {
+        const themeMap: Record<string, string> = {};
+        themeData.forEach(item => {
+          themeMap[item.key] = item.value;
+        });
+        setTheme(themeMap);
+      }
+
       setLoading(false);
     }
     load();
@@ -51,18 +67,38 @@ export default function EditorPage() {
           setIsPublished(publish);
         }
 
+        // Salvar layout
         const { error } = await supabase
           .from("page_layouts")
           .upsert({ id: "home", name: "Página Principal", ...payload });
 
         if (error) {
-          console.error("Erro ao salvar:", error);
+          console.error("Erro ao salvar layout:", error);
           alert("Erro ao salvar. Verifique o console.");
-        } else {
-          useEditorStore.getState().setDirty(false);
-          setShowSaved(true);
-          setTimeout(() => setShowSaved(false), 2000);
+          return;
         }
+
+        // Salvar tema
+        const { theme } = useEditorStore.getState();
+        if (Object.keys(theme).length > 0) {
+          const themeUpdates = Object.entries(theme).map(([key, value]) =>
+            supabase
+              .from("site_settings")
+              .update({ value, updated_at: new Date().toISOString() })
+              .eq("key", key)
+          );
+          
+          const results = await Promise.all(themeUpdates);
+          if (results.some(r => r.error)) {
+            console.error("Erro ao salvar tema:", results.find(r => r.error)?.error);
+            alert("Erro ao salvar cores do tema.");
+            return;
+          }
+        }
+
+        useEditorStore.getState().setDirty(false);
+        setShowSaved(true);
+        setTimeout(() => setShowSaved(false), 2000);
       } finally {
         setSaving(false);
       }

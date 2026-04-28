@@ -3,9 +3,10 @@
 import { sectionTypes, type SectionRegistryEntry } from "./sections/registry";
 import { useEditorStore } from "@/stores/editorStore";
 import { cn } from "@/lib/utils";
+import { Palette } from "lucide-react";
 
 export function SectionLibrary() {
-  const { sections, addSection } = useEditorStore();
+  const { sections, addSection, selectSection, selectedSectionId } = useEditorStore();
 
   const canAdd = (entry: SectionRegistryEntry) => {
     if (!entry.maxInstances) return true;
@@ -21,6 +22,39 @@ export function SectionLibrary() {
       </div>
 
       <div className="flex md:flex-col overflow-x-auto md:overflow-y-auto md:overflow-x-hidden py-2 px-3 md:px-2 gap-2 md:gap-0 md:space-y-1 scrollbar-hide">
+        {/* Global Theme Button */}
+        <button
+          onClick={() => selectSection("global_theme")}
+          className={cn(
+            "flex-none w-[160px] md:w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all group border md:border-transparent cursor-pointer",
+            selectedSectionId === "global_theme"
+              ? "bg-primary/10 border-primary/30 text-primary"
+              : "border-text-100 hover:bg-primary/5 hover:border-primary/20 hover:text-primary"
+          )}
+        >
+          <div
+            className={cn(
+              "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
+              selectedSectionId === "global_theme"
+                ? "bg-primary/20 text-primary"
+                : "bg-surface-50 text-text-400 group-hover:bg-primary/10 group-hover:text-primary"
+            )}
+          >
+            <Palette className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className={cn("text-sm font-medium truncate", selectedSectionId === "global_theme" ? "text-primary" : "text-text-900")}>
+              Tema Global
+            </div>
+            <div className={cn("text-[10px] truncate", selectedSectionId === "global_theme" ? "text-primary/70" : "text-text-400")}>
+              Cores da página
+            </div>
+          </div>
+        </button>
+
+        <div className="hidden md:block w-full h-px bg-text-100 my-2" />
+
+
         {sectionTypes.map((entry) => {
           const disabled = !canAdd(entry);
           const Icon = entry.icon;

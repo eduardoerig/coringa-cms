@@ -4,11 +4,48 @@ import { useEditorStore } from "@/stores/editorStore";
 import { sectionRegistry, type PropField } from "./sections/registry";
 import { RichTextEditor } from "./RichTextEditor";
 import { ImageUploader } from "./ImageUploader";
-import { X, Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function PropertiesPanel() {
-  const { sections, selectedSectionId, selectSection, updateSectionProps } = useEditorStore();
+  const { sections, selectedSectionId, selectSection, updateSectionProps, theme, updateTheme } = useEditorStore();
+
+  if (selectedSectionId === "global_theme") {
+    return (
+      <div className="w-full md:w-80 border-t md:border-t-0 md:border-l border-text-100 bg-white flex flex-col md:h-full flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-4 border-b border-text-100 sticky top-0 bg-white z-10">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <Palette className="w-4 h-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-display font-bold text-text-900 text-sm truncate">
+              Tema Global
+            </h3>
+            <p className="text-[10px] text-text-400 truncate">Configurações de cores da página</p>
+          </div>
+          <button
+            onClick={() => selectSection(null)}
+            className="p-1.5 rounded-lg text-text-400 hover:bg-text-100 hover:text-text-900 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+          <FieldRenderer
+            field={{ key: "theme_primary_color", label: "Cor Primária", type: "color" }}
+            value={theme.theme_primary_color || "#2563EB"}
+            onChange={(val) => updateTheme("theme_primary_color", val as string)}
+          />
+          <FieldRenderer
+            field={{ key: "theme_bg_color", label: "Cor de Fundo", type: "color" }}
+            value={theme.theme_bg_color || "#FAFAFA"}
+            onChange={(val) => updateTheme("theme_bg_color", val as string)}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const section = sections.find((s) => s.id === selectedSectionId);
 

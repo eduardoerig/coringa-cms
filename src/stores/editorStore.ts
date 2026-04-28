@@ -20,6 +20,7 @@ export interface EditorState {
   selectedSectionId: string | null;
   isDirty: boolean;
   isSaving: boolean;
+  theme: Record<string, string>;
 
   // Actions
   setSections: (sections: PageSection[]) => void;
@@ -32,6 +33,8 @@ export interface EditorState {
   duplicateSection: (id: string) => void;
   setDirty: (dirty: boolean) => void;
   setSaving: (saving: boolean) => void;
+  setTheme: (theme: Record<string, string>) => void;
+  updateTheme: (key: string, value: string) => void;
   reset: () => void;
 }
 
@@ -53,6 +56,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedSectionId: null,
   isDirty: false,
   isSaving: false,
+  theme: {},
 
   setSections: (sections) => set({ sections, isDirty: false }),
 
@@ -129,8 +133,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ sections: newSections, isDirty: true, selectedSectionId: duplicate.id });
   },
 
-  setDirty: (dirty) => set({ isDirty: dirty }),
+  setDirty: (dirty: boolean) => set({ isDirty: dirty }),
   setSaving: (saving) => set({ isSaving: saving }),
+
+  setTheme: (theme) => set({ theme, isDirty: false }),
+  
+  updateTheme: (key, value) => {
+    const { theme } = get();
+    set({ theme: { ...theme, [key]: value }, isDirty: true });
+  },
 
   reset: () =>
     set({
@@ -138,5 +149,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedSectionId: null,
       isDirty: false,
       isSaving: false,
+      theme: {},
     }),
 }));

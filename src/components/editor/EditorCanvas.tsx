@@ -6,8 +6,31 @@ import { useCallback, useRef, useState } from "react";
 import { Plus, LayoutTemplate } from "lucide-react";
 import { motion } from "framer-motion";
 
+export function generatePalette(hex: string) {
+  try {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+
+    const dark = `rgb(${Math.round(r * 0.7)}, ${Math.round(g * 0.7)}, ${Math.round(b * 0.7)})`;
+    const light = `rgb(${Math.min(255, Math.round(r * 1.15))}, ${Math.min(255, Math.round(g * 1.15))}, ${Math.min(255, Math.round(b * 1.15))})`;
+    const soft = `rgba(${r}, ${g}, ${b}, 0.12)`;
+    const bg = `rgba(${r}, ${g}, ${b}, 0.06)`;
+
+    return { primary: hex, dark, light, soft, bg };
+  } catch (e) {
+    return {
+      primary: "#2563EB",
+      dark: "rgb(26, 69, 164)",
+      light: "rgb(43, 113, 255)",
+      soft: "rgba(37, 99, 235, 0.12)",
+      bg: "rgba(37, 99, 235, 0.06)"
+    };
+  }
+}
+
 export function EditorCanvas() {
-  const { sections, moveSection, selectSection, selectedSectionId } = useEditorStore();
+  const { sections, moveSection, selectSection, selectedSectionId, theme } = useEditorStore();
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const dragCounter = useRef(0);
@@ -64,8 +87,24 @@ export function EditorCanvas() {
     dragCounter.current = 0;
   }, []);
 
+  const primaryColor = theme.theme_primary_color || "#2563EB";
+  const surfaceBg = theme.theme_bg_color || "#FAFAFA";
+  const palette = generatePalette(primaryColor);
+
+  const themeStyles = `
+    :root {
+      --theme-primary: ${palette.primary};
+      --theme-primary-dark: ${palette.dark};
+      --theme-primary-light: ${palette.light};
+      --theme-primary-soft: ${palette.soft};
+      --theme-primary-bg: ${palette.bg};
+      --theme-surface-50: ${surfaceBg};
+    }
+  `;
+
   return (
     <div className="flex-1 min-h-[400px] md:min-h-0 bg-surface-50/50 overflow-y-auto p-4 md:p-6">
+      <style dangerouslySetInnerHTML={{ __html: themeStyles }} />
       <div className="max-w-2xl mx-auto space-y-3">
         {sections.length === 0 ? (
           <motion.div 
