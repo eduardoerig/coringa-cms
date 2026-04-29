@@ -1,245 +1,74 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { ArrowLeft, Save, Globe, Loader2, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { Layout, Sparkles, ArrowRight, Settings, Globe } from "lucide-react";
 import Link from "next/link";
-import { SectionLibrary } from "@/components/editor/SectionLibrary";
-import { EditorCanvas } from "@/components/editor/EditorCanvas";
-import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
-import { useEditorStore } from "@/stores/editorStore";
-import { createClient } from "@/utils/supabase/client";
-import { cn } from "@/lib/utils";
 
-export default function EditorPage() {
-  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme } = useEditorStore();
-  const [isPublished, setIsPublished] = useState(false);
-  const [showSaved, setShowSaved] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
-
-  // Load layout
-  useEffect(() => {
-    async function load() {
-      // Carregar layout da página
-      const { data: layoutData } = await supabase
-        .from("page_layouts")
-        .select("*")
-        .eq("id", "home")
-        .single();
-
-      if (layoutData) {
-        setSections(layoutData.sections || []);
-        setIsPublished(layoutData.is_published ?? false);
-      }
-
-      // Carregar cores do tema
-      const { data: themeData } = await supabase
-        .from("site_settings")
-        .select("key, value")
-        .eq("group", "aparencia");
-      
-      if (themeData) {
-        const themeMap: Record<string, string> = {};
-        themeData.forEach(item => {
-          themeMap[item.key] = item.value;
-        });
-        setTheme(themeMap);
-      }
-
-      setLoading(false);
-    }
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Save
-  const handleSave = useCallback(
-    async (publish?: boolean) => {
-      setSaving(true);
-      try {
-        const payload: Record<string, unknown> = {
-          sections,
-          updated_at: new Date().toISOString(),
-        };
-
-        if (publish !== undefined) {
-          payload.is_published = publish;
-          setIsPublished(publish);
-        }
-
-        // Salvar layout
-        const { error } = await supabase
-          .from("page_layouts")
-          .upsert({ id: "home", name: "Página Principal", ...payload });
-
-        if (error) {
-          console.error("Erro ao salvar layout:", error);
-          alert("Erro ao salvar. Verifique o console.");
-          return;
-        }
-
-        // Salvar tema
-        const { theme } = useEditorStore.getState();
-        if (Object.keys(theme).length > 0) {
-          const themeUpdates = Object.entries(theme).map(([key, value]) => {
-            // Determinar label e tipo com base na chave para novas entradas
-            let label = "Configuração de Tema";
-            let type = "color";
-            
-            if (key === "dashboard_primary_color") label = "Cor Primária Admin";
-            if (key === "dashboard_bg_color") label = "Cor de Fundo Admin";
-            if (key === "theme_primary_color") label = "Cor Primária";
-            if (key === "theme_bg_color") label = "Cor de Fundo";
-
-            return supabase
-              .from("site_settings")
-              .upsert({ 
-                key, 
-                value, 
-                group: "aparencia",
-                label,
-                type,
-                updated_at: new Date().toISOString() 
-              });
-          });
-          
-          const results = await Promise.all(themeUpdates);
-          if (results.some(r => r.error)) {
-            console.error("Erro ao salvar tema:", results.find(r => r.error)?.error);
-            alert("Erro ao salvar cores do tema.");
-            return;
-          }
-        }
-
-        useEditorStore.getState().setDirty(false);
-        setShowSaved(true);
-        setTimeout(() => setShowSaved(false), 2000);
-      } finally {
-        setSaving(false);
-      }
-    },
-    [sections, supabase, setSaving]
-  );
-
-  // Keyboard shortcuts (Ctrl+S and Delete/Backspace)
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Salvar: Ctrl + S
-      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
-        e.preventDefault();
-        handleSave();
-      }
-      
-      // Deletar: Delete ou Backspace
-      if (e.key === "Delete" || e.key === "Backspace") {
-        // Ignora se estiver digitando em um input, textarea ou contenteditable (Tiptap)
-        const activeElement = document.activeElement;
-        if (
-          activeElement?.tagName === "INPUT" ||
-          activeElement?.tagName === "TEXTAREA" ||
-          activeElement?.getAttribute("contenteditable") === "true"
-        ) {
-          return;
-        }
-
-        const { selectedSectionId, removeSection } = useEditorStore.getState();
-        if (selectedSectionId) {
-          e.preventDefault();
-          if (window.confirm("Deseja realmente remover esta seção?")) {
-            removeSection(selectedSectionId);
-          }
-        }
-      }
-    };
-    
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [handleSave]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-surface-50">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
-      </div>
-    );
-  }
-
+export default function EditorEntryPage() {
   return (
-    <div className="flex flex-col min-h-[calc(100vh-80px)] md:h-[calc(100vh-64px)] lg:h-screen bg-white md:overflow-hidden rounded-2xl md:rounded-none shadow-sm md:shadow-none border border-text-100 md:border-none md:m-0">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 md:gap-4 px-4 py-3 border-b border-text-100 bg-white z-10 sticky top-0">
-        <Link
-          href="/admin"
-          className="flex items-center gap-2 text-text-500 hover:text-text-900 transition-colors text-sm font-medium"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="hidden sm:inline">Voltar</span>
-        </Link>
+    <div className="h-full w-full flex items-center justify-center bg-surface-50 p-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-2xl w-full"
+      >
+        <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-text-900/5 border border-text-100 overflow-hidden relative group">
+          {/* Decorative Background Elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 transition-colors group-hover:bg-primary/10" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -ml-32 -mb-32 transition-colors group-hover:bg-primary/10" />
 
-        <div className="flex-1 flex items-center flex-wrap gap-2 md:gap-3 min-w-[200px]">
-          <h1 className="font-display font-black text-primary text-lg md:text-xl">Editor da Página</h1>
-          {isDirty && (
-            <span className="text-[10px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full whitespace-nowrap">
-              Não salvo
-            </span>
-          )}
-          {showSaved && (
-            <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex items-center gap-1 whitespace-nowrap">
-              <Check className="w-3 h-3" /> Salvo
-            </span>
-          )}
+          <div className="relative p-12 flex flex-col items-center text-center">
+            {/* Icon stack */}
+            <div className="relative mb-10">
+              <div className="w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center relative z-10">
+                <Layout className="w-10 h-10 text-primary" />
+              </div>
+              <motion.div 
+                animate={{ scale: [1, 1.2, 1], rotate: [0, 10, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+                className="absolute -top-3 -right-3 w-12 h-12 bg-white rounded-2xl shadow-lg border border-text-50 flex items-center justify-center z-20"
+              >
+                <Sparkles className="w-6 h-6 text-primary" />
+              </motion.div>
+            </div>
+
+            <h1 className="text-5xl font-display font-black text-text-900 mb-6 tracking-tight leading-[1.1]">
+              Coringa <span className="text-primary">Studio</span>
+            </h1>
+            
+            <p className="text-xl text-text-500 max-w-md leading-relaxed mb-12 font-medium">
+              Transforme sua visão em realidade com o nosso ambiente de design focado e intuitivo.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full">
+              <Link 
+                href="/admin/editor/focused"
+                className="flex-1 w-full group/btn relative flex items-center justify-center gap-4 bg-text-900 text-white px-10 py-6 rounded-[2rem] font-black text-sm uppercase tracking-widest hover:bg-primary hover:shadow-2xl transition-all duration-500 overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:animate-[shimmer_2s_infinite]" />
+                <Layout className="w-5 h-5" />
+                <span>Iniciar Editor</span>
+                <ArrowRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
+              </Link>
+            </div>
+            
+            <div className="mt-12 pt-12 border-t border-text-50 w-full flex items-center justify-center gap-8 opacity-60">
+               <div className="flex items-center gap-2 text-xs font-bold text-text-400">
+                 <div className="w-2 h-2 rounded-full bg-green-500" />
+                 Sincronização Ativa
+               </div>
+               <div className="flex items-center gap-2 text-xs font-bold text-text-400">
+                 <Settings className="w-3 h-3" />
+                 Configurações de Tema
+               </div>
+               <Link href="/" target="_blank" className="flex items-center gap-2 text-xs font-bold text-text-400 hover:text-primary transition-colors">
+                 <Globe className="w-3 h-3" />
+                 Ver Site
+               </Link>
+            </div>
+          </div>
         </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end mt-2 sm:mt-0">
-          <a
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="text-text-400 hover:text-text-900 p-2 rounded-xl hover:bg-surface-50 transition-colors hidden sm:flex"
-            title="Ver site"
-          >
-            <Globe className="w-5 h-5" />
-          </a>
-
-          <button
-            onClick={() => handleSave()}
-            disabled={isSaving || !isDirty}
-            className={cn(
-              "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-medium transition-all",
-              isDirty
-                ? "bg-text-900 text-white hover:bg-ink-800 shadow-sm"
-                : "bg-text-100 text-text-400 cursor-not-allowed"
-            )}
-          >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
-            Salvar
-          </button>
-
-          <button
-            onClick={() => handleSave(true)}
-            disabled={isSaving}
-            className={cn(
-              "flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 md:px-4 py-2 rounded-xl text-sm font-bold transition-all",
-              isPublished
-                ? "bg-green-600 text-white hover:bg-green-700"
-                : "bg-primary text-white hover:bg-primary-dark shadow-primary"
-            )}
-          >
-            {isPublished ? "Publicado ✓" : "Publicar"}
-          </button>
-        </div>
-      </div>
-
-      {/* 3-panel layout */}
-      <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden">
-        <SectionLibrary />
-        <EditorCanvas />
-        <PropertiesPanel />
-      </div>
+      </motion.div>
     </div>
   );
 }

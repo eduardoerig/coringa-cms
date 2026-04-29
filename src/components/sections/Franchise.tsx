@@ -4,10 +4,12 @@ import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { useFranchiseModal } from "@/context/FranchiseContext";
+import { getSectionStyles } from "@/utils/sectionStyles";
+import { cn } from "@/lib/utils";
 
 interface FranchiseProps {
   settings?: Record<string, string>;
-  props?: Record<string, unknown>;
+  props?: Record<string, any>;
 }
 
 export function Franchise({ settings, props: editorProps }: FranchiseProps) {
@@ -25,13 +27,15 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
   ];
   const isHtml = description.includes("<");
 
-  const isDark = editorProps?.darkTheme === "true";
-  const bgStyle = editorProps?.backgroundColor ? { backgroundColor: editorProps.backgroundColor as string } : {};
+  const styles = getSectionStyles(editorProps || {});
 
   return (
-    <section id="franquia" className="py-24 relative overflow-hidden" style={bgStyle}>
+    <section id="franquia" className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className={`rounded-[40px] shadow-2xl overflow-hidden border border-primary/10 ${isDark ? 'bg-black/20' : 'bg-white'}`}>
+        <div className={cn(
+          "rounded-[40px] shadow-2xl overflow-hidden border",
+          styles.isDark ? "bg-black/20 border-white/10" : "bg-white border-primary/10"
+        )}>
           <div className="grid grid-cols-1 lg:grid-cols-2">
             
             {/* Content */}
@@ -43,11 +47,17 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               className="p-10 md:p-16 lg:p-20 flex flex-col justify-center"
             >
               <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Expansão</span>
-              <h2 className={`text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8 ${isDark ? 'text-white' : 'text-text-900'}`}>
+              <h2 className={cn(
+                "text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8",
+                styles.isDark ? "text-white" : "text-text-900"
+              )}>
                 {title}
               </h2>
               
-              <div className={`space-y-6 text-lg leading-relaxed mb-12 ${isDark ? 'text-white/80' : 'text-text-500'}`}>
+              <div className={cn(
+                "space-y-6 text-lg leading-relaxed mb-12",
+                styles.isDark ? "text-white/80" : "text-text-500"
+              )}>
                 {isHtml ? (
                   <div dangerouslySetInnerHTML={{ __html: description }} />
                 ) : (
@@ -60,15 +70,26 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               <div className="grid grid-cols-2 gap-8 mb-12">
                 {stats.map((stat, index) => (
                   <div key={index}>
-                    <div className={`text-4xl md:text-5xl font-display font-black mb-2 ${isDark ? 'text-white' : 'text-text-900'}`}>{stat.value}</div>
-                    <div className={`text-sm font-bold uppercase tracking-wider ${isDark ? 'text-tertiary' : 'text-text-400'}`}>{stat.label}</div>
+                    <div className={cn(
+                      "text-4xl md:text-5xl font-display font-black mb-2",
+                      styles.isDark ? "text-white" : "text-text-900"
+                    )}>{stat.value}</div>
+                    <div className={cn(
+                      "text-sm font-bold uppercase tracking-wider",
+                      styles.isDark ? "text-tertiary" : "text-text-400"
+                    )}>{stat.label}</div>
                   </div>
                 ))}
               </div>
 
               <button 
                 onClick={openModal}
-                className="group w-full sm:w-auto bg-primary text-white font-bold px-10 py-5 rounded-2xl shadow-primary hover:bg-primary-hover transition-all duration-300 flex items-center justify-center gap-3"
+                className={cn(
+                  "group w-full sm:w-auto font-bold px-10 py-5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3",
+                  styles.isDark 
+                    ? "bg-white text-text-900 hover:bg-white/90 shadow-xl" 
+                    : "bg-primary text-white shadow-primary hover:bg-primary-hover"
+                )}
               >
                 <span>{buttonText}</span>
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>

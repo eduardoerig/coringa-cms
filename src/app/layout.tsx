@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk, Roboto, Poppins } from "next/font/google";
+import { Inter, Space_Grotesk, Roboto, Poppins, Playfair_Display } from "next/font/google";
 import { Preloader } from "@/components/ui/Preloader";
 import "./globals.css";
 import { getSettings } from "@/utils/settings";
@@ -28,6 +28,12 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
   variable: "--font-poppins",
+});
+
+const playfairDisplay = Playfair_Display({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-playfair-display",
 });
 
 import { generatePalette } from "@/utils/colors";
@@ -72,7 +78,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport = {
-  themeColor: "#2563EB",
+  themeColor: "#C8687B",
 };
 
 export default async function RootLayout({
@@ -85,17 +91,17 @@ export default async function RootLayout({
   const pixelId = settings.marketing_pixel_id;
 
   // Gerar paleta de cores dinâmica
-  const primaryColor = settings.theme_primary_color || "#2563EB";
-  const surfaceBg = settings.theme_bg_color || "#FAFAFA";
+  const primaryColor = settings.theme_primary_color || "#C8687B";
+  const surfaceBg = settings.theme_bg_color || "#FFF8F6";
   const palette = generatePalette(primaryColor);
 
-  const textHeading = settings.theme_heading_color || "#18181B";
-  const textBody = settings.theme_text_color || "#3F3F46";
-  const tertiaryColor = settings.theme_tertiary_color || "#F59E0B";
-  const primaryHover = settings.theme_button_hover || palette.dark;
+  const textHeading = settings.theme_heading_color || "#2C2218";
+  const textBody = settings.theme_text_color || "#5C4A3A";
+  const tertiaryColor = settings.theme_tertiary_color || "#D4AF37";
+  const primaryHover = settings.theme_button_hover || "#A85068";
   
   const fontSans = settings.theme_font_sans || "inter";
-  const fontDisplay = settings.theme_font_display || "space-grotesk";
+  const fontDisplay = settings.theme_font_display || "playfair-display";
 
   const themeStyles = `
     :root {
@@ -115,7 +121,7 @@ export default async function RootLayout({
   `;
 
   return (
-    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${inter.variable} ${spaceGrotesk.variable} ${roboto.variable} ${poppins.variable}`}>
+    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${inter.variable} ${spaceGrotesk.variable} ${roboto.variable} ${poppins.variable} ${playfairDisplay.variable}`}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: themeStyles }} />
       </head>

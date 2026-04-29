@@ -1,5 +1,5 @@
 -- =================================================================
--- CORINGA CMS - SETUP COMPLETO DO BANCO DE DADOS
+-- CAMARIM ESTÉTICA - SETUP COMPLETO DO BANCO DE DADOS
 -- Execute este script no SQL Editor do Supabase para iniciar um novo projeto.
 -- =================================================================
 
@@ -38,37 +38,41 @@ WITH CHECK (true);
 INSERT INTO public.site_settings (key, value, "group", label, type)
 VALUES
     -- Geral
-    ('general_site_name', 'Coringa CMS', 'geral', 'Nome do Site', 'text'),
+    ('general_site_name', 'Camarim Estética, Spa e Saúde Integrada', 'geral', 'Nome do Site', 'text'),
     ('general_maintenance_mode', 'false', 'geral', 'Modo Manutenção', 'switch'),
 
     -- Aparência / Tema
-    ('theme_primary_color', '#0F172A', 'aparencia', 'Cor Primária', 'color'),
-    ('theme_bg_color', '#FAFAFA', 'aparencia', 'Cor de Fundo', 'color'),
+    ('theme_primary_color', '#C8687B', 'aparencia', 'Cor Primária', 'color'),
+    ('theme_bg_color', '#FFF8F6', 'aparencia', 'Cor de Fundo', 'color'),
+    ('theme_tertiary_color', '#D4AF37', 'aparencia', 'Cor Terciária (Destaques)', 'color'),
+    ('theme_button_hover', '#A85068', 'aparencia', 'Cor Hover dos Botões', 'color'),
+    ('theme_heading_color', '#2C2218', 'aparencia', 'Cor dos Títulos', 'color'),
+    ('theme_text_color', '#5C4A3A', 'aparencia', 'Cor do Texto', 'color'),
     ('theme_logo_url', '', 'aparencia', 'URL do Logo (horizontal)', 'url'),
     ('theme_favicon_url', '', 'aparencia', 'URL do Favicon', 'url'),
     ('theme_icon_url', '', 'aparencia', 'URL do Ícone (quadrado)', 'url'),
 
     -- Contato
-    ('contact_whatsapp', '(11) 99999-9999', 'contato', 'WhatsApp (com DDD)', 'text'),
-    ('contact_email', 'contato@coringacms.com.br', 'contato', 'E-mail de Contato', 'text'),
-    ('contact_address', 'Av. Paulista, 1000 - São Paulo, SP', 'contato', 'Endereço Comercial', 'textarea'),
+    ('contact_whatsapp', '(45) 99840-4228', 'contato', 'WhatsApp (com DDD)', 'text'),
+    ('contact_email', 'franriechel@gmail.com', 'contato', 'E-mail de Contato', 'text'),
+    ('contact_address', 'Rua Dom Pedro I, 157 - Centro, Marechal Cândido Rondon/PR - CEP 85960-000', 'contato', 'Endereço Comercial', 'textarea'),
 
     -- Redes Sociais
-    ('social_instagram', 'https://instagram.com/', 'social', 'Instagram URL', 'url'),
-    ('social_facebook', 'https://facebook.com/', 'social', 'Facebook URL', 'url'),
-    ('social_tiktok', 'https://tiktok.com/', 'social', 'TikTok URL', 'url'),
+    ('social_instagram', 'https://instagram.com/camarimesteticaspaesaude', 'social', 'Instagram URL', 'url'),
+    ('social_facebook', 'https://facebook.com/camarimesteticaspaesaude', 'social', 'Facebook URL', 'url'),
+    ('social_tiktok', '', 'social', 'TikTok URL', 'url'),
 
     -- Marketing & SEO
     ('marketing_ga_id', '', 'marketing', 'Google Analytics ID (GA4)', 'text'),
     ('marketing_pixel_id', '', 'marketing', 'Facebook Pixel ID', 'text'),
-    ('marketing_cta_link', '#', 'marketing', 'Link do CTA principal', 'url'),
-    ('marketing_cta_label', 'Acessar Agora', 'marketing', 'Texto do botão CTA', 'text'),
-    ('seo_description', 'Bem-vindo ao nosso site. Descubra nossas soluções inovadoras.', 'marketing', 'Meta Descrição Global', 'textarea'),
+    ('marketing_cta_link', 'https://wa.me/5545998404228?text=Olá!%20Gostaria%20de%20agendar%20uma%20sessão.', 'marketing', 'Link do CTA principal', 'url'),
+    ('marketing_cta_label', 'Agende sua Sessão', 'marketing', 'Texto do botão CTA', 'text'),
+    ('seo_description', 'Camarim Estética, Spa e Saúde Integrada — o único spa urbano de Marechal Cândido Rondon. Tratamentos estéticos personalizados, harmonização facial, spa para casais, nutrição integrada e tecnologias de ponta. Sinta o poder do autocuidado!', 'marketing', 'Meta Descrição Global', 'textarea'),
 
     -- Rodapé
-    ('footer_company_name', 'Coringa Tecnologia Ltda.', 'rodape', 'Razão Social / Nome', 'text'),
-    ('footer_cnpj', '00.000.000/0001-00', 'rodape', 'CNPJ', 'text'),
-    ('footer_description', 'Desenvolvendo as melhores experiências digitais.', 'rodape', 'Descrição no Rodapé', 'textarea')
+    ('footer_company_name', 'Camarim Estetica e Spa LTDA', 'rodape', 'Razão Social / Nome', 'text'),
+    ('footer_cnpj', '26.031.413/0001-27', 'rodape', 'CNPJ', 'text'),
+    ('footer_description', 'Mais que estética, cuidamos de você. Clínica de estética personalizada com foco em autoestima, bem-estar e saúde integrada.', 'rodape', 'Descrição no Rodapé', 'textarea')
 ON CONFLICT (key) DO UPDATE
 SET "group" = EXCLUDED."group",
     label = EXCLUDED.label,
@@ -209,7 +213,7 @@ ON public.page_layouts FOR DELETE
 TO authenticated
 USING (true);
 
--- Seed: layout padrão genérico (Coringa)
+-- Seed: layout padrão Camarim Estética
 INSERT INTO public.page_layouts (id, name, sections, is_published)
 VALUES (
   'home',
@@ -220,26 +224,26 @@ VALUES (
       "type": "hero",
       "visible": true,
       "props": {
-        "badge": "Qualidade Premium",
-        "title": "A solução que conquista o mercado",
-        "subtitle": "Transformando ideias em resultados extraordinários.",
-        "ctaText": "Ver Catálogo",
+        "badge": "✨ Spa Urbano Exclusivo",
+        "title": "Sinta o poder do autocuidado",
+        "subtitle": "Mais que estética, cuidamos de você. Tratamentos personalizados com tecnologia de ponta em Marechal Cândido Rondon.",
+        "ctaText": "Nossos Serviços",
         "ctaLink": "#cardapio",
-        "ctaSecondaryText": "Mais Populares",
-        "ctaSecondaryLink": "#destaques",
+        "ctaSecondaryText": "Agende sua Sessão",
+        "ctaSecondaryLink": "https://wa.me/5545998404228",
         "products": [
-          {"src": "https://placehold.co/600x400/png", "alt": "Produto A", "description": "Qualidade garantida e excelência."},
-          {"src": "https://placehold.co/600x400/png", "alt": "Produto B", "description": "Inovação e performance."},
-          {"src": "https://placehold.co/600x400/png", "alt": "Produto C", "description": "Feito para a sua melhor experiência."}
+          {"src": "https://placehold.co/600x400/C8687B/FFFFFF/png?text=Harmonização+Facial", "alt": "Harmonização Facial", "description": "Realce sua beleza natural com técnicas avançadas."},
+          {"src": "https://placehold.co/600x400/C8687B/FFFFFF/png?text=Spa+para+Casais", "alt": "Spa para Casais", "description": "Uma experiência única de relaxamento a dois."},
+          {"src": "https://placehold.co/600x400/C8687B/FFFFFF/png?text=Ultraformer+MPT", "alt": "Ultraformer MPT", "description": "Lifting sem cirurgia com ultrassom microfocado."}
         ]
       }
     },
     {
-      "id": "sec_divider_scroll",
+      "id": "sec_divider_wave",
       "type": "divider",
       "visible": true,
       "props": {
-        "style": "scroll_arrow"
+        "style": "wave"
       }
     },
     {
@@ -247,8 +251,16 @@ VALUES (
       "type": "highlights",
       "visible": true,
       "props": {
-        "title": "Nossos Queridinhos",
-        "subtitle": "Descubra as soluções que fazem nossa fama em todo o país."
+        "title": "Tratamentos em Destaque",
+        "subtitle": "Descubra os procedimentos que transformam a autoestima dos nossos pacientes."
+      }
+    },
+    {
+      "id": "sec_divider_line",
+      "type": "divider",
+      "visible": true,
+      "props": {
+        "style": "line"
       }
     },
     {
@@ -256,8 +268,16 @@ VALUES (
       "type": "menu",
       "visible": true,
       "props": {
-        "title": "Explore nosso Catálogo",
-        "subtitle": "Mais de 100 opções preparadas com dedicação para você."
+        "title": "Nossos Serviços",
+        "subtitle": "Cuidado integral com protocolos personalizados para cada paciente."
+      }
+    },
+    {
+      "id": "sec_divider_space",
+      "type": "divider",
+      "visible": true,
+      "props": {
+        "style": "space"
       }
     },
     {
@@ -266,10 +286,10 @@ VALUES (
       "visible": true,
       "props": {
         "title": "Nossa História",
-        "content": "<p>Nossa empresa nasceu com o sonho de levar as melhores soluções e experiências para nossos clientes.</p>",
-        "buttonText": "Conheça a história completa",
-        "buttonLink": "#",
-        "image": "https://placehold.co/800x600/png"
+        "content": "<p>Fundada em 2016, a <strong>Camarim Estética, Spa e Saúde Integrada</strong> nasceu com o propósito de oferecer cuidado integral e personalizado. Sob a direção da <strong>Dra. Luisa Vitória Miranda</strong> (Biomédica Esteta), nossa equipe de cerca de 10 profissionais especializados trabalha com dedicação para proporcionar autoestima, bem-estar e saúde.</p><p>Somos o <strong>único spa urbano de Marechal Cândido Rondon</strong> e região, oferecendo experiências exclusivas como spa para casais, spa para noivas e spa infantil. Em 2024, renovamos completamente nosso espaço para oferecer ainda mais conforto e excelência.</p>",
+        "buttonText": "Conheça nosso espaço",
+        "buttonLink": "https://instagram.com/camarimesteticaspaesaude",
+        "image": "https://placehold.co/800x600/FFF8F6/C8687B/png?text=Camarim+Estética"
       }
     },
     {
@@ -277,14 +297,15 @@ VALUES (
       "type": "franchise",
       "visible": true,
       "props": {
-        "title": "Seja um Parceiro",
-        "description": "<p>Faça parte da nossa rede de parceiros e transforme o mercado na sua região.</p>",
-        "buttonText": "Quero ser um Parceiro",
+        "title": "Spa Urbano Exclusivo",
+        "description": "<p>Viva uma experiência de relaxamento e renovação no <strong>único spa urbano de Marechal Cândido Rondon</strong>. Oferecemos pacotes exclusivos para casais, noivas, e até para os pequenos. Venha se cuidar!</p>",
+        "buttonText": "Agende seu Spa",
         "stats": [
-          {"value": "100+", "label": "Unidades"},
-          {"value": "10+", "label": "Anos de Experiência"}
+          {"value": "🏆 4x", "label": "Premiada"},
+          {"value": "10+", "label": "Profissionais"},
+          {"value": "2016", "label": "Desde"}
         ],
-        "image": "https://placehold.co/800x600/png"
+        "image": "https://placehold.co/800x600/FFF8F6/C8687B/png?text=Spa+Urbano"
       }
     }
   ]'::jsonb,

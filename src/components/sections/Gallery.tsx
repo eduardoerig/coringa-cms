@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { getSectionStyles } from "@/utils/sectionStyles";
+import { cn } from "@/lib/utils";
 
 interface GalleryImage {
   url: string;
@@ -9,26 +11,27 @@ interface GalleryImage {
 }
 
 interface GalleryProps {
-  props: {
-    title?: string;
-    images?: GalleryImage[];
-  };
+  props: Record<string, any>;
 }
 
-export function Gallery({ props }: GalleryProps) {
-  const { title, images = [] } = props;
+export function Gallery({ props: editorProps }: GalleryProps) {
+  const styles = getSectionStyles(editorProps || {});
+  const { title, images = [] } = editorProps;
 
   if (images.length === 0) return null;
 
   return (
-    <section className="py-20 bg-white">
+    <section className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-6xl mx-auto px-6">
         {title && (
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-display font-black text-text-900 text-center mb-12"
+            className={cn(
+              "text-3xl md:text-4xl font-display font-black text-center mb-12",
+              styles.isDark ? "text-white" : "text-text-900"
+            )}
           >
             {title}
           </motion.h2>

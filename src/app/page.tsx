@@ -1,4 +1,3 @@
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { getSettings } from "@/utils/settings";
@@ -60,7 +59,6 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-surface-50 selection:bg-primary selection:text-white">
-      <Navbar settings={settings} />
       
       <DynamicSections sections={sections} settings={settings} />
       

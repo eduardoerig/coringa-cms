@@ -79,14 +79,14 @@ export function Sidebar() {
           href="/" 
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-500 hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm font-medium"
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-500 hover:bg-surface-50 hover:text-text-900 transition-colors text-sm font-medium"
         >
           <ExternalLink className="w-5 h-5" />
           Ver Site
         </a>
         <button 
           onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-500 hover:bg-red-50 hover:text-primary transition-colors text-sm font-medium"
+          className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-text-500 hover:bg-surface-50 hover:text-text-900 transition-colors text-sm font-medium"
         >
           <LogOut className="w-5 h-5" />
           Sair do Sistema

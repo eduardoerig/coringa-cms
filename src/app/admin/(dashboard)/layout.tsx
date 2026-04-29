@@ -11,17 +11,17 @@ export const metadata = {
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const settings = await getSettings();
   
-  // Dashboard Theme
-  const primaryColor = settings.dashboard_primary_color || "#2563EB";
-  const surfaceBg = settings.dashboard_bg_color || "#FAFAFA";
+  // Dashboard Theme (Forced Neutral)
+  const primaryColor = "#18181B"; // Zinc-900
+  const surfaceBg = "#FFFFFF";
   const palette = generatePalette(primaryColor);
 
   const themeStyles = {
     '--theme-primary': palette.primary,
-    '--theme-primary-dark': palette.dark,
-    '--theme-primary-light': palette.light,
-    '--theme-primary-soft': palette.soft,
-    '--theme-primary-bg': palette.bg,
+    '--theme-primary-dark': "#000000",
+    '--theme-primary-light': "#3F3F46",
+    '--theme-primary-soft': "#F4F4F5",
+    '--theme-primary-bg': "#FAFAFA",
     '--theme-surface-50': surfaceBg,
   } as React.CSSProperties;
 
@@ -31,10 +31,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       style={themeStyles}
     >
       <Sidebar />
-      <main className="flex-1 p-4 pt-20 md:p-8 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
-          {children}
-        </div>
+      <main className="flex-1 min-w-0 overflow-hidden relative h-screen">
+        {children}
       </main>
     </div>
   );

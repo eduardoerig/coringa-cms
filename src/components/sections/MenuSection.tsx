@@ -7,6 +7,7 @@ import { MenuCardSkeleton } from "@/components/ui/Skeletons";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
+import { getSectionStyles } from "@/utils/sectionStyles";
 
 interface MenuItem {
   id: string;
@@ -23,7 +24,7 @@ interface CategoryItem {
 
 interface MenuSectionProps {
   settings?: Record<string, string>;
-  props?: Record<string, unknown>;
+  props?: Record<string, any>;
 }
 
 const defaultMenuItems: MenuItem[] = [
@@ -51,11 +52,10 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
   const pdfRef = useRef<HTMLDivElement>(null);
   const supabase = useMemo(() => createClient(), []);
 
+  const styles = getSectionStyles(editorProps || {});
+
   const title = (editorProps?.title as string) || "Explore nosso Cardápio";
   const subtitle = (editorProps?.subtitle as string) || "Mais de 100 opções preparadas com carinho para você.";
-
-  const isDark = editorProps?.darkTheme === "true";
-  const bgStyle = editorProps?.backgroundColor ? { backgroundColor: editorProps.backgroundColor as string } : {};
 
   useEffect(() => {
     async function fetchData() {
@@ -126,7 +126,7 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
   };
 
   return (
-    <section id="cardapio" className="py-24 relative overflow-hidden bg-white" style={bgStyle}>
+    <section id="cardapio" className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6">
         
         {/* Header */}
@@ -137,11 +137,11 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Cardápio</span>
-            <h2 className={`text-4xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-6 ${isDark ? 'text-white' : 'text-text-900'}`}>
+            <span className={cn("text-xs font-bold uppercase tracking-[0.2em] mb-4 block", styles.isDark ? "text-white/60" : "text-tertiary")}>Cardápio</span>
+            <h2 className={cn("text-4xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-6", styles.isDark ? "text-white" : "text-text-900")}>
               {title}
             </h2>
-            <p className={`text-lg leading-relaxed ${isDark ? 'text-white/80' : 'text-text-500'}`}>
+            <p className={cn("text-lg leading-relaxed", styles.isDark ? "text-white/80" : "text-text-500")}>
               {subtitle}
             </p>
           </motion.div>
@@ -156,8 +156,10 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
               className={cn(
                 "whitespace-nowrap flex-shrink-0 snap-start text-xs md:text-sm font-medium px-5 py-2 rounded-full border transition-all duration-200",
                 activeFilter === cat.id 
-                  ? "bg-primary text-white border-primary" 
-                  : "bg-white text-text-500 border-text-100 hover:border-primary hover:text-primary"
+                  ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105" 
+                  : styles.isDark
+                    ? "bg-white/5 text-white border-white/10 hover:bg-white/10"
+                    : "bg-white text-text-500 border-text-100 hover:border-primary hover:text-primary"
               )}
             >
               {cat.label}
@@ -174,13 +176,16 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
           </div>
         ) : filteredItems.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-6 bg-surface-100 rounded-full flex items-center justify-center">
-              <svg className="w-10 h-10 text-text-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <div className={cn(
+              "w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center",
+              styles.isDark ? "bg-white/10" : "bg-surface-100"
+            )}>
+              <svg className={cn("w-10 h-10", styles.isDark ? "text-white/40" : "text-text-300")} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
             </div>
-            <h3 className={`font-display font-bold text-xl mb-2 ${isDark ? 'text-white' : 'text-text-900'}`}>Nenhum produto encontrado</h3>
-            <p className={`text-sm ${isDark ? 'text-white/70' : 'text-text-400'}`}>Tente alterar o filtro de categoria.</p>
+            <h3 className={cn("font-display font-bold text-xl mb-2", styles.isDark ? 'text-white' : 'text-text-900')}>Nenhum produto encontrado</h3>
+            <p className={cn("text-sm", styles.isDark ? 'text-white/70' : 'text-text-400')}>Tente alterar o filtro de categoria.</p>
           </div>
         ) : (
           <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
@@ -193,16 +198,22 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
-                  className="group border border-text-100/50 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_12px_30px_rgba(26,16,8,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
-                  style={{ backgroundColor: (editorProps?.cardBgColor as string) || "#FFFFFF" }}
+                  className={cn(
+                    "group border rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_12px_30px_rgba(26,16,8,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col",
+                    styles.isDark ? "border-white/10" : "border-text-100/50"
+                  )}
+                  style={{ backgroundColor: (editorProps?.cardBgColor as string) || (styles.isDark ? "#1a1a1a" : "#FFFFFF") }}
                 >
-                  <div className="h-[120px] md:h-[180px] flex items-center justify-center p-3 md:p-6 bg-surface-50 group-hover:bg-primary-bg transition-colors duration-300">
+                  <div className={cn(
+                    "h-[120px] md:h-[180px] flex items-center justify-center p-3 md:p-6 transition-colors duration-300",
+                    styles.isDark ? "bg-white/5" : "bg-surface-50 group-hover:bg-primary-bg"
+                  )}>
                     <Image src={item.img} alt={item.title} width={150} height={150} className="max-h-20 md:max-h-32 w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105" />
                   </div>
                   <div className="p-3 md:p-4 flex-1 flex flex-col">
                     <span className="text-tertiary text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{item.category.replace("-", " ")}</span>
-                    <h3 className="font-display font-bold text-text-900 mt-1 mb-1 text-sm md:text-base leading-tight md:leading-snug line-clamp-2">{item.title}</h3>
-                    <p className="text-text-400 text-[10px] md:text-xs leading-relaxed line-clamp-2 md:line-clamp-none mt-auto pt-1">{item.desc}</p>
+                    <h3 className={cn("font-display font-bold mt-1 mb-1 text-sm md:text-base leading-tight md:leading-snug line-clamp-2", styles.isDark ? "text-white" : "text-text-900")}>{item.title}</h3>
+                    <p className={cn("text-[10px] md:text-xs leading-relaxed line-clamp-2 md:line-clamp-none mt-auto pt-1", styles.isDark ? "text-white/60" : "text-text-400")}>{item.desc}</p>
                   </div>
                 </motion.div>
               ))}
@@ -214,7 +225,12 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
           <button 
             onClick={handleDownloadPDF} 
             disabled={isGeneratingPDF}
-            className="inline-block border border-text-100 bg-white text-text-900 font-bold px-8 py-4 rounded-full shadow-sm hover:shadow-md hover:border-primary hover:text-primary transition-all duration-300 cursor-pointer disabled:opacity-75 disabled:cursor-wait"
+            className={cn(
+              "inline-block font-bold px-8 py-4 rounded-full transition-all duration-300 cursor-pointer disabled:opacity-75 disabled:cursor-wait",
+              styles.isDark
+                ? "bg-white text-text-900 hover:bg-white/90 shadow-xl"
+                : "border border-text-100 bg-white text-text-900 shadow-sm hover:shadow-md hover:border-primary hover:text-primary"
+            )}
           >
             {isGeneratingPDF ? "Montando Revista..." : "Baixar Cardápio Premium"}
           </button>

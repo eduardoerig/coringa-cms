@@ -9,6 +9,7 @@ import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
 import { Gallery } from "@/components/sections/Gallery";
 import { CTABanner } from "@/components/sections/CTABanner";
 import { TextBlock } from "@/components/sections/TextBlock";
+import { Navbar } from "@/components/layout/Navbar";
 
 interface PageSection {
   id: string;
@@ -25,6 +26,7 @@ interface DynamicSectionsProps {
 /** Mapeia type → componente */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const componentMap: Record<string, React.ComponentType<any>> = {
+  header: Navbar,
   hero: Hero,
   highlights: Highlights,
   menu: MenuSection,
@@ -41,6 +43,7 @@ export function DynamicSections({ sections, settings }: DynamicSectionsProps) {
   if (!sections || sections.length === 0) {
     return (
       <>
+        <Navbar settings={settings} />
         <Hero settings={settings} />
         <ScrollIndicator />
         <Highlights settings={settings} />

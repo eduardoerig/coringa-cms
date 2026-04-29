@@ -24,6 +24,7 @@ export interface EditorState {
 
   // Actions
   setSections: (sections: PageSection[]) => void;
+  reorderSections: (sections: PageSection[]) => void;
   selectSection: (id: string | null) => void;
   addSection: (type: string, afterId?: string) => void;
   removeSection: (id: string) => void;
@@ -58,7 +59,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isSaving: false,
   theme: {},
 
-  setSections: (sections) => set({ sections, isDirty: false }),
+  setSections: (sections) => set({ sections }),
+
+  reorderSections: (newSections: PageSection[]) => set({ sections: newSections, isDirty: true }),
 
   selectSection: (id) => set({ selectedSectionId: id }),
 

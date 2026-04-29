@@ -1,3 +1,13 @@
+import { Hero } from "@/components/sections/Hero";
+import { Highlights } from "@/components/sections/Highlights";
+import { MenuSection } from "@/components/sections/MenuSection";
+import { About } from "@/components/sections/About";
+import { Franchise } from "@/components/sections/Franchise";
+import { ScrollIndicator } from "@/components/ui/ScrollIndicator";
+import { Gallery } from "@/components/sections/Gallery";
+import { CTABanner } from "@/components/sections/CTABanner";
+import { TextBlock } from "@/components/sections/TextBlock";
+import { Navbar } from "@/components/layout/Navbar";
 import {
   Layout,
   Star,
@@ -33,17 +43,107 @@ export interface SectionRegistryEntry {
   defaultProps: Record<string, unknown>;
   /** Limite de instâncias (ex: hero = 1) */
   maxInstances?: number;
+  /** Imagem de preview para a biblioteca */
+  previewImage?: string;
 }
+
+// Mapeamento de componentes para o editor e landing
+export const sectionComponentMap: Record<string, React.ComponentType<any>> = {
+  hero: Hero,
+  highlights: Highlights,
+  menu: MenuSection,
+  about: About,
+  franchise: Franchise,
+  divider: ScrollIndicator,
+  gallery: Gallery,
+  cta_banner: CTABanner,
+  text_block: TextBlock,
+  header: Navbar,
+};
+
+import { getSectionStyles } from "@/utils/sectionStyles";
+export { getSectionStyles };
+
+// ---- Common Fields ----
+
+const COMMON_FIELDS: PropField[] = [
+  {
+    key: "section_bg_type",
+    label: "Cor de Fundo",
+    type: "select",
+    options: [
+      { value: "white", label: "Branco" },
+      { value: "rose_light", label: "Rosé Suave" },
+      { value: "rose_dark", label: "Rosé Camarim" },
+      { value: "dark", label: "Escuro" },
+    ],
+  },
+  {
+    key: "section_padding",
+    label: "Espaçamento (Padding)",
+    type: "select",
+    options: [
+      { value: "small", label: "Pequeno" },
+      { value: "medium", label: "Médio" },
+      { value: "large", label: "Grande" },
+      { value: "none", label: "Nenhum" },
+    ],
+  },
+];
+
+const COMMON_DEFAULTS = {
+  section_bg_type: "white",
+  section_padding: "medium",
+};
 
 // ---- Registro ----
 
 export const sectionRegistry: Record<string, SectionRegistryEntry> = {
+  header: {
+    type: "header",
+    label: "Cabeçalho",
+    description: "Navegação principal e logo do site",
+    icon: Layout,
+    fields: [
+      { key: "site_name", label: "Nome do Site", type: "text" },
+      { key: "logo_url", label: "Logo URL", type: "image" },
+      { key: "cta_label", label: "Texto do Botão (CTA)", type: "text" },
+      { key: "cta_link", label: "Link do Botão (CTA)", type: "url" },
+      {
+        key: "links",
+        label: "Links de Navegação",
+        type: "array",
+        itemFields: [
+          { key: "label", label: "Texto", type: "text" },
+          { key: "url", label: "URL", type: "text" },
+        ],
+      },
+      { key: "bgColor", label: "Cor de Fundo (Fixo)", type: "color" },
+      { key: "textColor", label: "Cor do Texto/Links", type: "color" },
+      { key: "ctaBgColor", label: "Cor de Fundo do Botão", type: "color" },
+      { key: "ctaTextColor", label: "Cor do Texto do Botão", type: "color" },
+    ],
+    defaultProps: {
+      site_name: "",
+      logo_url: "",
+      cta_label: "Agende Agora",
+      cta_link: "#",
+      links: [
+        { label: "Início", url: "#hero-section" },
+        { label: "Serviços", url: "#cardapio" },
+        { label: "Sobre", url: "#sobre" },
+        { label: "Spa", url: "#franquia" },
+      ],
+    },
+    maxInstances: 1,
+  },
   hero: {
     type: "hero",
     label: "Hero (Banner)",
     description: "Banner principal com produtos, título e botões de ação",
     icon: Layout,
     maxInstances: 1,
+    previewImage: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "badge", label: "Badge", type: "text", placeholder: "Qualidade Premium" },
       { key: "title", label: "Título", type: "text", placeholder: "O sabor que conquista o Brasil" },
@@ -62,6 +162,28 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "description", label: "Descrição", type: "text" },
         ],
       },
+      {
+        key: "layout_variant",
+        label: "Modelo de Layout",
+        type: "select",
+        options: [
+          { value: "floating", label: "Imagens Flutuantes (Padrão)" },
+          { value: "centered_big", label: "Imagem Central Grande" },
+          { value: "full_bg", label: "Fundo Total com Overlay" },
+        ],
+      },
+      {
+        key: "backgroundImage",
+        label: "Imagem de Fundo (para Fundo Total)",
+        type: "image",
+      },
+      {
+        key: "overlayOpacity",
+        label: "Opacidade do Overlay (0-100)",
+        type: "text",
+        placeholder: "40",
+      },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       badge: "Qualidade Premium",
@@ -76,6 +198,10 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
         { src: "https://placehold.co/600x400/png", alt: "Produto B", description: "Inovação e performance." },
         { src: "https://placehold.co/600x400/png", alt: "Produto C", description: "Feito para a sua melhor experiência." },
       ],
+      layout_variant: "floating",
+      backgroundImage: "https://images.pexels.com/photos/3757942/pexels-photo-3757942.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1",
+      overlayOpacity: "40",
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -85,19 +211,18 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     description: "Carrossel de produtos em destaque (puxa do banco)",
     icon: Star,
     maxInstances: 1,
+    previewImage: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Nossos Queridinhos" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Descubra os sabores..." },
       { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "#FFFFFF" },
-      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
-      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "Nossos Queridinhos",
       subtitle: "Descubra os sabores que fazem a fama da nossa marca em todo o país.",
       cardBgColor: "#FFFFFF",
-      backgroundColor: "",
-      darkTheme: "false",
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -107,19 +232,18 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     description: "Grade de produtos com filtro por categorias e download de PDF",
     icon: UtensilsCrossed,
     maxInstances: 1,
+    previewImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Explore nosso Cardápio" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Mais de 100 opções..." },
       { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "#FFFFFF" },
-      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
-      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "Explore nosso Cardápio",
       subtitle: "Mais de 100 opções preparadas com carinho para você.",
       cardBgColor: "#FFFFFF",
-      backgroundColor: "",
-      darkTheme: "false",
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -128,14 +252,14 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     label: "Sobre Nós",
     description: "Seção institucional com texto, imagem e botão de ação",
     icon: BookOpen,
+    previewImage: "https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Nossa História" },
       { key: "content", label: "Conteúdo", type: "richtext" },
       { key: "buttonText", label: "Texto do Botão", type: "text", placeholder: "Saiba mais" },
       { key: "buttonLink", label: "Link do Botão", type: "url", placeholder: "https://..." },
       { key: "image", label: "Imagem", type: "image" },
-      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
-      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "Nossa História",
@@ -143,8 +267,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       buttonText: "Saiba mais",
       buttonLink: "#",
       image: "",
-      backgroundColor: "",
-      darkTheme: "false",
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -154,6 +277,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     description: "Chamada para franqueados com estatísticas e formulário",
     icon: Building2,
     maxInstances: 1,
+    previewImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Seja um Franqueado" },
       { key: "description", label: "Descrição", type: "richtext" },
@@ -168,8 +292,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "label", label: "Label", type: "text", placeholder: "Unidades" },
         ],
       },
-      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
-      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "Seja um Franqueado",
@@ -180,8 +303,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
         { value: "700+", label: "Unidades" },
         { value: "40+", label: "Anos de Sucesso" },
       ],
-      backgroundColor: "",
-      darkTheme: "false",
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -190,6 +312,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     label: "Galeria",
     description: "Grade de imagens com legendas",
     icon: Images,
+    previewImage: "https://images.unsplash.com/photo-1513519247352-4d3660dec40c?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Galeria" },
       {
@@ -201,10 +324,12 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "caption", label: "Legenda", type: "text" },
         ],
       },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "Galeria",
       images: [],
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -213,19 +338,21 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     label: "Banner CTA",
     description: "Banner de chamada para ação com cor de fundo",
     icon: Megaphone,
+    previewImage: "https://images.unsplash.com/photo-1533750349088-cd871a92f312?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Faça seu pedido agora!" },
       { key: "description", label: "Descrição", type: "textarea" },
       { key: "buttonText", label: "Texto do Botão", type: "text", placeholder: "Pedir Agora" },
       { key: "buttonLink", label: "Link do Botão", type: "url" },
-      { key: "backgroundColor", label: "Cor de Fundo", type: "color" },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "Faça seu pedido agora!",
       description: "Peça pelo iFood e receba em casa.",
       buttonText: "Pedir Agora",
       buttonLink: "#",
-      backgroundColor: "#A8151F",
+      ...COMMON_DEFAULTS,
+      section_bg_type: "rose_dark",
     },
   },
 
@@ -237,10 +364,12 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Título" },
       { key: "content", label: "Conteúdo", type: "richtext" },
+      ...COMMON_FIELDS,
     ],
     defaultProps: {
       title: "",
       content: "<p>Escreva seu conteúdo aqui...</p>",
+      ...COMMON_DEFAULTS,
     },
   },
 
@@ -271,6 +400,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     },
   },
 };
+
 
 /** Lista ordenada para exibir na biblioteca */
 export const sectionTypes = Object.values(sectionRegistry);
