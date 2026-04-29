@@ -38,7 +38,7 @@ export function Gallery({ props: editorProps }: GalleryProps) {
         )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {images.map((img, i) => (
+          {images.map((img: GalleryImage, i: number) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, scale: 0.95 }}

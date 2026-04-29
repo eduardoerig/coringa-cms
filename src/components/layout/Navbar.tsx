@@ -83,7 +83,7 @@ export function Navbar({ settings, props, isEditor }: NavbarProps) {
           </a>
 
           <div className="hidden md:flex items-center gap-8">
-            {links.map((link, idx) => (
+            {links.map((link: { label: string; url: string }, idx: number) => (
               <a 
                 key={idx} 
                 href={link.url} 
@@ -147,7 +147,7 @@ export function Navbar({ settings, props, isEditor }: NavbarProps) {
               "z-[90] bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center gap-6"
             )}
           >
-            {links.map((link, idx) => (
+            {links.map((link: { label: string; url: string }, idx: number) => (
               <motion.a 
                 key={idx}
                 initial={{ opacity: 0, y: 20 }} 

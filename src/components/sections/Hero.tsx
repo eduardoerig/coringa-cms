@@ -88,7 +88,7 @@ export function Hero({ settings, props: editorProps }: HeroProps) {
         {/* Variant: Floating Products */}
         {layoutVariant === "floating" && heroProducts.length > 0 && (
           <div className="relative flex items-end justify-center gap-6 md:gap-10 lg:gap-14 max-w-3xl mx-auto mb-12 md:mb-16">
-            {heroProducts.slice(0, 3).map((product, index) => (
+            {heroProducts.slice(0, 3).map((product: HeroProduct, index: number) => (
               <HeroProduct key={product.alt + index} product={product} index={index} yMotion={index === 0 ? y1 : index === 1 ? y2 : y3} />
             ))}
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 50, damping: 10 }} className={`absolute w-[220px] h-[220px] md:w-[350px] md:h-[350px] ${styles.isDark ? 'bg-white/10' : 'bg-primary-soft/15'} rounded-full -z-10 blur-3xl top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2`} />

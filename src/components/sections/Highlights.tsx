@@ -62,7 +62,7 @@ export function Highlights({ settings, props: editorProps }: HighlightsProps) {
         if (error) throw error;
 
         if (isMounted && data && data.length > 0) {
-          setItems(data.map(p => ({
+          setItems(data.map((p: any) => ({
             id: p.id,
             name: p.title,
             tag: p.tag || 'Destaque',
@@ -148,7 +148,7 @@ export function Highlights({ settings, props: editorProps }: HighlightsProps) {
                 onScroll={handleScroll}
                 className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory pt-4 px-4 -mx-4 scrollbar-hide scroll-smooth"
               >
-                {items.map((item, i) => (
+                {items.map((item: HighlightItem, i: number) => (
                   <motion.div 
                     key={item.id}
                     initial={{ opacity: 0, y: 50, rotateX: -10 }}
