@@ -376,7 +376,6 @@ function FieldRenderer({
       );
 
     case "color":
-      const { theme } = useEditorStore();
       
       // Lista fixa das cores da marca + Neutros para garantir que nunca "sumam"
       const rawPresets = [
