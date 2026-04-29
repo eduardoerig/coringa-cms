@@ -31,17 +31,46 @@ export function PropertiesPanel() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          <FieldRenderer
-            field={{ key: "theme_primary_color", label: "Cor Primária", type: "color" }}
-            value={theme.theme_primary_color || "#2563EB"}
-            onChange={(val) => updateTheme("theme_primary_color", val as string)}
-          />
-          <FieldRenderer
-            field={{ key: "theme_bg_color", label: "Cor de Fundo", type: "color" }}
-            value={theme.theme_bg_color || "#FAFAFA"}
-            onChange={(val) => updateTheme("theme_bg_color", val as string)}
-          />
+        <div className="flex-1 overflow-y-auto p-4 space-y-8">
+          {/* Landing Page Theme */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-text-400">
+              <div className="h-px flex-1 bg-text-100" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Landing Page</span>
+              <div className="h-px flex-1 bg-text-100" />
+            </div>
+            
+            <FieldRenderer
+              field={{ key: "theme_primary_color", label: "Cor Primária", type: "color" }}
+              value={theme.theme_primary_color || "#2563EB"}
+              onChange={(val) => updateTheme("theme_primary_color", val as string)}
+            />
+            <FieldRenderer
+              field={{ key: "theme_bg_color", label: "Cor de Fundo", type: "color" }}
+              value={theme.theme_bg_color || "#FAFAFA"}
+              onChange={(val) => updateTheme("theme_bg_color", val as string)}
+            />
+          </div>
+
+          {/* Dashboard Theme */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-text-400">
+              <div className="h-px flex-1 bg-text-100" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">Dashboard</span>
+              <div className="h-px flex-1 bg-text-100" />
+            </div>
+            
+            <FieldRenderer
+              field={{ key: "dashboard_primary_color", label: "Cor Primária Admin", type: "color" }}
+              value={theme.dashboard_primary_color || theme.theme_primary_color || "#2563EB"}
+              onChange={(val) => updateTheme("dashboard_primary_color", val as string)}
+            />
+            <FieldRenderer
+              field={{ key: "dashboard_bg_color", label: "Cor de Fundo Admin", type: "color" }}
+              value={theme.dashboard_bg_color || theme.theme_bg_color || "#FAFAFA"}
+              onChange={(val) => updateTheme("dashboard_bg_color", val as string)}
+            />
+          </div>
         </div>
       </div>
     );

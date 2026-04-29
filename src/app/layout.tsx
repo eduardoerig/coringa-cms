@@ -18,21 +18,7 @@ const spaceGrotesk = Space_Grotesk({
   variable: "--font-space-grotesk",
 });
 
-/**
- * Gera uma paleta de cores derivadas a partir de uma cor hexadecimal primária.
- */
-function generatePalette(hex: string) {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-
-  const dark = `rgb(${Math.round(r * 0.7)}, ${Math.round(g * 0.7)}, ${Math.round(b * 0.7)})`;
-  const light = `rgb(${Math.min(255, Math.round(r * 1.15))}, ${Math.min(255, Math.round(g * 1.15))}, ${Math.min(255, Math.round(b * 1.15))})`;
-  const soft = `rgba(${r}, ${g}, ${b}, 0.12)`;
-  const bg = `rgba(${r}, ${g}, ${b}, 0.06)`;
-
-  return { primary: hex, dark, light, soft, bg };
-}
+import { generatePalette } from "@/utils/colors";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();

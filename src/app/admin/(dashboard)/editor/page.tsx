@@ -81,12 +81,27 @@ export default function EditorPage() {
         // Salvar tema
         const { theme } = useEditorStore.getState();
         if (Object.keys(theme).length > 0) {
-          const themeUpdates = Object.entries(theme).map(([key, value]) =>
-            supabase
+          const themeUpdates = Object.entries(theme).map(([key, value]) => {
+            // Determinar label e tipo com base na chave para novas entradas
+            let label = "Configuração de Tema";
+            let type = "color";
+            
+            if (key === "dashboard_primary_color") label = "Cor Primária Admin";
+            if (key === "dashboard_bg_color") label = "Cor de Fundo Admin";
+            if (key === "theme_primary_color") label = "Cor Primária";
+            if (key === "theme_bg_color") label = "Cor de Fundo";
+
+            return supabase
               .from("site_settings")
-              .update({ value, updated_at: new Date().toISOString() })
-              .eq("key", key)
-          );
+              .upsert({ 
+                key, 
+                value, 
+                group: "aparencia",
+                label,
+                type,
+                updated_at: new Date().toISOString() 
+              });
+          });
           
           const results = await Promise.all(themeUpdates);
           if (results.some(r => r.error)) {
