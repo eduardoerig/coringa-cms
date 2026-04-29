@@ -12,8 +12,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const settings = await getSettings();
   
   // Dashboard Theme
-  const primaryColor = settings.dashboard_primary_color || settings.theme_primary_color || "#2563EB";
-  const surfaceBg = settings.dashboard_bg_color || settings.theme_bg_color || "#FAFAFA";
+  const primaryColor = settings.dashboard_primary_color || "#2563EB";
+  const surfaceBg = settings.dashboard_bg_color || "#FAFAFA";
   const palette = generatePalette(primaryColor);
 
   const themeStyles = {

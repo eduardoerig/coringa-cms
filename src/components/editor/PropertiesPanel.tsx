@@ -46,9 +46,59 @@ export function PropertiesPanel() {
               onChange={(val) => updateTheme("theme_primary_color", val as string)}
             />
             <FieldRenderer
+              field={{ key: "theme_button_hover", label: "Cor Hover Botões", type: "color" }}
+              value={theme.theme_button_hover || "#1E40AF"}
+              onChange={(val) => updateTheme("theme_button_hover", val as string)}
+            />
+            <FieldRenderer
+              field={{ key: "theme_tertiary_color", label: "Cor Terciária (Destaques)", type: "color" }}
+              value={theme.theme_tertiary_color || "#F59E0B"}
+              onChange={(val) => updateTheme("theme_tertiary_color", val as string)}
+            />
+            <FieldRenderer
               field={{ key: "theme_bg_color", label: "Cor de Fundo", type: "color" }}
               value={theme.theme_bg_color || "#FAFAFA"}
               onChange={(val) => updateTheme("theme_bg_color", val as string)}
+            />
+            <FieldRenderer
+              field={{ key: "theme_heading_color", label: "Cor dos Títulos", type: "color" }}
+              value={theme.theme_heading_color || "#18181B"}
+              onChange={(val) => updateTheme("theme_heading_color", val as string)}
+            />
+            <FieldRenderer
+              field={{ key: "theme_text_color", label: "Cor do Texto", type: "color" }}
+              value={theme.theme_text_color || "#3F3F46"}
+              onChange={(val) => updateTheme("theme_text_color", val as string)}
+            />
+            <FieldRenderer
+              field={{
+                key: "theme_font_sans",
+                label: "Fonte Principal",
+                type: "select",
+                options: [
+                  { value: "inter", label: "Inter" },
+                  { value: "roboto", label: "Roboto" },
+                  { value: "poppins", label: "Poppins" },
+                  { value: "space-grotesk", label: "Space Grotesk" },
+                ]
+              }}
+              value={theme.theme_font_sans || "inter"}
+              onChange={(val) => updateTheme("theme_font_sans", val as string)}
+            />
+            <FieldRenderer
+              field={{
+                key: "theme_font_display",
+                label: "Fonte de Títulos",
+                type: "select",
+                options: [
+                  { value: "space-grotesk", label: "Space Grotesk" },
+                  { value: "inter", label: "Inter" },
+                  { value: "roboto", label: "Roboto" },
+                  { value: "poppins", label: "Poppins" },
+                ]
+              }}
+              value={theme.theme_font_display || "space-grotesk"}
+              onChange={(val) => updateTheme("theme_font_display", val as string)}
             />
           </div>
 
@@ -62,12 +112,12 @@ export function PropertiesPanel() {
             
             <FieldRenderer
               field={{ key: "dashboard_primary_color", label: "Cor Primária Admin", type: "color" }}
-              value={theme.dashboard_primary_color || theme.theme_primary_color || "#2563EB"}
+              value={theme.dashboard_primary_color || "#2563EB"}
               onChange={(val) => updateTheme("dashboard_primary_color", val as string)}
             />
             <FieldRenderer
               field={{ key: "dashboard_bg_color", label: "Cor de Fundo Admin", type: "color" }}
-              value={theme.dashboard_bg_color || theme.theme_bg_color || "#FAFAFA"}
+              value={theme.dashboard_bg_color || "#FAFAFA"}
               onChange={(val) => updateTheme("dashboard_bg_color", val as string)}
             />
           </div>

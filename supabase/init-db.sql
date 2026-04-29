@@ -28,6 +28,12 @@ ON public.site_settings FOR UPDATE
 TO authenticated
 USING (true);
 
+DROP POLICY IF EXISTS "Admin pode inserir configurações" ON public.site_settings;
+CREATE POLICY "Admin pode inserir configurações"
+ON public.site_settings FOR INSERT
+TO authenticated
+WITH CHECK (true);
+
 -- Seed: dados genéricos
 INSERT INTO public.site_settings (key, value, "group", label, type)
 VALUES

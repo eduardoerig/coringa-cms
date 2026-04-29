@@ -70,6 +70,14 @@ export function EditorCanvas() {
   const surfaceBg = theme.theme_bg_color || "#FAFAFA";
   const palette = generatePalette(primaryColor);
 
+  const textHeading = theme.theme_heading_color || "#18181B";
+  const textBody = theme.theme_text_color || "#3F3F46";
+  const tertiaryColor = theme.theme_tertiary_color || "#F59E0B";
+  const primaryHover = theme.theme_button_hover || palette.dark;
+  
+  const fontSans = theme.theme_font_sans || "inter";
+  const fontDisplay = theme.theme_font_display || "space-grotesk";
+
   const themeStyles = `
     :root {
       --theme-primary: ${palette.primary};
@@ -77,7 +85,13 @@ export function EditorCanvas() {
       --theme-primary-light: ${palette.light};
       --theme-primary-soft: ${palette.soft};
       --theme-primary-bg: ${palette.bg};
+      --theme-primary-hover: ${primaryHover};
       --theme-surface-50: ${surfaceBg};
+      --theme-text-heading: ${textHeading};
+      --theme-text-body: ${textBody};
+      --theme-tertiary: ${tertiaryColor};
+      --font-sans: var(--font-${fontSans});
+      --font-display: var(--font-${fontDisplay});
     }
   `;
 

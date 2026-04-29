@@ -59,7 +59,7 @@ export function Navbar({ settings }: NavbarProps) {
                 href={ctaLink}
                 target="_blank"
                 rel="noreferrer"
-                className="flex items-center gap-2 bg-primary text-white text-sm font-bold tracking-wide px-6 py-2.5 rounded-full shadow-primary hover:-translate-y-0.5 hover:shadow-xl hover:bg-primary-dark transition-all duration-300"
+                className="flex items-center gap-2 bg-primary text-white text-sm font-bold tracking-wide px-6 py-2.5 rounded-full shadow-primary hover:-translate-y-0.5 hover:shadow-xl hover:bg-primary-hover transition-all duration-300"
               >
                 <span>{ctaLabel}</span>
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

@@ -80,25 +80,29 @@ export function Highlights({ settings, props: editorProps }: HighlightsProps) {
     };
   }, [supabase]);
 
+  const isDark = editorProps?.darkTheme === "true";
+  const bgStyle = editorProps?.backgroundColor ? { backgroundColor: editorProps.backgroundColor as string } : {};
+
   return (
-    <section id="destaques" className="py-24 bg-white overflow-hidden perspective-1000">
-      <div className="max-w-6xl mx-auto px-6">
+    <section id="destaques" ref={ref} className="py-24 relative overflow-hidden bg-surface-50" style={bgStyle}>
+      <div className="max-w-7xl mx-auto px-6">
         
-        <motion.div 
-          ref={ref}
-          initial={{ opacity: 0, y: 30 }}
-          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
-        >
-          <span className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3 block">Nossos Destaques</span>
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-display font-black text-text-900 tracking-tight mb-6">
-            {title}
-          </h2>
-          <p className="text-text-500 max-w-md mx-auto leading-relaxed text-lg">
-            {subtitle}
-          </p>
-        </motion.div>
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Destaques</span>
+            <h2 className={`text-4xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-6 ${isDark ? 'text-white' : 'text-text-900'}`}>
+              {title}
+            </h2>
+            <p className={`text-lg leading-relaxed ${isDark ? 'text-white/80' : 'text-text-500'}`}>
+              {subtitle}
+            </p>
+          </motion.div>
+        </div>
 
         {/* Skeleton loading */}
         {loading ? (
@@ -143,7 +147,8 @@ export function Highlights({ settings, props: editorProps }: HighlightsProps) {
                   initial={{ opacity: 0, y: 50, rotateX: -10 }}
                   animate={isInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 50, rotateX: -10 }}
                   transition={{ duration: 0.7, delay: i * 0.15 }}
-                  className="group relative flex-none w-[260px] md:w-[280px] snap-start bg-white border border-text-100/60 rounded-[28px] overflow-hidden shadow-sm hover:shadow-md hover:shadow-black/10 hover:-translate-y-2 transition-all duration-500 cursor-pointer isolate"
+                  className="group relative flex-none w-[260px] md:w-[280px] snap-start border border-text-100/60 rounded-[28px] overflow-hidden shadow-sm hover:shadow-md hover:shadow-black/10 hover:-translate-y-2 transition-all duration-500 cursor-pointer isolate"
+                  style={{ backgroundColor: (editorProps?.cardBgColor as string) || "#FFFFFF" }}
                 >
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-surface-200/80 rounded-full opacity-0 blur-xl group-hover:blur-3xl group-hover:scale-[15] group-hover:opacity-100 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none -z-10" />
                   
@@ -157,10 +162,10 @@ export function Highlights({ settings, props: editorProps }: HighlightsProps) {
                     />
                   </div>
 
-                  <div className="p-6 relative z-10 bg-white">
+                  <div className="p-6 relative z-10">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-primary text-[10px] font-bold uppercase tracking-widest">{item.tag}</span>
-                      <div className="w-8 h-8 rounded-full bg-surface-50 flex items-center justify-center text-text-300 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                      <span className="text-tertiary text-[10px] font-bold uppercase tracking-widest">{item.tag}</span>
+                      <div className="w-8 h-8 rounded-full bg-surface-50 flex items-center justify-center text-text-300 group-hover:bg-primary-hover group-hover:text-white transition-colors duration-300">
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                       </div>
                     </div>

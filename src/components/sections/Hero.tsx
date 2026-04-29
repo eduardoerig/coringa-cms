@@ -44,7 +44,7 @@ export function Hero({ settings, props: editorProps }: HeroProps) {
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-black text-text-900 tracking-tight leading-[0.9] mb-6">{title}</h1>
           <p className="text-text-500 text-lg md:text-xl leading-relaxed mb-10 max-w-xl mx-auto">{subtitle}</p>
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
-            <a href={ctaLink} className="group relative px-8 py-4 bg-primary text-white font-bold rounded-2xl shadow-primary hover:bg-primary-dark transition-all duration-300 flex items-center gap-2 overflow-hidden">
+            <a href={ctaLink} className="group relative px-8 py-4 bg-primary text-white font-bold rounded-2xl shadow-primary hover:bg-primary-hover transition-all duration-300 flex items-center gap-2 overflow-hidden">
               <span className="relative z-10">{ctaText}</span>
               <svg className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />

@@ -20,8 +20,11 @@ export function About({ settings, props: editorProps }: AboutProps) {
   const imageSrc = (editorProps?.image as string) || "https://placehold.co/800x800/eeeeee/999999?text=Nossa+Historia";
   const isHtml = text.includes("<");
 
+  const isDark = editorProps?.darkTheme === "true";
+  const bgStyle = editorProps?.backgroundColor ? { backgroundColor: editorProps.backgroundColor as string } : {};
+
   return (
-    <section id="sobre" className="py-24 bg-white relative overflow-hidden">
+    <section id="sobre" className="py-24 relative overflow-hidden bg-white" style={bgStyle}>
       <div className="max-w-7xl mx-auto px-6">
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
@@ -32,12 +35,12 @@ export function About({ settings, props: editorProps }: AboutProps) {
             animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
             transition={{ duration: 0.8 }}
           >
-            <span className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">A Nossa História</span>
-            <h2 className="text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black text-text-900 tracking-tight mb-8">
+            <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">A Nossa História</span>
+            <h2 className={`text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8 ${isDark ? 'text-white' : 'text-text-900'}`}>
               {title}
             </h2>
             
-            <div className="space-y-6 text-text-500 text-lg leading-relaxed mb-10">
+            <div className={`space-y-6 text-lg leading-relaxed mb-10 ${isDark ? 'text-white/80' : 'text-text-500'}`}>
               {isHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: text }} />
               ) : (
@@ -48,7 +51,7 @@ export function About({ settings, props: editorProps }: AboutProps) {
             </div>
 
             <div className="flex gap-4">
-              <a href={buttonLink} target="_blank" rel="noreferrer" className="group rounded-full bg-primary-bg text-primary font-bold px-8 py-4 flex items-center gap-2 hover:bg-primary hover:text-white transition-colors duration-300">
+              <a href={buttonLink} target="_blank" rel="noreferrer" className="group rounded-full bg-primary-bg text-primary font-bold px-8 py-4 flex items-center gap-2 hover:bg-primary-hover hover:text-white transition-colors duration-300">
                 <span>{buttonText}</span>
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </a>

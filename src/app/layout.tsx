@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Space_Grotesk, Roboto, Poppins } from "next/font/google";
 import { Preloader } from "@/components/ui/Preloader";
 import "./globals.css";
 import { getSettings } from "@/utils/settings";
@@ -16,6 +16,18 @@ const inter = Inter({
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-space-grotesk",
+});
+
+const roboto = Roboto({
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+  variable: "--font-roboto",
+});
+
+const poppins = Poppins({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  variable: "--font-poppins",
 });
 
 import { generatePalette } from "@/utils/colors";
@@ -77,6 +89,14 @@ export default async function RootLayout({
   const surfaceBg = settings.theme_bg_color || "#FAFAFA";
   const palette = generatePalette(primaryColor);
 
+  const textHeading = settings.theme_heading_color || "#18181B";
+  const textBody = settings.theme_text_color || "#3F3F46";
+  const tertiaryColor = settings.theme_tertiary_color || "#F59E0B";
+  const primaryHover = settings.theme_button_hover || palette.dark;
+  
+  const fontSans = settings.theme_font_sans || "inter";
+  const fontDisplay = settings.theme_font_display || "space-grotesk";
+
   const themeStyles = `
     :root {
       --theme-primary: ${palette.primary};
@@ -84,12 +104,18 @@ export default async function RootLayout({
       --theme-primary-light: ${palette.light};
       --theme-primary-soft: ${palette.soft};
       --theme-primary-bg: ${palette.bg};
+      --theme-primary-hover: ${primaryHover};
       --theme-surface-50: ${surfaceBg};
+      --theme-text-heading: ${textHeading};
+      --theme-text-body: ${textBody};
+      --theme-tertiary: ${tertiaryColor};
+      --font-sans: var(--font-${fontSans});
+      --font-display: var(--font-${fontDisplay});
     }
   `;
 
   return (
-    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="pt-BR" data-scroll-behavior="smooth" className={`${inter.variable} ${spaceGrotesk.variable} ${roboto.variable} ${poppins.variable}`}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: themeStyles }} />
       </head>

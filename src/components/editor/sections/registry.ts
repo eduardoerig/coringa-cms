@@ -88,10 +88,16 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Nossos Queridinhos" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Descubra os sabores..." },
+      { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "#FFFFFF" },
+      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
+      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
     ],
     defaultProps: {
       title: "Nossos Queridinhos",
       subtitle: "Descubra os sabores que fazem a fama da nossa marca em todo o país.",
+      cardBgColor: "#FFFFFF",
+      backgroundColor: "",
+      darkTheme: "false",
     },
   },
 
@@ -104,10 +110,16 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Explore nosso Cardápio" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Mais de 100 opções..." },
+      { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "#FFFFFF" },
+      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
+      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
     ],
     defaultProps: {
       title: "Explore nosso Cardápio",
       subtitle: "Mais de 100 opções preparadas com carinho para você.",
+      cardBgColor: "#FFFFFF",
+      backgroundColor: "",
+      darkTheme: "false",
     },
   },
 
@@ -122,6 +134,8 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "buttonText", label: "Texto do Botão", type: "text", placeholder: "Saiba mais" },
       { key: "buttonLink", label: "Link do Botão", type: "url", placeholder: "https://..." },
       { key: "image", label: "Imagem", type: "image" },
+      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
+      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
     ],
     defaultProps: {
       title: "Nossa História",
@@ -129,6 +143,8 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       buttonText: "Saiba mais",
       buttonLink: "#",
       image: "",
+      backgroundColor: "",
+      darkTheme: "false",
     },
   },
 
@@ -152,6 +168,8 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "label", label: "Label", type: "text", placeholder: "Unidades" },
         ],
       },
+      { key: "backgroundColor", label: "Cor de Fundo da Seção", type: "color" },
+      { key: "darkTheme", label: "Tema Escuro (Textos Brancos)?", type: "select", options: [{ value: "false", label: "Não" }, { value: "true", label: "Sim" }] },
     ],
     defaultProps: {
       title: "Seja um Franqueado",
@@ -162,6 +180,8 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
         { value: "700+", label: "Unidades" },
         { value: "40+", label: "Anos de Sucesso" },
       ],
+      backgroundColor: "",
+      darkTheme: "false",
     },
   },
 
@@ -241,9 +261,13 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { value: "wave", label: "Onda" },
         ],
       },
+      { key: "backgroundColor", label: "Cor de Fundo (Topo)", type: "color", placeholder: "Ex: #FFFFFF" },
+      { key: "fillColor", label: "Cor de Preenchimento (Base/Onda)", type: "color", placeholder: "Ex: #7B1113" },
     ],
     defaultProps: {
       style: "space",
+      backgroundColor: "",
+      fillColor: "",
     },
   },
 };

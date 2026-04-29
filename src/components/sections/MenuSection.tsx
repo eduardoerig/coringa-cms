@@ -54,6 +54,9 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
   const title = (editorProps?.title as string) || "Explore nosso Cardápio";
   const subtitle = (editorProps?.subtitle as string) || "Mais de 100 opções preparadas com carinho para você.";
 
+  const isDark = editorProps?.darkTheme === "true";
+  const bgStyle = editorProps?.backgroundColor ? { backgroundColor: editorProps.backgroundColor as string } : {};
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -123,17 +126,25 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
   };
 
   return (
-    <section id="cardapio" className="py-24 bg-surface-50 relative">
-      <div className="max-w-6xl mx-auto px-6 relative z-10">
+    <section id="cardapio" className="py-24 relative overflow-hidden bg-white" style={bgStyle}>
+      <div className="max-w-7xl mx-auto px-6">
         
-        <div className="text-center mb-12">
-          <span className="text-primary text-xs font-bold uppercase tracking-[0.2em] mb-3 block">Cardápio</span>
-          <h2 className="text-3xl md:text-5xl font-display font-black text-text-900 tracking-tight">
-            {title}
-          </h2>
-          {subtitle && (
-            <p className="text-text-400 mt-4 max-w-md mx-auto">{subtitle}</p>
-          )}
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Cardápio</span>
+            <h2 className={`text-4xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-6 ${isDark ? 'text-white' : 'text-text-900'}`}>
+              {title}
+            </h2>
+            <p className={`text-lg leading-relaxed ${isDark ? 'text-white/80' : 'text-text-500'}`}>
+              {subtitle}
+            </p>
+          </motion.div>
         </div>
 
         {/* Filters */}
@@ -168,8 +179,8 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
                 <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
               </svg>
             </div>
-            <h3 className="text-text-900 font-display font-bold text-xl mb-2">Nenhum produto encontrado</h3>
-            <p className="text-text-400 text-sm">Tente alterar o filtro de categoria.</p>
+            <h3 className={`font-display font-bold text-xl mb-2 ${isDark ? 'text-white' : 'text-text-900'}`}>Nenhum produto encontrado</h3>
+            <p className={`text-sm ${isDark ? 'text-white/70' : 'text-text-400'}`}>Tente alterar o filtro de categoria.</p>
           </div>
         ) : (
           <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
@@ -182,13 +193,14 @@ export function MenuSection({ settings, props: editorProps }: MenuSectionProps) 
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
-                  className="group bg-white border border-text-100/50 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_12px_30px_rgba(26,16,8,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                  className="group border border-text-100/50 rounded-2xl md:rounded-3xl overflow-hidden shadow-sm hover:shadow-[0_12px_30px_rgba(26,16,8,0.06)] hover:-translate-y-1 transition-all duration-300 flex flex-col"
+                  style={{ backgroundColor: (editorProps?.cardBgColor as string) || "#FFFFFF" }}
                 >
                   <div className="h-[120px] md:h-[180px] flex items-center justify-center p-3 md:p-6 bg-surface-50 group-hover:bg-primary-bg transition-colors duration-300">
                     <Image src={item.img} alt={item.title} width={150} height={150} className="max-h-20 md:max-h-32 w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105" />
                   </div>
                   <div className="p-3 md:p-4 flex-1 flex flex-col">
-                    <span className="text-primary text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{item.category.replace("-", " ")}</span>
+                    <span className="text-tertiary text-[9px] md:text-[10px] font-bold uppercase tracking-widest">{item.category.replace("-", " ")}</span>
                     <h3 className="font-display font-bold text-text-900 mt-1 mb-1 text-sm md:text-base leading-tight md:leading-snug line-clamp-2">{item.title}</h3>
                     <p className="text-text-400 text-[10px] md:text-xs leading-relaxed line-clamp-2 md:line-clamp-none mt-auto pt-1">{item.desc}</p>
                   </div>
