@@ -8,6 +8,7 @@ import { Gallery } from "@/components/sections/Gallery";
 import { CTABanner } from "@/components/sections/CTABanner";
 import { TextBlock } from "@/components/sections/TextBlock";
 import { Navbar } from "@/components/layout/Navbar";
+import { FooterBlock } from "@/components/sections/FooterBlock";
 import {
   Layout,
   Star,
@@ -61,6 +62,7 @@ export const sectionComponentMap: Record<string, React.ComponentType<any>> = {
   cta_banner: CTABanner,
   text_block: TextBlock,
   header: Navbar,
+  footer: FooterBlock,
 };
 
 import { getSectionStyles } from "@/utils/sectionStyles";
@@ -435,6 +437,29 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       backgroundColor: "",
       fillColor: "",
     },
+  },
+
+  footer: {
+    type: "footer",
+    label: "Rodapé",
+    description: "Rodapé do site com links, redes sociais e informações da empresa.",
+    icon: Layout,
+    fields: [
+      { key: "companyName", label: "Nome da Empresa", type: "text", placeholder: "Empresa Exemplo Ltda", category: "content" },
+      { key: "cnpj", label: "CNPJ", type: "text", placeholder: "00.000.000/0001-00", category: "content" },
+      { key: "description", label: "Descrição", type: "textarea", placeholder: "Oferecemos os melhores produtos...", category: "content" },
+      { key: "siteName", label: "Nome do Site", type: "text", placeholder: "Meu Site", category: "content" },
+      ...COMMON_APPEARANCE_FIELDS,
+    ],
+    defaultProps: {
+      companyName: "Empresa Exemplo Ltda.",
+      cnpj: "",
+      description: "Oferecemos os melhores produtos e serviços com qualidade e dedicação.",
+      siteName: "Meu Site",
+      ...COMMON_APPEARANCE_DEFAULTS,
+      section_bg_type: "white",
+    },
+    maxInstances: 1,
   },
 };
 

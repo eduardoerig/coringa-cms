@@ -1,4 +1,4 @@
-import { Footer } from "@/components/layout/Footer";
+
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 import { getSettings } from "@/utils/settings";
 import { createClient } from "@/utils/supabase/server";
@@ -63,7 +63,6 @@ export default async function Home() {
       <DynamicSections sections={sections} settings={settings} />
       
       <WhatsAppButton phone={settings.contact_whatsapp} />
-      <Footer />
     </main>
   );
 }
