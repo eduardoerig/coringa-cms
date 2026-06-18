@@ -211,25 +211,73 @@ function AppearanceFieldRenderer({ field, value, onChange }: { field: PropField;
 
 // ---- Inline Color Picker: Compacto, com preview + hex + botão limpar ----
 function InlineColorPicker({ label, placeholder, value, onChange }: { label: string; placeholder?: string; value: string; onChange: (v: unknown) => void; }) {
+  const { theme } = useEditorStore();
   const displayHex = value || "";
   const hasValue = displayHex.length > 0;
 
-  // Resolver o hex para exibição (pode ser var CSS)
-  const resolvedHex = useMemo(() => {
-    if (!displayHex) return "#CCCCCC";
-    if (displayHex.startsWith("var(--")) {
-      const match = displayHex.match(/,\s*(#[0-9A-Fa-f]{6})/);
-      return match ? match[1] : "#CCCCCC";
-    }
+  const palette = useMemo(() => {
+    const rawPalette = [
+      { id: "var(--theme-primary)", label: "Primária", color: theme.theme_primary_color },
+      { id: "var(--theme-surface-50)", label: "Fundo", color: theme.theme_bg_color },
+      { id: "var(--theme-tertiary)", label: "Terciária", color: theme.theme_tertiary_color },
+    ];
+    
+    let customs: any[] = [];
+    try {
+      if (theme.theme_custom_colors) customs = JSON.parse(theme.theme_custom_colors);
+    } catch (e) {}
+    
+    customs.forEach(c => {
+      if (c.hex && c.id) {
+        rawPalette.push({ id: `var(--${c.id})`, label: c.name || "Customizada", color: c.hex });
+      }
+    });
+
+    // Filtrar cores inválidas e duplicadas pelo código HEX
+    const seenHex = new Set<string>();
+    return rawPalette.filter(swatch => {
+      if (!swatch.color) return false;
+      const hex = swatch.color.toUpperCase();
+      if (seenHex.has(hex)) return false;
+      seenHex.add(hex);
+      return true;
+    });
+  }, [theme]);
+
+  // Resolver o rótulo para exibição (ex: "Primária" em vez de "var(--...)")
+  const displayLabel = useMemo(() => {
+    if (!displayHex) return placeholder || "Automático";
+    const swatch = palette.find(s => s.id === displayHex);
+    if (swatch) return swatch.label;
     return displayHex;
-  }, [displayHex]);
+  }, [displayHex, palette, placeholder]);
+
+  // Resolver o hex para o <input type="color"> nativo (exige #RRGGBB)
+  const pickerHex = useMemo(() => {
+    if (!displayHex) return "#CCCCCC";
+    let hex = displayHex;
+    if (displayHex.startsWith("var(--")) {
+      const swatch = palette.find(s => s.id === displayHex);
+      if (swatch && swatch.color.startsWith("#")) {
+        hex = swatch.color;
+      } else {
+        return "#CCCCCC";
+      }
+    }
+    // Converter hex de 3 digitos para 6 se necessário
+    if (/^#[0-9A-Fa-f]{3}$/.test(hex)) {
+      return `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+    }
+    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) return hex;
+    return "#CCCCCC"; // Fallback se for rgba ou invalido
+  }, [displayHex, palette]);
 
   const [editing, setEditing] = useState(false);
-  const [hexInput, setHexInput] = useState(resolvedHex);
+  const [hexInput, setHexInput] = useState(displayHex);
 
   useEffect(() => {
-    setHexInput(resolvedHex);
-  }, [resolvedHex]);
+    setHexInput(displayHex);
+  }, [displayHex]);
 
   const handleHexCommit = () => {
     const clean = hexInput.trim();
@@ -238,13 +286,13 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
   };
 
   return (
-    <div className="group">
+    <div className="group space-y-2">
       <div className="flex items-center gap-3 py-1.5">
         {/* Color Preview / Picker */}
         <div className="relative shrink-0">
           <input
             type="color"
-            value={hasValue ? resolvedHex : "#CCCCCC"}
+            value={hasValue ? pickerHex : "#CCCCCC"}
             onChange={(e) => { onChange(e.target.value); setHexInput(e.target.value); }}
             className="w-8 h-8 rounded-lg border-2 border-white shadow-sm cursor-pointer p-0 bg-transparent ring-1 ring-zinc-200 hover:ring-zinc-400 transition-all"
           />
@@ -266,14 +314,14 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
               onBlur={handleHexCommit}
               onKeyDown={(e) => e.key === "Enter" && handleHexCommit()}
               autoFocus
-              className="w-full px-1.5 py-0.5 text-[11px] font-mono font-bold text-zinc-700 bg-zinc-50 border border-zinc-200 rounded-md focus:outline-none focus:border-zinc-400 uppercase"
+              className="w-full px-1.5 py-0.5 text-[11px] font-mono font-bold text-zinc-700 bg-zinc-50 border border-zinc-200 rounded-md focus:outline-none focus:border-zinc-400"
             />
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="text-[11px] font-mono font-medium text-zinc-400 hover:text-zinc-700 transition-colors uppercase"
+              className="text-[11px] font-mono font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
             >
-              {hasValue ? resolvedHex : (placeholder || "Automático")}
+              {displayLabel}
             </button>
           )}
         </div>
@@ -288,6 +336,19 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
             <RotateCcw className="w-3 h-3" />
           </button>
         )}
+      </div>
+      
+      {/* Paleta Global - Amostras */}
+      <div className="flex flex-wrap gap-1.5 pl-11">
+        {palette.map((swatch, idx) => (
+          <button
+            key={idx}
+            onClick={() => onChange(swatch.id)}
+            title={swatch.label}
+            className="w-5 h-5 rounded-full border border-zinc-200 hover:scale-110 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-1"
+            style={{ backgroundColor: swatch.color }}
+          />
+        ))}
       </div>
     </div>
   );

@@ -55,6 +55,7 @@ export function Highlights({ settings, props: editorProps, isEditor }: Highlight
   const accentColor = (editorProps?.accentColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const cardBorderColor = (editorProps?.cardBorderColor as string) || "";
+  const cardBgColor = (editorProps?.cardBgColor as string) || "";
   const tagBgColor = (editorProps?.tagBgColor as string) || "";
   const tagTextColor = (editorProps?.tagTextColor as string) || "";
 
@@ -193,6 +194,7 @@ export function Highlights({ settings, props: editorProps, isEditor }: Highlight
                     isEditor={isEditor}
                     isInView={isInView}
                     styles={styles}
+                    cardBgColor={cardBgColor}
                     cardBorderColor={cardBorderColor}
                     tagBgColor={tagBgColor}
                     tagTextColor={tagTextColor}
@@ -266,9 +268,9 @@ export function Highlights({ settings, props: editorProps, isEditor }: Highlight
 }
 
 // Card extraído para componente separado para gerenciar hovers
-function HighlightCard({ item, index, isEditor, isInView, styles, cardBorderColor, tagBgColor, tagTextColor, accentColor, btnColor }: {
+function HighlightCard({ item, index, isEditor, isInView, styles, cardBgColor, cardBorderColor, tagBgColor, tagTextColor, accentColor, btnColor }: {
   item: HighlightItem; index: number; isEditor?: boolean; isInView: boolean; styles: any;
-  cardBorderColor: string; tagBgColor: string; tagTextColor: string; accentColor?: string; btnColor?: string;
+  cardBgColor: string; cardBorderColor: string; tagBgColor: string; tagTextColor: string; accentColor?: string; btnColor?: string;
 }) {
   const [hovered, setHovered] = useState(false);
   const hoverColor = btnColor || accentColor || 'var(--color-primary)';
@@ -286,6 +288,7 @@ function HighlightCard({ item, index, isEditor, isInView, styles, cardBorderColo
           : 'bg-white'
       )}
       style={{
+        backgroundColor: cardBgColor || undefined,
         borderWidth: '1px',
         borderStyle: 'solid',
         borderColor: cardBorderColor || (styles.isDark ? 'rgba(255,255,255,0.1)' : 'var(--color-text-100)'),
