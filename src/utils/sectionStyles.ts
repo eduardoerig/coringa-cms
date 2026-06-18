@@ -29,7 +29,7 @@ export function getSectionStyles(props: Record<string, any>) {
   }
 
   const textClasses = isDark 
-    ? "text-white selection:bg-white selection:text-primary" 
+    ? "text-white" 
     : "text-text-900";
 
   const paddingClasses = {

@@ -18,6 +18,10 @@ export function Gallery({ props: editorProps }: GalleryProps) {
   const styles = getSectionStyles(editorProps || {});
   const { title, images = [] } = editorProps;
 
+  // Cores dinâmicas — tokens semânticos
+  const titleColor = (editorProps?.titleColor as string) || "";
+  const subtitleColor = (editorProps?.subtitleColor as string) || "";
+
   if (images.length === 0) return null;
 
   return (
@@ -28,10 +32,8 @@ export function Gallery({ props: editorProps }: GalleryProps) {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className={cn(
-              "text-3xl md:text-4xl font-display font-black text-center mb-12",
-              styles.isDark ? "text-white" : "text-text-900"
-            )}
+            className="text-3xl md:text-4xl font-display font-black text-center mb-12"
+            style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
           >
             {title}
           </motion.h2>

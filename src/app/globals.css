@@ -47,10 +47,7 @@ body {
   color: var(--color-text-900);
 }
 
-::selection {
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-}
+
 
 ::-webkit-scrollbar {
   width: 6px;
@@ -75,3 +72,19 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Editor Preview: forçar visibilidade de todos os elementos animados */
+.editor-preview * {
+  animation-play-state: paused !important;
+}
+
+.editor-preview [style*="opacity: 0"],
+.editor-preview [style*="opacity:0"] {
+  opacity: 1 !important;
+}
+
+.editor-preview a,
+.editor-preview button {
+  cursor: default !important;
+}
+

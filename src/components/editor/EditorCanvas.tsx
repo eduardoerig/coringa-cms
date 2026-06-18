@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 type Viewport = "desktop" | "tablet" | "mobile";
 
-export function EditorCanvas() {
+export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
   const { sections, selectedSectionId, selectSection, theme } = useEditorStore();
   const [viewport, setViewport] = useState<Viewport>("desktop");
   const [zoom, setZoom] = useState(0.85);
@@ -252,9 +252,9 @@ export function EditorCanvas() {
                   <motion.div 
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex justify-center py-12 border-t border-text-50 bg-surface-50/50"
+                    className="flex justify-center py-12 border-t border-zinc-50 bg-zinc-50/50"
                   >
-                    <button className="group flex items-center gap-3 px-6 py-3 bg-white hover:bg-text-900 hover:text-white rounded-full border border-text-100 shadow-sm transition-all duration-300">
+                    <button onClick={onOpenLibrary} className="group flex items-center gap-3 px-6 py-3 bg-white hover:bg-zinc-900 hover:text-white rounded-full border border-zinc-200 shadow-sm transition-all duration-300">
                       <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
                       <span className="text-sm font-bold tracking-tight">Adicionar Seção</span>
                     </button>

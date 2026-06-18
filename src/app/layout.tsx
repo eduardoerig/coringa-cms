@@ -78,7 +78,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport = {
-  themeColor: "#C8687B",
+  themeColor: "#FFFFFF",
 };
 
 export default async function RootLayout({
@@ -91,17 +91,27 @@ export default async function RootLayout({
   const pixelId = settings.marketing_pixel_id;
 
   // Gerar paleta de cores dinâmica
-  const primaryColor = settings.theme_primary_color || "#C8687B";
-  const surfaceBg = settings.theme_bg_color || "#FFF8F6";
+  const primaryColor = settings.theme_primary_color || "#000000";
+  const surfaceBg = settings.theme_bg_color || "#FFFFFF";
   const palette = generatePalette(primaryColor);
 
   const textHeading = settings.theme_heading_color || "#2C2218";
   const textBody = settings.theme_text_color || "#5C4A3A";
-  const tertiaryColor = settings.theme_tertiary_color || "#D4AF37";
+  const tertiaryColor = settings.theme_tertiary_color || "#333333";
   const primaryHover = settings.theme_button_hover || "#A85068";
   
   const fontSans = settings.theme_font_sans || "inter";
   const fontDisplay = settings.theme_font_display || "playfair-display";
+
+  let customTokensCss = "";
+  try {
+    const tokens = settings.theme_custom_colors ? JSON.parse(settings.theme_custom_colors) : [];
+    tokens.forEach((token: any) => {
+      customTokensCss += `      --${token.id}: ${token.hex};\n`;
+    });
+  } catch (e) {
+    console.error("Erro ao parsear custom colors:", e);
+  }
 
   const themeStyles = `
     :root {
@@ -117,6 +127,7 @@ export default async function RootLayout({
       --theme-tertiary: ${tertiaryColor};
       --font-sans: var(--font-${fontSans});
       --font-display: var(--font-${fontDisplay});
+${customTokensCss}
     }
   `;
 

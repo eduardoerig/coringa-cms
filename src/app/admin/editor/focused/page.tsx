@@ -1,19 +1,23 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, PlusCircle, Layers, Palette, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, PlusCircle, Layers, Palette, AlertTriangle, X } from "lucide-react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SectionLibrary } from "@/components/editor/SectionLibrary";
 import { LayerPanel } from "@/components/editor/LayerPanel";
 import { EditorCanvas } from "@/components/editor/EditorCanvas";
 import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
+import { ColorPalettePanel } from "@/components/editor/ColorPalettePanel";
 import { useEditorStore } from "@/stores/editorStore";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { FranchiseProvider } from "@/context/FranchiseContext";
 
-type Tab = "library" | "layers";
+type Tab = "library" | "layers" | "palette";
+
+type Toast = { id: number; message: string; type: "success" | "error" };
+
 
 export default function FocusedEditorPage() {
   const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectSection, selectedSectionId } = useEditorStore();
@@ -23,7 +27,14 @@ export default function FocusedEditorPage() {
   const [loading, setLoading] = useState(true);
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [toasts, setToasts] = useState<Toast[]>([]);
   const supabase = createClient();
+
+  const addToast = (message: string, type: Toast["type"] = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
+  };
 
   useEffect(() => {
     async function load() {
@@ -76,7 +87,7 @@ export default function FocusedEditorPage() {
 
         if (error) {
           console.error("Erro ao salvar layout:", error);
-          alert("Erro ao salvar. Verifique o console.");
+          addToast("Erro ao salvar. Verifique o console.", "error");
           return;
         }
 
@@ -161,17 +172,32 @@ export default function FocusedEditorPage() {
   return (
     <FranchiseProvider>
       <div 
-        className="flex flex-col h-screen bg-white overflow-hidden selection:bg-text-900 selection:text-white"
+        className="flex flex-col h-screen bg-white overflow-hidden selection:bg-zinc-900 selection:text-white"
         style={adminThemeStyles}
       >
-        {/* Top Header - Focused Mode */}
-        <div className="h-16 border-b border-text-100 bg-white flex items-center justify-between px-6 flex-shrink-0 z-50 shadow-sm">
-          <div className="flex items-center gap-6">
-            <Link 
+        {/* Toast Notifications */}
+        <div className="fixed top-4 right-4 z-[300] flex flex-col gap-2 pointer-events-none">
+          <AnimatePresence>
+            {toasts.map((t) => (
+              <motion.div key={t.id} initial={{ opacity: 0, x: 40, scale: 0.9 }} animate={{ opacity: 1, x: 0, scale: 1 }} exit={{ opacity: 0, x: 40, scale: 0.9 }}
+                className={cn("flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-sm font-bold pointer-events-auto",
+                  t.type === "success" ? "bg-white border-green-100 text-zinc-900" : "bg-red-50 border-red-100 text-red-700")}>
+                {t.type === "success" ? <Check className="w-4 h-4 text-green-500 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-red-500 shrink-0" />}
+                <span className="text-[12px]">{t.message}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Top Header */}
+        <div className="h-14 border-b border-zinc-100 bg-white flex items-center justify-between px-5 flex-shrink-0 z-50 shadow-sm">
+          <div className="flex items-center gap-4">
+            <Link
               href="/admin/editor"
-              className="group flex items-center gap-2 text-text-400 hover:text-text-900 transition-all font-black text-[10px] uppercase tracking-widest"
+              onClick={(e) => { if (isDirty && !window.confirm("Há alterações não salvas. Deseja sair mesmo assim?")) e.preventDefault(); }}
+              className="group flex items-center gap-2 text-zinc-400 hover:text-zinc-900 transition-all font-black text-[10px] uppercase tracking-widest"
             >
-              <div className="w-8 h-8 rounded-xl bg-surface-50 flex items-center justify-center group-hover:bg-text-900 group-hover:text-white transition-all">
+              <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-900 group-hover:text-white transition-all">
                 <ArrowLeft className="w-4 h-4" />
               </div>
               <span>Sair do Editor</span>
@@ -285,6 +311,35 @@ export default function FocusedEditorPage() {
                 Camadas
               </span>
             </div>
+
+            {/* Paleta */}
+            <div className="flex flex-col items-center gap-1 group">
+              <button
+                onClick={() => {
+                  setActiveTab("palette");
+                  setLeftSidebarCollapsed(false);
+                  if (selectedSectionId === "global_theme") selectSection(null);
+                }}
+                className={cn(
+                  "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 relative",
+                  activeTab === "palette" && !leftSidebarCollapsed 
+                    ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 scale-105" 
+                    : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
+                )}
+                title="Paleta Global"
+              >
+                <Palette className={cn("w-[14px] h-[14px] transition-transform", activeTab === "palette" && !leftSidebarCollapsed ? "scale-105" : "group-hover:scale-105")} />
+                {activeTab === "palette" && !leftSidebarCollapsed && (
+                  <motion.div layoutId="nav-pill" className="absolute -left-5 w-1 h-5 bg-zinc-900 rounded-r-full shadow-[4px_0_15px_rgba(0,0,0,0.1)]" />
+                )}
+              </button>
+              <span className={cn(
+                "text-[7px] font-normal uppercase tracking-tight transition-colors duration-300",
+                activeTab === "palette" && !leftSidebarCollapsed ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600"
+              )}>
+                Paleta
+              </span>
+            </div>
             
             <div className="mt-auto flex flex-col gap-6 mb-4">
               {/* Estilo */}
@@ -336,12 +391,13 @@ export default function FocusedEditorPage() {
             <div className="w-[360px] h-full overflow-y-auto custom-scrollbar">
               {activeTab === "library" && <SectionLibrary />}
               {activeTab === "layers" && <LayerPanel />}
+              {activeTab === "palette" && <ColorPalettePanel />}
             </div>
           </motion.div>
 
           {/* Main Canvas Area */}
           <div className="flex-1 overflow-hidden bg-[#F1F3F5] flex flex-col relative">
-            <EditorCanvas />
+            <EditorCanvas onOpenLibrary={() => { setActiveTab("library"); setLeftSidebarCollapsed(false); }} />
             
             {/* Right Panel Toggle Button - Floating */}
             <button

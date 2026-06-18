@@ -13,7 +13,7 @@ export default async function Home() {
 
   if (isMaintenanceMode) {
     return (
-      <main className="min-h-screen bg-surface-50 flex items-center justify-center p-6 selection:bg-primary selection:text-white">
+      <main className="min-h-screen bg-surface-50 flex items-center justify-center p-6">
         <div className="text-center max-w-lg">
           <div className="mb-8">
             <Image
@@ -58,7 +58,7 @@ export default async function Home() {
   const sections = layout?.is_published ? layout.sections : null;
 
   return (
-    <main className="min-h-screen bg-surface-50 selection:bg-primary selection:text-white">
+    <main className="min-h-screen bg-surface-50">
       
       <DynamicSections sections={sections} settings={settings} />
       

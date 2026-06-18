@@ -30,6 +30,8 @@ export interface PropField {
   options?: { value: string; label: string }[];
   /** Para type: "array" — define os campos de cada item */
   itemFields?: PropField[];
+  /** Classificação do campo: "content" ou "appearance" */
+  category?: "content" | "appearance";
 }
 
 export interface SectionRegistryEntry {
@@ -64,19 +66,16 @@ export const sectionComponentMap: Record<string, React.ComponentType<any>> = {
 import { getSectionStyles } from "@/utils/sectionStyles";
 export { getSectionStyles };
 
-// ---- Common Fields ----
+// ---- Campos Comuns de Aparência (Unificados) ----
 
-const COMMON_FIELDS: PropField[] = [
+/** 5 tokens semânticos de cor + padding + fundo — presentes em TODAS as seções */
+const COMMON_APPEARANCE_FIELDS: PropField[] = [
   {
     key: "section_bg_type",
-    label: "Cor de Fundo",
-    type: "select",
-    options: [
-      { value: "white", label: "Branco" },
-      { value: "rose_light", label: "Rosé Suave" },
-      { value: "rose_dark", label: "Rosé Camarim" },
-      { value: "dark", label: "Escuro" },
-    ],
+    label: "Cor de Fundo da Seção",
+    type: "color",
+    placeholder: "#FFFFFF",
+    category: "appearance",
   },
   {
     key: "section_padding",
@@ -88,12 +87,23 @@ const COMMON_FIELDS: PropField[] = [
       { value: "large", label: "Grande" },
       { value: "none", label: "Nenhum" },
     ],
+    category: "appearance",
   },
+  { key: "titleColor", label: "Cor dos Títulos", type: "color", placeholder: "Automático", category: "appearance" },
+  { key: "subtitleColor", label: "Cor dos Textos", type: "color", placeholder: "Automático", category: "appearance" },
+  { key: "accentColor", label: "Cor de Destaque (Tags/Ícones/Links)", type: "color", placeholder: "Automático", category: "appearance" },
+  { key: "btnBgColor", label: "Cor dos Botões", type: "color", placeholder: "Automático", category: "appearance" },
+  { key: "btnTextColor", label: "Cor do Texto dos Botões", type: "color", placeholder: "Automático", category: "appearance" },
 ];
 
-const COMMON_DEFAULTS = {
-  section_bg_type: "white",
+const COMMON_APPEARANCE_DEFAULTS = {
+  section_bg_type: "#FFFFFF",
   section_padding: "medium",
+  titleColor: "",
+  subtitleColor: "",
+  accentColor: "",
+  btnBgColor: "",
+  btnTextColor: "",
 };
 
 // ---- Registro ----
@@ -118,10 +128,11 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "url", label: "URL", type: "text" },
         ],
       },
-      { key: "bgColor", label: "Cor de Fundo (Fixo)", type: "color" },
-      { key: "textColor", label: "Cor do Texto/Links", type: "color" },
-      { key: "ctaBgColor", label: "Cor de Fundo do Botão", type: "color" },
-      { key: "ctaTextColor", label: "Cor do Texto do Botão", type: "color" },
+      // Aparência
+      { key: "bgColor", label: "Cor de Fundo (Fixo)", type: "color", category: "appearance" },
+      { key: "textColor", label: "Cor do Texto/Links", type: "color", category: "appearance" },
+      { key: "ctaBgColor", label: "Cor de Fundo do Botão CTA", type: "color", category: "appearance" },
+      { key: "ctaTextColor", label: "Cor do Texto do Botão CTA", type: "color", category: "appearance" },
     ],
     defaultProps: {
       site_name: "",
@@ -145,6 +156,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     maxInstances: 1,
     previewImage: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?q=80&w=600&auto=format&fit=crop",
     fields: [
+      // Conteúdo
       { key: "badge", label: "Badge", type: "text", placeholder: "Qualidade Premium" },
       { key: "title", label: "Título", type: "text", placeholder: "O sabor que conquista o Brasil" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Desde 1980..." },
@@ -162,28 +174,25 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "description", label: "Descrição", type: "text" },
         ],
       },
+      // Aparência
       {
         key: "layout_variant",
         label: "Modelo de Layout",
         type: "select",
+        category: "appearance",
         options: [
           { value: "floating", label: "Imagens Flutuantes (Padrão)" },
           { value: "centered_big", label: "Imagem Central Grande" },
           { value: "full_bg", label: "Fundo Total com Overlay" },
         ],
       },
-      {
-        key: "backgroundImage",
-        label: "Imagem de Fundo (para Fundo Total)",
-        type: "image",
-      },
-      {
-        key: "overlayOpacity",
-        label: "Opacidade do Overlay (0-100)",
-        type: "text",
-        placeholder: "40",
-      },
-      ...COMMON_FIELDS,
+      { key: "backgroundImage", label: "Imagem de Fundo (para Fundo Total)", type: "image", category: "appearance" },
+      { key: "overlayOpacity", label: "Opacidade do Overlay (0-100)", type: "text", placeholder: "40", category: "appearance" },
+      { key: "badgeColor", label: "Cor de Fundo do Badge", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "badgeTextColor", label: "Cor do Texto do Badge", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "secondaryBtnBorderColor", label: "Cor Borda Botão Secundário", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "secondaryBtnTextColor", label: "Cor Texto Botão Secundário", type: "color", placeholder: "Automático", category: "appearance" },
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       badge: "Qualidade Premium",
@@ -201,7 +210,11 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       layout_variant: "floating",
       backgroundImage: "https://images.pexels.com/photos/3757942/pexels-photo-3757942.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&dpr=1",
       overlayOpacity: "40",
-      ...COMMON_DEFAULTS,
+      badgeColor: "",
+      badgeTextColor: "",
+      secondaryBtnBorderColor: "",
+      secondaryBtnTextColor: "",
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -215,14 +228,21 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Nossos Queridinhos" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Descubra os sabores..." },
-      { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "#FFFFFF" },
-      ...COMMON_FIELDS,
+      // Aparência
+      { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "cardBorderColor", label: "Cor da Borda dos Cards", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "tagBgColor", label: "Cor de Fundo da Tag", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "tagTextColor", label: "Cor do Texto da Tag", type: "color", placeholder: "Automático", category: "appearance" },
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "Nossos Queridinhos",
       subtitle: "Descubra os sabores que fazem a fama da nossa marca em todo o país.",
-      cardBgColor: "#FFFFFF",
-      ...COMMON_DEFAULTS,
+      cardBgColor: "",
+      cardBorderColor: "",
+      tagBgColor: "",
+      tagTextColor: "",
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -236,14 +256,19 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Explore nosso Cardápio" },
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Mais de 100 opções..." },
-      { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "#FFFFFF" },
-      ...COMMON_FIELDS,
+      // Aparência
+      { key: "cardBgColor", label: "Cor de Fundo dos Cards", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "filterActiveBgColor", label: "Cor de Fundo do Filtro Ativo", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "filterActiveTextColor", label: "Cor do Texto do Filtro Ativo", type: "color", placeholder: "Automático", category: "appearance" },
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "Explore nosso Cardápio",
       subtitle: "Mais de 100 opções preparadas com carinho para você.",
-      cardBgColor: "#FFFFFF",
-      ...COMMON_DEFAULTS,
+      cardBgColor: "",
+      filterActiveBgColor: "",
+      filterActiveTextColor: "",
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -259,7 +284,10 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "buttonText", label: "Texto do Botão", type: "text", placeholder: "Saiba mais" },
       { key: "buttonLink", label: "Link do Botão", type: "url", placeholder: "https://..." },
       { key: "image", label: "Imagem", type: "image" },
-      ...COMMON_FIELDS,
+      { key: "decalNumber", label: "Selo — Número", type: "text", placeholder: "10" },
+      { key: "decalLabel", label: "Selo — Sub", type: "text", placeholder: "Anos" },
+      { key: "decalText", label: "Selo — Texto", type: "text", placeholder: "De Excelência" },
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "Nossa História",
@@ -267,7 +295,10 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       buttonText: "Saiba mais",
       buttonLink: "#",
       image: "",
-      ...COMMON_DEFAULTS,
+      decalNumber: "10",
+      decalLabel: "Anos",
+      decalText: "De Excelência",
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -292,7 +323,10 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "label", label: "Label", type: "text", placeholder: "Unidades" },
         ],
       },
-      ...COMMON_FIELDS,
+      // Aparência
+      { key: "cardBgColor", label: "Cor de Fundo do Card", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "cardBorderColor", label: "Cor da Borda do Card", type: "color", placeholder: "Automático", category: "appearance" },
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "Seja um Franqueado",
@@ -303,7 +337,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
         { value: "700+", label: "Unidades" },
         { value: "40+", label: "Anos de Sucesso" },
       ],
-      ...COMMON_DEFAULTS,
+      cardBgColor: "",
+      cardBorderColor: "",
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -324,12 +360,12 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "caption", label: "Legenda", type: "text" },
         ],
       },
-      ...COMMON_FIELDS,
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "Galeria",
       images: [],
-      ...COMMON_DEFAULTS,
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -344,15 +380,14 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "description", label: "Descrição", type: "textarea" },
       { key: "buttonText", label: "Texto do Botão", type: "text", placeholder: "Pedir Agora" },
       { key: "buttonLink", label: "Link do Botão", type: "url" },
-      ...COMMON_FIELDS,
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "Faça seu pedido agora!",
       description: "Peça pelo iFood e receba em casa.",
       buttonText: "Pedir Agora",
       buttonLink: "#",
-      ...COMMON_DEFAULTS,
-      section_bg_type: "rose_dark",
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -364,12 +399,12 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     fields: [
       { key: "title", label: "Título", type: "text", placeholder: "Título" },
       { key: "content", label: "Conteúdo", type: "richtext" },
-      ...COMMON_FIELDS,
+      ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {
       title: "",
       content: "<p>Escreva seu conteúdo aqui...</p>",
-      ...COMMON_DEFAULTS,
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
@@ -383,6 +418,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
         key: "style",
         label: "Estilo",
         type: "select",
+        category: "appearance",
         options: [
           { value: "scroll_arrow", label: "Seta de Scroll" },
           { value: "line", label: "Linha" },
@@ -390,8 +426,8 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { value: "wave", label: "Onda" },
         ],
       },
-      { key: "backgroundColor", label: "Cor de Fundo (Topo)", type: "color", placeholder: "Ex: #FFFFFF" },
-      { key: "fillColor", label: "Cor de Preenchimento (Base/Onda)", type: "color", placeholder: "Ex: #7B1113" },
+      { key: "backgroundColor", label: "Cor de Fundo (Topo)", type: "color", placeholder: "Ex: #FFFFFF", category: "appearance" },
+      { key: "fillColor", label: "Cor de Preenchimento (Base/Onda)", type: "color", placeholder: "Ex: #000000", category: "appearance" },
     ],
     defaultProps: {
       style: "space",

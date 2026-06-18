@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useFranchiseModal } from "@/context/FranchiseContext";
 import { getSectionStyles } from "@/utils/sectionStyles";
 import { cn } from "@/lib/utils";
@@ -27,15 +27,29 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
   ];
   const isHtml = description.includes("<");
 
+  // Cores dinâmicas — tokens semânticos
+  const titleColor = (editorProps?.titleColor as string) || "";
+  const subtitleColor = (editorProps?.subtitleColor as string) || "";
+  const accentColor = (editorProps?.accentColor as string) || "";
+  const btnBgColor = (editorProps?.btnBgColor as string) || "";
+  const btnTextColor = (editorProps?.btnTextColor as string) || "";
+  const cardBgColor = (editorProps?.cardBgColor as string) || "";
+  const cardBorderColor = (editorProps?.cardBorderColor as string) || "";
+
   const styles = getSectionStyles(editorProps || {});
 
   return (
     <section id="franquia" className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className={cn(
-          "rounded-[40px] shadow-2xl overflow-hidden border",
-          styles.isDark ? "bg-black/20 border-white/10" : "bg-white border-primary/10"
-        )}>
+        <div 
+          className="rounded-[40px] shadow-2xl overflow-hidden"
+          style={{
+            backgroundColor: cardBgColor || (styles.isDark ? 'rgba(0,0,0,0.2)' : '#FFFFFF'),
+            borderWidth: '1px',
+            borderStyle: 'solid',
+            borderColor: cardBorderColor || (styles.isDark ? 'rgba(255,255,255,0.1)' : (accentColor || 'var(--color-primary)') + '1A'),
+          }}
+        >
           <div className="grid grid-cols-1 lg:grid-cols-2">
             
             {/* Content */}
@@ -46,18 +60,21 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               transition={{ duration: 0.8 }}
               className="p-10 md:p-16 lg:p-20 flex flex-col justify-center"
             >
-              <span className="text-tertiary text-xs font-bold uppercase tracking-[0.2em] mb-4 block">Expansão</span>
-              <h2 className={cn(
-                "text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8",
-                styles.isDark ? "text-white" : "text-text-900"
-              )}>
+              <span 
+                className="text-xs font-bold uppercase tracking-[0.2em] mb-4 block"
+                style={{ color: accentColor || 'var(--color-tertiary)' }}
+              >Expansão</span>
+              <h2 
+                className="text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8"
+                style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
+              >
                 {title}
               </h2>
               
-              <div className={cn(
-                "space-y-6 text-lg leading-relaxed mb-12",
-                styles.isDark ? "text-white/80" : "text-text-500"
-              )}>
+              <div 
+                className="space-y-6 text-lg leading-relaxed mb-12"
+                style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
+              >
                 {isHtml ? (
                   <div dangerouslySetInnerHTML={{ __html: description }} />
                 ) : (
@@ -70,30 +87,27 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
               <div className="grid grid-cols-2 gap-8 mb-12">
                 {stats.map((stat, index) => (
                   <div key={index}>
-                    <div className={cn(
-                      "text-4xl md:text-5xl font-display font-black mb-2",
-                      styles.isDark ? "text-white" : "text-text-900"
-                    )}>{stat.value}</div>
-                    <div className={cn(
-                      "text-sm font-bold uppercase tracking-wider",
-                      styles.isDark ? "text-tertiary" : "text-text-400"
-                    )}>{stat.label}</div>
+                    <div 
+                      className="text-4xl md:text-5xl font-display font-black mb-2"
+                      style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
+                    >{stat.value}</div>
+                    <div 
+                      className="text-sm font-bold uppercase tracking-wider"
+                      style={{ color: accentColor || (styles.isDark ? 'var(--color-tertiary)' : 'var(--color-text-400)') }}
+                    >{stat.label}</div>
                   </div>
                 ))}
               </div>
 
-              <button 
+              <FranchiseButton
                 onClick={openModal}
-                className={cn(
-                  "group w-full sm:w-auto font-bold px-10 py-5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3",
-                  styles.isDark 
-                    ? "bg-white text-text-900 hover:bg-white/90 shadow-xl" 
-                    : "bg-primary text-white shadow-primary hover:bg-primary-hover"
-                )}
+                bgColor={btnBgColor}
+                textColor={btnTextColor}
+                isDark={styles.isDark}
               >
                 <span>{buttonText}</span>
                 <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </button>
+              </FranchiseButton>
             </motion.div>
 
             <motion.div 
@@ -117,5 +131,31 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
         </div>
       </div>
     </section>
+  );
+}
+
+// Botão Franchise com hover dinâmico
+function FranchiseButton({ onClick, bgColor, textColor, isDark, children }: {
+  onClick: () => void; bgColor: string; textColor: string; isDark: boolean; children: React.ReactNode;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const baseBg = bgColor || (isDark ? '#FFFFFF' : 'var(--color-primary)');
+  const baseText = textColor || (isDark ? 'var(--color-text-900)' : '#FFFFFF');
+
+  return (
+    <button 
+      onClick={onClick}
+      className="group w-full sm:w-auto font-bold px-10 py-5 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3"
+      style={{
+        backgroundColor: baseBg,
+        color: baseText,
+        filter: hovered ? 'brightness(0.88)' : 'brightness(1)',
+        boxShadow: hovered ? '0 25px 50px -12px rgba(0,0,0,0.25)' : '0 10px 25px -6px rgba(0,0,0,0.15)',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {children}
+    </button>
   );
 }

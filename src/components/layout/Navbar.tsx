@@ -88,7 +88,9 @@ export function Navbar({ settings, props, isEditor }: NavbarProps) {
                 key={idx} 
                 href={link.url} 
                 className="nav-link font-semibold text-sm transition-colors relative"
-                style={{ color: (scrolled || isEditor) ? (customTextColor || "var(--text-500)") : "#FFFFFF" }}
+                style={{ color: (scrolled || isEditor) ? (customTextColor || "var(--color-text-500)") : "#FFFFFF" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = customCtaBgColor || "var(--color-primary)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = (scrolled || isEditor) ? (customTextColor || "var(--color-text-500)") : "#FFFFFF" }}
               >
                 {link.label}
               </a>
@@ -100,10 +102,12 @@ export function Navbar({ settings, props, isEditor }: NavbarProps) {
                 rel="noreferrer"
                 className="flex items-center gap-2 text-sm font-bold tracking-wide px-6 py-2.5 rounded-full transition-all duration-300"
                 style={{ 
-                  backgroundColor: customCtaBgColor || "var(--primary)",
+                  backgroundColor: customCtaBgColor || "var(--color-primary)",
                   color: customCtaTextColor || "#FFFFFF",
-                  boxShadow: customCtaBgColor ? `0 10px 20px ${customCtaBgColor}40` : "0 10px 20px var(--primary-shadow)"
+                  boxShadow: customCtaBgColor ? `0 10px 20px ${customCtaBgColor}40` : "0 10px 20px var(--color-primary-soft)"
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.85)' }}
+                onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)' }}
               >
                 <span>{ctaLabel}</span>
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -155,8 +159,10 @@ export function Navbar({ settings, props, isEditor }: NavbarProps) {
                 transition={{ delay: 0.1 + idx * 0.05 }} 
                 href={link.url} 
                 onClick={() => setMenuOpen(false)} 
-                className="text-3xl font-display font-medium text-text-900 tracking-tight hover:text-primary transition-colors"
-                style={{ color: customTextColor || "" }}
+                className="text-3xl font-display font-medium text-text-900 tracking-tight transition-colors"
+                style={{ color: customTextColor || "var(--color-text-900)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = customCtaBgColor || "var(--color-primary)" }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = customTextColor || "var(--color-text-900)" }}
               >
                 {link.label}
               </motion.a>
@@ -170,11 +176,14 @@ export function Navbar({ settings, props, isEditor }: NavbarProps) {
                 target="_blank" 
                 rel="noreferrer"
                 onClick={() => setMenuOpen(false)}
-                className="mt-4 flex items-center gap-3 px-8 py-4 rounded-full text-xl font-bold shadow-xl shadow-primary/20"
+                className="mt-4 flex items-center gap-3 px-8 py-4 rounded-full text-xl font-bold shadow-xl transition-all"
                 style={{ 
-                  backgroundColor: customCtaBgColor || "var(--primary)",
-                  color: customCtaTextColor || "#FFFFFF" 
+                  backgroundColor: customCtaBgColor || "var(--color-primary)",
+                  color: customCtaTextColor || "#FFFFFF",
+                  boxShadow: customCtaBgColor ? `0 10px 20px ${customCtaBgColor}40` : "0 10px 20px var(--color-primary-soft)"
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.filter = 'brightness(0.85)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.filter = 'brightness(1)'; e.currentTarget.style.transform = 'scale(1)'; }}
               >
                 <span>{ctaLabel}</span>
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">

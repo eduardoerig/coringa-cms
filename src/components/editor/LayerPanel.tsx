@@ -1,171 +1,80 @@
-"use client";
-
+﻿"use client";
 import { useEditorStore } from "@/stores/editorStore";
 import { sectionRegistry } from "./sections/registry";
 import { cn } from "@/lib/utils";
-import { 
-  GripVertical, 
-  Eye, 
-  EyeOff, 
-  Trash2, 
-  Copy,
-  Layers,
-  Search,
-  Plus
-} from "lucide-react";
-import { motion, Reorder } from "framer-motion";
+import { GripVertical, Eye, EyeOff, Trash2, Copy, Layers, AlertCircle, X, Check } from "lucide-react";
+import { motion, Reorder, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+
+function DeleteDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+      className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 p-4 border border-red-100 shadow-lg">
+      <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><AlertCircle className="w-5 h-5 text-red-500" /></div>
+      <p className="text-[11px] font-black text-zinc-900 uppercase tracking-wider">Remover camada?</p>
+      <div className="flex gap-2 w-full">
+        <button onClick={onCancel} className="flex-1 py-2 rounded-xl border border-zinc-200 text-[10px] font-black uppercase tracking-wider text-zinc-600 hover:bg-zinc-50 transition-all flex items-center justify-center gap-1.5"><X className="w-3 h-3" /> Cancelar</button>
+        <button onClick={onConfirm} className="flex-1 py-2 rounded-xl bg-red-500 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-600 transition-all flex items-center justify-center gap-1.5"><Trash2 className="w-3 h-3" /> Remover</button>
+      </div>
+    </motion.div>
+  );
+}
 
 export function LayerPanel() {
-  const { 
-    sections, 
-    reorderSections,
-    selectedSectionId, 
-    selectSection, 
-    removeSection, 
-    duplicateSection,
-    toggleVisibility 
-  } = useEditorStore();
+  const { sections, reorderSections, selectedSectionId, selectSection, removeSection, duplicateSection, toggleVisibility } = useEditorStore();
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  const handleRemove = (id: string) => { removeSection(id); setConfirmId(null); };
 
   return (
-    <div className="w-full border-r border-text-100 bg-white flex flex-col h-full overflow-hidden select-none">
-      {/* Header */}
-      <div className="px-5 py-5 border-b border-text-100 flex items-center justify-between bg-zinc-50/50">
+    <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
+      <div className="px-5 py-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-zinc-900 flex items-center justify-center shadow-lg shadow-zinc-900/10">
-            <Layers className="w-4 h-4 text-white" />
-          </div>
+          <div className="w-8 h-8 rounded-xl bg-zinc-900 flex items-center justify-center shadow-sm"><Layers className="w-4 h-4 text-white" /></div>
           <div>
             <h3 className="font-display font-black text-zinc-900 text-sm tracking-tight">Estrutura</h3>
-            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Camadas</p>
+            <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">Camadas</p>
           </div>
         </div>
-        <div className="text-[10px] font-black text-zinc-400 bg-white px-2.5 py-1 rounded-full border border-zinc-100 shadow-sm">
-          {sections.length} BLOCOS
-        </div>
+        <span className="text-[9px] font-black text-zinc-400 bg-white px-2.5 py-1 rounded-full border border-zinc-100 shadow-sm">{sections.length} BLOCOS</span>
       </div>
 
-      {/* Layer List */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 custom-scrollbar">
         {sections.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="w-16 h-16 rounded-3xl bg-surface-50 flex items-center justify-center mb-4 border border-dashed border-text-200">
-              <Layers className="w-8 h-8 text-text-200" />
-            </div>
-            <h4 className="text-sm font-bold text-text-900 mb-1">Nenhuma camada</h4>
-            <p className="text-xs text-text-400 leading-relaxed">
-              Adicione seções da biblioteca para começar a construir seu site.
-            </p>
+            <div className="w-14 h-14 rounded-2xl bg-zinc-50 flex items-center justify-center mb-4 border-2 border-dashed border-zinc-200"><Layers className="w-7 h-7 text-zinc-200" /></div>
+            <h4 className="text-sm font-bold text-zinc-900 mb-1">Nenhuma camada</h4>
+            <p className="text-xs text-zinc-400 leading-relaxed">Adicione seções da biblioteca para começar.</p>
           </div>
         ) : (
-          <Reorder.Group 
-            axis="y" 
-            values={sections} 
-            onReorder={reorderSections}
-            className="space-y-1.5"
-          >
+          <Reorder.Group axis="y" values={sections} onReorder={reorderSections} className="space-y-1.5">
             {sections.map((section, index) => {
               const entry = sectionRegistry[section.type];
               const Icon = entry?.icon || Layers;
               const isSelected = selectedSectionId === section.id;
               const title = (section.props?.title as string) || entry?.label || "Seção";
+              const isConfirming = confirmId === section.id;
 
               return (
-                <Reorder.Item
-                  key={section.id}
-                  value={section}
-                  className="relative group"
-                >
-                  <div
-                    onClick={() => selectSection(section.id)}
-                    className={cn(
-                      "flex items-center gap-3 p-3 rounded-2xl transition-all border cursor-pointer relative",
-                      isSelected 
-                        ? "bg-zinc-900 text-white border-zinc-900 shadow-xl shadow-zinc-900/10 scale-[1.02]" 
-                        : "bg-white border-transparent hover:bg-zinc-50 hover:border-zinc-200",
-                      !section.visible && "opacity-50 grayscale-[0.5]"
-                    )}
-                  >
-                    {/* Reorder Handle */}
-                    <div className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-zinc-200 group-hover:text-zinc-400 transition-colors">
-                      <GripVertical className={cn("w-4 h-4", isSelected && "text-white/40")} />
+                <Reorder.Item key={section.id} value={section} className="relative group">
+                  <div onClick={() => selectSection(section.id)} className={cn("flex items-center gap-2.5 p-3 rounded-2xl transition-all border cursor-pointer relative overflow-hidden", isSelected ? "bg-zinc-900 text-white border-zinc-900 shadow-xl" : "bg-white border-transparent hover:bg-zinc-50 hover:border-zinc-200", !section.visible && "opacity-50")}>
+                    <AnimatePresence>{isConfirming && <DeleteDialog onConfirm={() => handleRemove(section.id)} onCancel={() => setConfirmId(null)} />}</AnimatePresence>
+                    <div className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-zinc-300 group-hover:text-zinc-400 transition-colors"><GripVertical className={cn("w-4 h-4", isSelected && "text-white/40")} /></div>
+                    <span className={cn("text-[9px] font-black w-4 text-right shrink-0", isSelected ? "text-white/40" : "text-zinc-300")}>#{index + 1}</span>
+                    <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all", isSelected ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200")}>
+                      <Icon className="w-4 h-4" />
                     </div>
-
-                    {/* Icon */}
-                    <div className={cn(
-                      "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300",
-                      isSelected 
-                        ? "bg-white/20 text-white" 
-                        : "bg-zinc-100 text-zinc-500 group-hover:bg-white group-hover:shadow-sm"
-                    )}>
-                      <Icon className="w-4.5 h-4.5" />
-                    </div>
-
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className={cn(
-                        "text-[13px] font-bold truncate transition-colors",
-                        isSelected ? "text-white" : "text-zinc-900"
-                      )}>
-                        {title}
-                      </div>
-                      <div className={cn(
-                        "text-[10px] font-medium tracking-wide uppercase",
-                        isSelected ? "text-white/60" : "text-zinc-400"
-                      )}>
-                        {entry?.label || "Seção"}
-                      </div>
+                      <div className={cn("text-[12px] font-bold truncate", isSelected ? "text-white" : "text-zinc-900")}>{title}</div>
+                      <div className={cn("text-[9px] font-medium tracking-wide uppercase", isSelected ? "text-white/60" : "text-zinc-400")}>{entry?.label}</div>
                     </div>
-
-                      <div className={cn(
-                        "flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-1 group-hover:translate-x-0",
-                        isSelected && "opacity-100"
-                      )}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleVisibility(section.id);
-                          }}
-                          className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-                            isSelected 
-                              ? "hover:bg-white/20 text-white" 
-                              : !section.visible ? "bg-zinc-900/10 text-zinc-900" : "text-zinc-400 hover:bg-white hover:text-zinc-900 hover:shadow-sm"
-                          )}
-                          title={section.visible ? "Ocultar" : "Mostrar"}
-                        >
-                          {section.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                        </button>
-  
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            duplicateSection(section.id);
-                          }}
-                          className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-                            isSelected ? "hover:bg-white/20 text-white" : "text-zinc-400 hover:bg-white hover:text-zinc-900 hover:shadow-sm"
-                          )}
-                          title="Duplicar"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm("Deseja realmente remover esta camada?")) {
-                              removeSection(section.id);
-                            }
-                          }}
-                          className={cn(
-                            "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
-                            isSelected ? "hover:bg-red-500 text-white" : "text-zinc-400 hover:bg-red-50 hover:text-red-600 hover:shadow-sm"
-                          )}
-                          title="Remover"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <div className={cn("flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0", isSelected && "opacity-100")}>
+                      <button onClick={(e) => { e.stopPropagation(); toggleVisibility(section.id); }} className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isSelected ? "hover:bg-white/20 text-white" : "text-zinc-400 hover:bg-white hover:shadow-sm")} title={section.visible ? "Ocultar" : "Mostrar"}>
+                        {section.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); duplicateSection(section.id); }} className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isSelected ? "hover:bg-white/20 text-white" : "text-zinc-400 hover:bg-white hover:shadow-sm")} title="Duplicar"><Copy className="w-3.5 h-3.5" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); setConfirmId(section.id); }} className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isSelected ? "hover:bg-red-500 text-white" : "text-zinc-400 hover:bg-red-50 hover:text-red-500")} title="Remover"><Trash2 className="w-3.5 h-3.5" /></button>
+                    </div>
                   </div>
                 </Reorder.Item>
               );
@@ -174,46 +83,22 @@ export function LayerPanel() {
         )}
       </div>
 
-      {/* Navegação / Preview Section */}
-      <div className="p-4 border-t border-text-100 bg-surface-50/30">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-[10px] font-black text-text-400 uppercase tracking-widest">Navegação</h4>
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+      {sections.length > 0 && (
+        <div className="p-4 border-t border-zinc-100 bg-zinc-50/30">
+          <p className="text-[9px] text-zinc-400 font-black uppercase tracking-widest mb-2">Navegação Rápida</p>
+          <div className="bg-white border border-zinc-100 rounded-xl p-2 space-y-1 max-h-[160px] overflow-y-auto custom-scrollbar">
+            {sections.map((s, i) => {
+              const entry = sectionRegistry[s.type];
+              return (
+                <button key={s.id} onClick={() => selectSection(s.id)} className={cn("w-full h-7 rounded-lg flex items-center px-2 gap-2 text-[10px] font-bold cursor-pointer transition-all border border-transparent", selectedSectionId === s.id ? "bg-zinc-900 text-white" : "bg-zinc-50 text-zinc-500 hover:bg-white hover:border-zinc-200 hover:text-zinc-800")}>
+                  <span className="opacity-40 font-black w-3 text-right">{i + 1}</span>
+                  <span className="truncate flex-1">{(s.props?.title as string) || entry?.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        
-        <div className="bg-white border border-text-100 rounded-xl p-2 shadow-inner min-h-[120px] flex flex-col gap-1 max-h-[200px] overflow-y-auto custom-scrollbar">
-          {sections.map((s, i) => {
-             const entry = sectionRegistry[s.type];
-             return (
-               <div 
-                key={s.id}
-                onClick={() => selectSection(s.id)}
-                className={cn(
-                  "h-7 rounded-lg flex items-center px-2 gap-2 text-[10px] font-bold cursor-pointer transition-all border border-transparent",
-                  selectedSectionId === s.id 
-                    ? "bg-primary text-white shadow-sm shadow-primary/20" 
-                    : "bg-surface-50 text-text-400 hover:bg-white hover:border-text-100 hover:text-text-700"
-                )}
-               >
-                 <span className="opacity-40 font-black">{i + 1}</span>
-                 <span className="truncate flex-1">{(s.props?.title as string) || entry?.label || "Seção"}</span>
-               </div>
-             )
-          })}
-          {sections.length === 0 && (
-            <div className="flex-1 flex flex-col items-center justify-center text-[10px] text-text-300 italic p-4 text-center">
-              Aguardando estrutura...
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="p-3 border-t border-text-100 bg-surface-50/20 text-center">
-        <p className="text-[9px] text-text-400 font-medium">
-          Editor v2.0 • Camarim Estética
-        </p>
-      </div>
+      )}
     </div>
   );
 }
