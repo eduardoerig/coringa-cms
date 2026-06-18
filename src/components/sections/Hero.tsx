@@ -84,11 +84,11 @@ export function Hero({ settings, props: editorProps, isEditor }: HeroProps) {
           <img 
             src={backgroundImage} 
             alt="Hero Background" 
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
           <div 
-            className="absolute inset-0 bg-black" 
-            style={{ opacity: overlayOpacity }}
+            className="absolute inset-0 z-10" 
+            style={{ backgroundColor: `rgba(0, 0, 0, ${overlayOpacity})` }}
           />
         </div>
       )}
