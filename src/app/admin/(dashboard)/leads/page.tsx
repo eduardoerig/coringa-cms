@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { Search, Mail, Phone, Calendar, Download, ChevronDown } from "lucide-react";
+import { Search, Mail, Phone, Calendar, Download, ChevronDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/admin/ToastContainer";
 
 interface Lead {
   id: string;
@@ -16,10 +18,10 @@ interface Lead {
 }
 
 const statusOptions = [
-  { value: "novo", label: "Novo", color: "bg-blue-100 text-blue-800" },
-  { value: "contatado", label: "Contatado", color: "bg-amber-100 text-amber-800" },
-  { value: "convertido", label: "Convertido", color: "bg-green-100 text-green-800" },
-  { value: "descartado", label: "Descartado", color: "bg-text-100 text-text-500" },
+  { value: "novo",       label: "Novo",       color: "bg-blue-500/15 text-blue-300",   dot: "bg-blue-400" },
+  { value: "contatado",  label: "Contatado",  color: "bg-amber-500/15 text-amber-300", dot: "bg-amber-400" },
+  { value: "convertido", label: "Convertido", color: "bg-green-500/15 text-green-300", dot: "bg-green-400" },
+  { value: "descartado", label: "Descartado", color: "bg-[#252540] text-[#64748B]",   dot: "bg-[#475569]" },
 ];
 
 function getStatusStyle(status: string) {
@@ -33,6 +35,7 @@ export default function LeadsAdmin() {
   const [statusFilter, setStatusFilter] = useState("todos");
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const supabase = useMemo(() => createClient(), []);
+  const { toasts, addToast } = useToast();
 
   useEffect(() => {
     void (async () => {
@@ -40,7 +43,10 @@ export default function LeadsAdmin() {
         .from('leads')
         .select('*')
         .order('created_at', { ascending: false });
-      if (error) console.error('Erro ao buscar leads:', error);
+      if (error) {
+        console.error('Erro ao buscar leads:', error);
+        addToast(`Erro ao carregar leads: ${error.message}`, "error");
+      }
       if (data) setLeads(data);
       setLoading(false);
     })();
@@ -72,7 +78,7 @@ export default function LeadsAdmin() {
 
     if (error) {
       console.error('Erro ao atualizar status:', error);
-      // Reverte em caso de erro — refetch
+      addToast("Erro ao atualizar status. Recarregando...", "error");
       const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
       if (data) setLeads(data);
     }
@@ -175,7 +181,12 @@ export default function LeadsAdmin() {
             </thead>
             <tbody className="divide-y divide-text-100">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-text-400">Carregando leads...</td></tr>
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-text-400">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                    Carregando leads...
+                  </td>
+                </tr>
               ) : filteredLeads.length === 0 ? (
                 <tr><td colSpan={5} className="p-8 text-center text-text-400">Nenhum lead encontrado.</td></tr>
               ) : (
@@ -209,11 +220,11 @@ export default function LeadsAdmin() {
                             setOpenDropdownId(openDropdownId === lead.id ? null : lead.id);
                           }}
                           className={cn(
-                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold capitalize cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-text-200",
+                            "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold cursor-pointer transition-all hover:ring-2 hover:ring-offset-1 hover:ring-text-200",
                             getStatusStyle(lead.status)
                           )}
                         >
-                          {lead.status}
+                          {statusOptions.find(s => s.value === lead.status)?.label ?? lead.status}
                           <ChevronDown className="w-3 h-3" />
                         </button>
                         
@@ -231,7 +242,7 @@ export default function LeadsAdmin() {
                                   lead.status === opt.value ? "text-primary font-bold" : "text-text-700"
                                 )}
                               >
-                                <span className={cn("w-2 h-2 rounded-full", opt.color.split(" ")[0])} />
+                                <span className={cn("w-2 h-2 rounded-full", opt.dot)} />
                                 {opt.label}
                               </button>
                             ))}
@@ -246,6 +257,7 @@ export default function LeadsAdmin() {
           </table>
         </div>
       </div>
+      <ToastContainer toasts={toasts} />
     </div>
   );
 }

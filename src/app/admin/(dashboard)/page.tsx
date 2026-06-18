@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { IceCream, Tags, Users, TrendingUp, ExternalLink, Clock } from "lucide-react";
+import { IceCream, Tags, Users, ExternalLink, Clock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -21,13 +21,10 @@ interface RecentLead {
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({
-    products: 0,
-    categories: 0,
-    leads: 0
-  });
+  const [stats, setStats] = useState({ products: 0, categories: 0, leads: 0 });
   const [recentProducts, setRecentProducts] = useState<RecentProduct[]>([]);
   const [recentLeads, setRecentLeads] = useState<RecentLead[]>([]);
+  const [loading, setLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -43,20 +40,21 @@ export default function AdminDashboard() {
       setStats({
         products: productsRes.count || 0,
         categories: categoriesRes.count || 0,
-        leads: leadsRes.count || 0
+        leads: leadsRes.count || 0,
       });
 
       if (latestProducts.data) setRecentProducts(latestProducts.data);
       if (latestLeads.data) setRecentLeads(latestLeads.data);
+      setLoading(false);
     }
 
     fetchData();
   }, [supabase]);
 
   const statCards = [
-    { title: "Total de Produtos", value: stats.products, icon: IceCream, color: "bg-orange-100 text-orange-600", href: "/admin/products" },
-    { title: "Categorias", value: stats.categories, icon: Tags, color: "bg-blue-100 text-blue-600", href: "/admin/categories" },
-    { title: "Leads de Franquia", value: stats.leads, icon: Users, color: "bg-green-100 text-green-600", href: "/admin/leads" },
+    { title: "Total de Produtos", icon: IceCream, value: stats.products, color: "bg-orange-500/10 text-orange-400", href: "/admin/products" },
+    { title: "Categorias",        icon: Tags,     value: stats.categories, color: "bg-blue-500/10 text-blue-400",   href: "/admin/categories" },
+    { title: "Leads de Franquia", icon: Users,    value: stats.leads,     color: "bg-green-500/10 text-green-400", href: "/admin/leads" },
   ];
 
   function timeAgo(dateStr: string) {
@@ -66,8 +64,7 @@ export default function AdminDashboard() {
     if (minutes < 60) return `${minutes}min atrás`;
     const hours = Math.floor(minutes / 60);
     if (hours < 24) return `${hours}h atrás`;
-    const days = Math.floor(hours / 24);
-    return `${days}d atrás`;
+    return `${Math.floor(hours / 24)}d atrás`;
   }
 
   return (
@@ -77,8 +74,8 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Visão Geral</h1>
           <p className="text-text-500 mt-2">Bem-vindo ao painel de controle do site.</p>
         </div>
-        <a 
-          href="/" 
+        <a
+          href="/"
           target="_blank"
           rel="noreferrer"
           className="hidden sm:flex items-center gap-2 text-sm text-text-500 hover:text-primary transition-colors font-medium"
@@ -88,15 +85,16 @@ export default function AdminDashboard() {
         </a>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {statCards.map((stat, i) => (
-          <motion.div 
+          <motion.div
             key={stat.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Link 
+            <Link
               href={stat.href}
               className="bg-white p-6 rounded-2xl border border-text-100 shadow-sm flex items-center gap-6 hover:shadow-md hover:border-primary/20 transition-all duration-200 group block"
             >
@@ -105,7 +103,11 @@ export default function AdminDashboard() {
               </div>
               <div>
                 <p className="text-text-400 text-sm font-medium">{stat.title}</p>
-                <h3 className="text-3xl font-display font-bold text-text-900 mt-1">{stat.value}</h3>
+                {loading ? (
+                  <div className="h-9 w-12 mt-1 rounded-lg bg-text-100/60 animate-pulse" />
+                ) : (
+                  <h3 className="text-3xl font-display font-bold text-text-900 mt-1">{stat.value}</h3>
+                )}
               </div>
             </Link>
           </motion.div>
@@ -117,7 +119,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl border border-text-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-text-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-600">
+              <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400">
                 <IceCream className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-display font-bold text-text-900">Últimos Produtos</h2>
@@ -125,7 +127,11 @@ export default function AdminDashboard() {
             <Link href="/admin/products" className="text-xs text-primary font-bold hover:underline">Ver todos →</Link>
           </div>
 
-          {recentProducts.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            </div>
+          ) : recentProducts.length > 0 ? (
             <ul className="divide-y divide-text-100">
               {recentProducts.map(product => (
                 <li key={product.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50/50 transition-colors">
@@ -138,9 +144,7 @@ export default function AdminDashboard() {
               ))}
             </ul>
           ) : (
-            <div className="p-8 text-center text-text-400 text-sm">
-              Nenhum produto cadastrado.
-            </div>
+            <div className="p-8 text-center text-text-400 text-sm">Nenhum produto cadastrado.</div>
           )}
         </div>
 
@@ -148,7 +152,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl border border-text-100 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b border-text-100">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400">
                 <Users className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-display font-bold text-text-900">Últimos Leads</h2>
@@ -156,7 +160,11 @@ export default function AdminDashboard() {
             <Link href="/admin/leads" className="text-xs text-primary font-bold hover:underline">Ver todos →</Link>
           </div>
 
-          {recentLeads.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            </div>
+          ) : recentLeads.length > 0 ? (
             <ul className="divide-y divide-text-100">
               {recentLeads.map(lead => (
                 <li key={lead.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50/50 transition-colors">
@@ -172,9 +180,7 @@ export default function AdminDashboard() {
               ))}
             </ul>
           ) : (
-            <div className="p-8 text-center text-text-400 text-sm">
-              Nenhum lead recebido.
-            </div>
+            <div className="p-8 text-center text-text-400 text-sm">Nenhum lead recebido.</div>
           )}
         </div>
       </div>

@@ -55,7 +55,9 @@ export function Sidebar() {
 
       <nav className="flex-1 py-8 px-4 space-y-2">
         {menuItems.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive = item.path === "/admin"
+          ? pathname === "/admin"
+          : pathname.startsWith(item.path);
           return (
             <Link
               key={item.name}

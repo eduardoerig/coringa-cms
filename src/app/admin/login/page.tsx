@@ -38,7 +38,7 @@ export default function LoginAdmin() {
         <div className="flex justify-center text-primary mb-4">
           <IceCream className="w-16 h-16" />
         </div>
-        <h2 className="mt-2 text-center text-3xl font-display font-black text-text-900 tracking-tight">
+        <h2 className="mt-2 text-center text-3xl font-sans font-black text-text-900 tracking-tight">
           Acesso Restrito
         </h2>
         <p className="mt-2 text-center text-sm text-text-500">

@@ -2,18 +2,18 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { 
-  Save, 
-  Loader2, 
-  Globe, 
-  Phone, 
-  Share2, 
-  BarChart3, 
-  CheckCircle2
+import {
+  Save,
+  Loader2,
+  Globe,
+  Phone,
+  Share2,
+  BarChart3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { useToast } from "@/hooks/useToast";
+import { ToastContainer } from "@/components/admin/ToastContainer";
 
 interface Setting {
   key: string;
@@ -27,15 +27,14 @@ const tabGroups = [
   {
     groupLabel: "Configurações",
     tabs: [
-      { id: "geral", label: "Geral", icon: Globe },
-      { id: "contato", label: "Contatos", icon: Phone },
-      { id: "social", label: "Redes Sociais", icon: Share2 },
-      { id: "marketing", label: "Marketing & SEO", icon: BarChart3 },
+      { id: "geral",      label: "Geral",           icon: Globe },
+      { id: "contato",    label: "Contatos",         icon: Phone },
+      { id: "social",     label: "Redes Sociais",    icon: Share2 },
+      { id: "marketing",  label: "Marketing & SEO",  icon: BarChart3 },
     ],
   },
 ];
 
-// Flat list para lookup
 const allTabs = tabGroups.flatMap(g => g.tabs);
 
 export default function SettingsAdmin() {
@@ -44,7 +43,7 @@ export default function SettingsAdmin() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("geral");
-  const [successMessage, setSuccessMessage] = useState(false);
+  const { toasts, addToast } = useToast();
   const supabase = useMemo(() => createClient(), []);
 
   // Detectar se há alterações não salvas
@@ -99,8 +98,7 @@ export default function SettingsAdmin() {
     const changedSettings = settings.filter(s => s.value !== originalSettings[s.key]);
     
     if (changedSettings.length === 0) {
-      setSuccessMessage(true);
-      setTimeout(() => setSuccessMessage(false), 3000);
+      addToast("Nenhuma alteração para salvar.", "warning");
       setIsSaving(false);
       return;
     }
@@ -119,13 +117,12 @@ export default function SettingsAdmin() {
     const hasError = results.some(r => r.error);
 
     if (hasError) {
-      alert("Algumas configurações não puderam ser salvas.");
+      addToast("Algumas configurações não puderam ser salvas.", "error");
     } else {
       const map: Record<string, string> = {};
       settings.forEach(s => { map[s.key] = s.value; });
       setOriginalSettings(map);
-      setSuccessMessage(true);
-      setTimeout(() => setSuccessMessage(false), 3000);
+      addToast("Salvo com sucesso!");
     }
     
     setIsSaving(false);
@@ -233,7 +230,7 @@ export default function SettingsAdmin() {
                             >
                               <span
                                 className={cn(
-                                  "inline-block h-4 w-4 transform rounded-full bg-white transition-transform",
+                                  "toggle-knob inline-block h-4 w-4 transform rounded-full transition-transform",
                                   setting.value === 'true' ? "translate-x-6" : "translate-x-1"
                                 )}
                               />
@@ -270,20 +267,7 @@ export default function SettingsAdmin() {
         </div>
       </div>
 
-      {/* Success Notification */}
-      <AnimatePresence>
-        {successMessage && (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 20 }}
-            className="fixed bottom-8 right-8 bg-green-600 text-white px-6 py-3 rounded-xl shadow-xl flex items-center gap-3 z-50"
-          >
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="font-bold">Salvo com sucesso!</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <ToastContainer toasts={toasts} />
     </div>
   );
 }

@@ -4,6 +4,10 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import Image from "next/image";
 import { createClient } from "@/utils/supabase/client";
 import { Plus, Edit2, Trash2, Search, IceCream, X, Save, Upload, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/useToast";
+import { useConfirm } from "@/hooks/useConfirm";
+import { ToastContainer } from "@/components/admin/ToastContainer";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 interface Category {
   id: string;
@@ -28,6 +32,9 @@ export default function ProductsAdmin() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const supabase = useMemo(() => createClient(), []);
+
+  const { toasts, addToast } = useToast();
+  const { confirm, confirmState, respondConfirm } = useConfirm();
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -54,30 +61,36 @@ export default function ProductsAdmin() {
 
     if (error) {
       console.error('Erro ao buscar produtos:', error);
-      alert(`Erro ao buscar produtos: ${error.message}`);
+      addToast(`Erro ao buscar produtos: ${error.message}`, "error");
     }
 
     if (data) setProducts(data);
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, addToast]);
 
   useEffect(() => {
     void (async () => {
-      // Carrega categorias
       const { data: cats } = await supabase.from('categories').select('*');
       if (cats) setCategories(cats);
-      // Carrega produtos (usa o callback memoizado)
       await fetchProducts();
     })();
   }, [supabase, fetchProducts]);
 
   async function handleDelete(id: string) {
-    if (confirm("Tem certeza que deseja excluir este produto?")) {
+    const ok = await confirm({
+      title: "Excluir produto?",
+      message: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      cancelLabel: "Cancelar",
+      variant: "danger",
+    });
+    if (ok) {
       const { error } = await supabase.from('products').delete().eq('id', id);
       if (error) {
-        alert(`Erro ao excluir produto: ${error.message}`);
+        addToast(`Erro ao excluir produto: ${error.message}`, "error");
         console.error(error);
       } else {
+        addToast("Produto excluído.");
         fetchProducts();
       }
     }
@@ -111,11 +124,10 @@ export default function ProductsAdmin() {
   async function uploadImage(file: File): Promise<string | null> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('products')
-      .upload(filePath, file);
+      .upload(fileName, file);
 
     if (uploadError) {
       console.error('Erro ao subir imagem:', uploadError);
@@ -124,14 +136,14 @@ export default function ProductsAdmin() {
 
     const { data: { publicUrl } } = supabase.storage
       .from('products')
-      .getPublicUrl(filePath);
+      .getPublicUrl(fileName);
 
     return publicUrl;
   }
 
   async function handleSaveProduct() {
     if (!formData.title.trim()) {
-      alert('O nome do produto é obrigatório.');
+      addToast("O nome do produto é obrigatório.", "error");
       return;
     }
 
@@ -139,14 +151,13 @@ export default function ProductsAdmin() {
 
     let finalImageUrl = formData.image_url;
 
-    // Se houver um arquivo selecionado, faz o upload primeiro
     if (selectedFile) {
       setUploadProgress(true);
       const uploadedUrl = await uploadImage(selectedFile);
       setUploadProgress(false);
-      
+
       if (!uploadedUrl) {
-        alert('Erro ao fazer upload da imagem. O produto não será salvo.');
+        addToast("Erro ao fazer upload da imagem. O produto não foi salvo.", "error");
         setIsSaving(false);
         return;
       }
@@ -172,10 +183,11 @@ export default function ProductsAdmin() {
     setIsSaving(false);
 
     if (errorResult) {
-      alert(`Erro ao salvar produto: ${errorResult.message}`);
+      addToast(`Erro ao salvar produto: ${errorResult.message}`, "error");
       console.error('Supabase error:', errorResult);
     } else {
       setIsModalOpen(false);
+      addToast(modalMode === "create" ? "Produto criado com sucesso!" : "Produto atualizado!");
       fetchProducts();
     }
   }
@@ -200,7 +212,7 @@ export default function ProductsAdmin() {
           <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Produtos</h1>
           <p className="text-text-500 mt-1">Gerencie os itens do cardápio e os destaques.</p>
         </div>
-        <button 
+        <button
           onClick={openCreateModal}
           className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-sm"
         >
@@ -213,9 +225,9 @@ export default function ProductsAdmin() {
         <div className="p-4 border-b border-text-100 flex items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-300" />
-            <input 
-              type="text" 
-              placeholder="Buscar produtos..." 
+            <input
+              type="text"
+              placeholder="Buscar produtos..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-text-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
@@ -239,7 +251,12 @@ export default function ProductsAdmin() {
             </thead>
             <tbody className="divide-y divide-text-100">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-text-400">Carregando produtos...</td></tr>
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-text-400">
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                    Carregando produtos...
+                  </td>
+                </tr>
               ) : filteredProducts.length === 0 ? (
                 <tr><td colSpan={5} className="p-8 text-center text-text-400">Nenhum produto encontrado.</td></tr>
               ) : (
@@ -270,21 +287,23 @@ export default function ProductsAdmin() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       {product.is_featured ? (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 text-green-600">✓</span>
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-500/15 text-green-400">✓</span>
                       ) : (
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-text-100 text-text-400">-</span>
+                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#1C1C2E] text-[#64748B]">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button 
+                        <button
                           onClick={() => openEditModal(product)}
+                          aria-label={`Editar produto ${product.title}`}
                           className="p-2 text-text-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleDelete(product.id)}
+                          aria-label={`Excluir produto ${product.title}`}
                           className="p-2 text-text-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -302,34 +321,34 @@ export default function ProductsAdmin() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-text-900/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
             <div className="p-6 border-b border-text-100 flex items-center justify-between">
               <h2 className="text-xl font-bold text-text-900">
                 {modalMode === 'create' ? 'Novo Produto' : 'Editar Produto'}
               </h2>
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="text-text-400 hover:text-text-600 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto space-y-4">
               <div>
                 <label className="block text-sm font-bold text-text-700 mb-1">Nome do Produto</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
                   className="w-full px-4 py-2 border border-text-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-text-700 mb-1">Descrição</label>
-                <textarea 
+                <textarea
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   className="w-full px-4 py-2 border border-text-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary h-24 resize-none"
@@ -339,7 +358,7 @@ export default function ProductsAdmin() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-bold text-text-700 mb-1">Categoria</label>
-                  <select 
+                  <select
                     value={formData.category_id}
                     onChange={e => setFormData({...formData, category_id: e.target.value})}
                     className="w-full px-4 py-2 border border-text-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -352,8 +371,8 @@ export default function ProductsAdmin() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-text-700 mb-1">Tag (ex: Novidade)</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.tag}
                     onChange={e => setFormData({...formData, tag: e.target.value})}
                     className="w-full px-4 py-2 border border-text-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
@@ -364,16 +383,15 @@ export default function ProductsAdmin() {
               <div>
                 <label className="block text-sm font-bold text-text-700 mb-1">Imagem do Produto</label>
                 <div className="flex flex-col gap-3">
-                  {/* Preview da Imagem */}
                   {(selectedFile || formData.image_url) && (
                     <div className="relative w-full h-40 bg-surface-50 rounded-xl border border-text-100 overflow-hidden group">
-                      <Image 
-                        src={selectedFile ? URL.createObjectURL(selectedFile) : formData.image_url} 
-                        alt="Preview" 
+                      <Image
+                        src={selectedFile ? URL.createObjectURL(selectedFile) : formData.image_url}
+                        alt={formData.title ? `Preview de ${formData.title}` : "Preview da imagem do produto"}
                         fill
                         className="object-contain p-2"
                       />
-                      <button 
+                      <button
                         type="button"
                         onClick={() => {
                           setSelectedFile(null);
@@ -386,19 +404,24 @@ export default function ProductsAdmin() {
                     </div>
                   )}
 
-                  {/* Input de Arquivo */}
                   <div className="relative">
-                    <input 
-                      type="file" 
-                      accept="image/*"
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
                       onChange={e => {
                         const file = e.target.files?.[0];
-                        if (file) setSelectedFile(file);
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                          addToast("Arquivo muito grande. Máximo: 5 MB.", "error");
+                          return;
+                        }
+                        setSelectedFile(file);
+                        setFormData(prev => ({ ...prev, image_url: "" }));
                       }}
-                      className="hidden" 
+                      className="hidden"
                       id="product-image-upload"
                     />
-                    <label 
+                    <label
                       htmlFor="product-image-upload"
                       className="flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed border-text-200 rounded-xl hover:border-primary hover:bg-surface-50 transition-all cursor-pointer group"
                     >
@@ -408,7 +431,7 @@ export default function ProductsAdmin() {
                       </span>
                     </label>
                     <p className="text-[10px] text-text-400 mt-1 px-1">
-                      * Recomendado: Resolução quadrada (1:1), ex: 800x800px. Preferência por fundo transparente (PNG).
+                      * PNG, JPG ou WebP, máx. 5 MB. Preferência por fundo transparente (PNG), resolução 800×800px.
                     </p>
                   </div>
 
@@ -418,10 +441,13 @@ export default function ProductsAdmin() {
                     <div className="h-px bg-text-100 flex-1"></div>
                   </div>
 
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={formData.image_url}
-                    onChange={e => setFormData({...formData, image_url: e.target.value})}
+                    onChange={e => {
+                      setFormData({...formData, image_url: e.target.value});
+                      if (e.target.value) setSelectedFile(null);
+                    }}
                     placeholder="https://exemplo.com/imagem.png"
                     className="w-full px-4 py-2 border border-text-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs"
                   />
@@ -429,8 +455,8 @@ export default function ProductsAdmin() {
               </div>
 
               <div className="flex items-center gap-2 mt-2">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   id="is_featured"
                   checked={formData.is_featured}
                   onChange={e => setFormData({...formData, is_featured: e.target.checked})}
@@ -443,13 +469,13 @@ export default function ProductsAdmin() {
             </div>
 
             <div className="p-6 border-t border-text-100 bg-surface-50 flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setIsModalOpen(false)}
                 className="px-5 py-2.5 text-sm font-bold text-text-600 hover:bg-text-100 rounded-xl transition-colors"
               >
                 Cancelar
               </button>
-              <button 
+              <button
                 onClick={handleSaveProduct}
                 disabled={isSaving || uploadProgress}
                 className="flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-primary hover:bg-primary/90 rounded-xl transition-colors disabled:opacity-50"
@@ -465,6 +491,9 @@ export default function ProductsAdmin() {
           </div>
         </div>
       )}
+
+      <ToastContainer toasts={toasts} />
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
     </>
   );
 }
