@@ -307,11 +307,12 @@ function MenuCard({ item, styles, editorProps, accentColor, btnColor }: {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div 
-        className="h-[120px] md:h-[180px] flex items-center justify-center p-3 md:p-6 transition-colors duration-300"
-        style={{ backgroundColor: styles.isDark ? 'rgba(255,255,255,0.05)' : (hovered ? 'var(--color-primary-bg)' : 'var(--color-surface-50)') }}
-      >
-        <Image src={item.img} alt={item.title} width={150} height={150} className="max-h-20 md:max-h-32 w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105" />
+      <div className="h-[120px] md:h-[180px] w-full overflow-hidden">
+        <img 
+          src={item.img} 
+          alt={item.title} 
+          className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105" 
+        />
       </div>
       <div className="p-3 md:p-4 flex-1 flex flex-col">
         <span 

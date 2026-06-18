@@ -299,15 +299,12 @@ function HighlightCard({ item, index, isEditor, isInView, styles, cardBgColor, c
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-surface-200/80 rounded-full opacity-0 blur-xl group-hover:blur-3xl group-hover:scale-[15] group-hover:opacity-100 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none -z-10" />
       
       <div className={cn(
-        "relative h-[240px] flex items-center justify-center overflow-visible z-10 transition-colors duration-500 group-hover:bg-transparent",
-        styles.isDark ? 'bg-white/5' : 'bg-surface-50'
+        "relative h-[240px] w-full overflow-hidden z-10 rounded-t-[32px]"
       )}>
-        <Image 
+        <img 
           src={item.image} 
           alt={item.name} 
-          width={250} 
-          height={250} 
-          className="max-h-[190px] w-auto drop-shadow-sm z-20 group-hover:scale-[1.15] group-hover:-translate-y-3 group-hover:drop-shadow-[0_15px_30px_rgba(0,0,0,0.15)] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" 
+          className="w-full h-full object-cover z-20 group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" 
         />
       </div>
 
