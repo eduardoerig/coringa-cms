@@ -36,7 +36,7 @@ const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
 });
 
-import { generatePalette } from "@/utils/colors";
+import { generatePalette, safeCssColor, safeCssTokenId } from "@/utils/colors";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
@@ -91,23 +91,25 @@ export default async function RootLayout({
   const pixelId = settings.marketing_pixel_id;
 
   // Gerar paleta de cores dinâmica
-  const primaryColor = settings.theme_primary_color || "#000000";
-  const surfaceBg = settings.theme_bg_color || "#FFFFFF";
+  const primaryColor = safeCssColor(settings.theme_primary_color, "#000000");
+  const surfaceBg = safeCssColor(settings.theme_bg_color, "#FFFFFF");
   const palette = generatePalette(primaryColor);
 
-  const textHeading = settings.theme_heading_color || "#2C2218";
-  const textBody = settings.theme_text_color || "#5C4A3A";
-  const tertiaryColor = settings.theme_tertiary_color || "#333333";
-  const primaryHover = settings.theme_button_hover || "#A85068";
-  
+  const textHeading = safeCssColor(settings.theme_heading_color, "#2C2218");
+  const textBody = safeCssColor(settings.theme_text_color, "#5C4A3A");
+  const tertiaryColor = safeCssColor(settings.theme_tertiary_color, "#333333");
+  const primaryHover = safeCssColor(settings.theme_button_hover, "#A85068");
+
   const fontSans = settings.theme_font_sans || "inter";
   const fontDisplay = settings.theme_font_display || "playfair-display";
 
   let customTokensCss = "";
   try {
     const tokens = settings.theme_custom_colors ? JSON.parse(settings.theme_custom_colors) : [];
-    tokens.forEach((token: any) => {
-      customTokensCss += `      --${token.id}: ${token.hex};\n`;
+    tokens.forEach((token: { id: string; hex: string }) => {
+      if (safeCssTokenId(token.id) && /^#[0-9A-Fa-f]{3,8}$/.test(token.hex)) {
+        customTokensCss += `      --${token.id}: ${token.hex};\n`;
+      }
     });
   } catch (e) {
     console.error("Erro ao parsear custom colors:", e);

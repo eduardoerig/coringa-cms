@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { getSectionStyles } from "@/utils/sectionStyles";
+import DOMPurify from "isomorphic-dompurify";
 
 interface TextBlockProps {
   props: {
@@ -57,7 +58,7 @@ export function TextBlock({ props }: TextBlockProps) {
               '--tw-prose-bold': styles.isDark ? '#FFFFFF' : 'var(--color-text-900)',
               '--tw-prose-quotes': styles.isDark ? 'rgba(255,255,255,0.6)' : undefined,
             } as React.CSSProperties}
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
           />
         )}
       </div>

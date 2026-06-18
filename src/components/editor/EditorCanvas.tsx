@@ -20,7 +20,7 @@ import {
   Grid3X3
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { generatePalette } from "@/utils/colors";
+import { generatePalette, safeCssColor } from "@/utils/colors";
 import { cn } from "@/lib/utils";
 
 type Viewport = "desktop" | "tablet" | "mobile";
@@ -31,13 +31,13 @@ export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
   const [zoom, setZoom] = useState(0.85);
   const [showGrid, setShowGrid] = useState(true);
 
-  const primaryColor = theme.theme_primary_color || "#2563EB";
-  const surfaceBg = theme.theme_bg_color || "#FAFAFA";
+  const primaryColor = safeCssColor(theme.theme_primary_color, "#2563EB");
+  const surfaceBg = safeCssColor(theme.theme_bg_color, "#FAFAFA");
   const palette = generatePalette(primaryColor);
-  const textHeading = theme.theme_heading_color || "#18181B";
-  const textBody = theme.theme_text_color || "#3F3F46";
-  const tertiaryColor = theme.theme_tertiary_color || "#F59E0B";
-  const primaryHover = theme.theme_button_hover || palette.dark;
+  const textHeading = safeCssColor(theme.theme_heading_color, "#18181B");
+  const textBody = safeCssColor(theme.theme_text_color, "#3F3F46");
+  const tertiaryColor = safeCssColor(theme.theme_tertiary_color, "#F59E0B");
+  const primaryHover = theme.theme_button_hover ? safeCssColor(theme.theme_button_hover, primaryColor) : palette.dark;
   const fontSans = theme.theme_font_sans || "inter";
   const fontDisplay = theme.theme_font_display || "space-grotesk";
 

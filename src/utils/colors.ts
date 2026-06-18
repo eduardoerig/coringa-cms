@@ -1,6 +1,14 @@
-/**
- * Gera uma paleta de cores derivadas a partir de uma cor hexadecimal primária.
- */
+const HEX_REGEX = /^#[0-9A-Fa-f]{3,8}$/;
+const CSS_ID_REGEX = /^[a-zA-Z][a-zA-Z0-9-]*$/;
+
+export function safeCssColor(value: string, fallback: string): string {
+  return HEX_REGEX.test(value?.trim()) ? value.trim() : fallback;
+}
+
+export function safeCssTokenId(id: string): boolean {
+  return CSS_ID_REGEX.test(id);
+}
+
 export function generatePalette(hex: string) {
   try {
     // Validar se o hex é válido (mínimo de 7 caracteres incluindo #)

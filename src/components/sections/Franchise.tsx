@@ -6,6 +6,7 @@ import { useRef, useState } from "react";
 import { useFranchiseModal } from "@/context/FranchiseContext";
 import { getSectionStyles } from "@/utils/sectionStyles";
 import { cn } from "@/lib/utils";
+import DOMPurify from "isomorphic-dompurify";
 
 interface FranchiseProps {
   settings?: Record<string, string>;
@@ -76,7 +77,7 @@ export function Franchise({ settings, props: editorProps }: FranchiseProps) {
                 style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
               >
                 {isHtml ? (
-                  <div dangerouslySetInnerHTML={{ __html: description }} />
+                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(description) }} />
                 ) : (
                   description.split('\n').map((paragraph, i) => (
                     <p key={i}>{paragraph}</p>

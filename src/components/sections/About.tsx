@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { getSectionStyles } from "@/utils/sectionStyles";
 
 interface AboutProps {
@@ -60,7 +61,7 @@ export function About({ settings, props: editorProps, isEditor }: AboutProps) {
               style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
             >
               {isHtml ? (
-                <div dangerouslySetInnerHTML={{ __html: text }} />
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }} />
               ) : (
                 text.split('\n').map((paragraph, i) => (
                   <p key={i}>{paragraph}</p>
