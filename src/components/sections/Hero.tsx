@@ -22,7 +22,9 @@ export function Hero({ settings, props: editorProps, isEditor }: HeroProps) {
 
   const layoutVariant = (editorProps?.layout_variant as string) || "floating";
   const backgroundImage = (editorProps?.backgroundImage as string);
-  const overlayOpacity = parseInt((editorProps?.overlayOpacity as string) || "40") / 100;
+  let parsedOpacity = parseInt(String(editorProps?.overlayOpacity || "40").trim());
+  if (isNaN(parsedOpacity)) parsedOpacity = 40;
+  const overlayOpacity = parsedOpacity / 100;
 
   const title = (editorProps?.title as string) || "Transformamos ideias em experiências";
   const subtitle = (editorProps?.subtitle as string) || "Descubra nossos produtos e serviços feitos com dedicação e paixão.";
@@ -79,12 +81,10 @@ export function Hero({ settings, props: editorProps, isEditor }: HeroProps) {
       {/* Background for Full BG Variant */}
       {layoutVariant === "full_bg" && backgroundImage && (
         <div className="absolute inset-0 z-0">
-          <Image 
+          <img 
             src={backgroundImage} 
             alt="Hero Background" 
-            fill 
-            className="object-cover"
-            priority
+            className="absolute inset-0 w-full h-full object-cover"
           />
           <div 
             className="absolute inset-0 bg-black" 
@@ -207,7 +207,7 @@ export function Hero({ settings, props: editorProps, isEditor }: HeroProps) {
               style={{
                 borderColor: secondaryBtnBorderColor || (layoutVariant === "full_bg" ? 'rgba(255,255,255,0.3)' : styles.isDark ? 'rgba(255,255,255,0.2)' : 'var(--color-text-100)'),
                 color: secondaryBtnTextColor || (layoutVariant === "full_bg" ? '#FFFFFF' : styles.isDark ? '#FFFFFF' : 'var(--color-text-900)'),
-                backgroundColor: layoutVariant === "full_bg" ? 'rgba(255,255,255,0.1)' : (styles.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)'),
+                backgroundColor: (editorProps?.secondaryBtnBgColor as string) || (layoutVariant === "full_bg" ? 'rgba(255,255,255,0.1)' : (styles.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.5)')),
                 backdropFilter: 'blur(12px)',
               }}
             >

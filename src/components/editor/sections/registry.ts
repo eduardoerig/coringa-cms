@@ -192,6 +192,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "badgeTextColor", label: "Cor do Texto do Badge", type: "color", placeholder: "Automático", category: "appearance" },
       { key: "secondaryBtnBorderColor", label: "Cor Borda Botão Secundário", type: "color", placeholder: "Automático", category: "appearance" },
       { key: "secondaryBtnTextColor", label: "Cor Texto Botão Secundário", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "secondaryBtnBgColor", label: "Cor Fundo Botão Secundário", type: "color", placeholder: "Automático", category: "appearance" },
       ...COMMON_APPEARANCE_FIELDS,
     ],
     defaultProps: {

@@ -233,9 +233,7 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
 
   const handleHexCommit = () => {
     const clean = hexInput.trim();
-    if (/^#[0-9A-Fa-f]{3,8}$/.test(clean)) {
-      onChange(clean);
-    }
+    onChange(clean);
     setEditing(false);
   };
 

@@ -69,11 +69,9 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
 
       {value ? (
         <div className="relative group rounded-xl overflow-hidden border border-text-100 bg-surface-50">
-          <Image
+          <img
             src={value}
             alt="Preview"
-            width={400}
-            height={200}
             className="w-full h-32 object-cover"
           />
           <button
