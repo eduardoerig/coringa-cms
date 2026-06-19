@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useEditorStore } from "@/stores/editorStore";
+import { useConfirm } from "@/hooks/useConfirm";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
 
 export interface DesignToken {
@@ -11,6 +13,7 @@ export interface DesignToken {
 
 export function ColorPalettePanel() {
   const { theme, updateTheme } = useEditorStore();
+  const { confirm, confirmState, respondConfirm } = useConfirm();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editHex, setEditHex] = useState("");
@@ -38,10 +41,14 @@ export function ColorPalettePanel() {
     startEditing(newToken);
   };
 
-  const handleRemoveToken = (id: string) => {
-    if (window.confirm("Deseja realmente remover esta cor da paleta global? Isso pode afetar componentes que a utilizam.")) {
-      saveTokens(tokens.filter((t) => t.id !== id));
-    }
+  const handleRemoveToken = async (id: string) => {
+    const ok = await confirm({
+      title: "Remover cor?",
+      message: "Isso pode afetar componentes que a utilizam.",
+      variant: "danger",
+      confirmLabel: "Remover",
+    });
+    if (ok) saveTokens(tokens.filter((t) => t.id !== id));
   };
 
   const startEditing = (token: DesignToken) => {
@@ -82,7 +89,65 @@ export function ColorPalettePanel() {
         </button>
       </div>
 
+      {/* Cores do Tema */}
+      <div className="px-5 py-4 border-b border-zinc-100">
+        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-3">Cores do Tema</p>
+        <div className="space-y-3">
+          {[
+            { key: "theme_primary_color", label: "Cor Primária" },
+            { key: "theme_bg_color", label: "Cor de Fundo" },
+            { key: "theme_tertiary_color", label: "Cor Terciária" },
+          ].map(({ key, label }) => (
+            <div key={key} className="flex items-center gap-3">
+              <input
+                type="color"
+                value={theme[key] || "#000000"}
+                onChange={(e) => updateTheme(key, e.target.value)}
+                className="w-8 h-8 rounded-lg border-2 border-white shadow-sm cursor-pointer p-0 bg-transparent ring-1 ring-zinc-200 hover:ring-zinc-400 transition-all"
+              />
+              <div>
+                <p className="text-[11px] font-bold text-zinc-700">{label}</p>
+                <p className="text-[10px] font-mono text-zinc-400">{theme[key] || "—"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tipografia */}
+      <div className="px-5 py-4 border-b border-zinc-100">
+        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-3">Tipografia</p>
+        <div className="space-y-3">
+          <div>
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-wider block mb-1.5">Fonte Corpo</label>
+            <select
+              value={theme["theme_font_sans"] || "inter"}
+              onChange={(e) => updateTheme("theme_font_sans", e.target.value)}
+              className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all appearance-none cursor-pointer"
+            >
+              <option value="inter">Inter</option>
+              <option value="roboto">Roboto</option>
+              <option value="poppins">Poppins</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] font-black text-zinc-600 uppercase tracking-wider block mb-1.5">Fonte Títulos</label>
+            <select
+              value={theme["theme_font_display"] || "space-grotesk"}
+              onChange={(e) => updateTheme("theme_font_display", e.target.value)}
+              className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all appearance-none cursor-pointer"
+            >
+              <option value="space-grotesk">Space Grotesk</option>
+              <option value="inter">Inter</option>
+              <option value="poppins">Poppins</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Custom Tokens */}
       <div className="p-5 flex-1 overflow-y-auto">
+        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-3">Cores Customizadas</p>
         {tokens.length === 0 ? (
           <div className="text-center py-10">
             <p className="text-xs text-zinc-400">Nenhuma cor cadastrada.</p>
@@ -170,6 +235,8 @@ export function ColorPalettePanel() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
     </div>
   );
 }

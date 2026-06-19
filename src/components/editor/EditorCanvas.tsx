@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { SectionInCanvas } from "./SectionInCanvas";
-import { FooterClient } from "@/components/layout/FooterClient";
 import { 
   Plus, 
   LayoutTemplate, 
@@ -97,8 +96,6 @@ export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
               <Smartphone className="w-4 h-4" />
             </button>
           </div>
-          
-          <div className="h-6 w-px bg-text-100" />
           
           <div className="h-6 w-px bg-text-100" />
 
@@ -263,8 +260,6 @@ export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
               )}
             </div>
 
-            {/* Real Footer */}
-            <FooterClient settings={theme} />
           </div>
         </div>
         </div>

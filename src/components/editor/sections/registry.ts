@@ -11,8 +11,10 @@ import { Navbar } from "@/components/layout/Navbar";
 import { FooterBlock } from "@/components/sections/FooterBlock";
 import {
   Layout,
+  PanelTopOpen,
+  PanelBottomOpen,
+  LayoutGrid,
   Star,
-  UtensilsCrossed,
   BookOpen,
   Building2,
   Images,
@@ -115,7 +117,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     type: "header",
     label: "Cabeçalho",
     description: "Navegação principal e logo do site",
-    icon: Layout,
+    icon: PanelTopOpen,
     fields: [
       { key: "site_name", label: "Nome do Site", type: "text" },
       { key: "logo_url", label: "Logo URL", type: "image" },
@@ -139,13 +141,13 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     defaultProps: {
       site_name: "",
       logo_url: "",
-      cta_label: "Agende Agora",
+      cta_label: "Fale Conosco",
       cta_link: "#",
       links: [
         { label: "Início", url: "#hero-section" },
-        { label: "Serviços", url: "#cardapio" },
+        { label: "Serviços", url: "#produtos" },
         { label: "Sobre", url: "#sobre" },
-        { label: "Spa", url: "#franquia" },
+        { label: "Franquia", url: "#franquia" },
       ],
     },
     maxInstances: 1,
@@ -201,9 +203,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       badge: "Qualidade Premium",
       title: "A solução que conquista o mercado",
       subtitle: "Transformando ideias em resultados extraordinários.",
-      ctaText: "Ver Cardápio",
-      ctaLink: "#cardapio",
-      ctaSecondaryText: "Mais Pedidos",
+      ctaText: "Ver Produtos",
+      ctaLink: "#produtos",
+      ctaSecondaryText: "Saiba Mais",
       ctaSecondaryLink: "#destaques",
       products: [
         { src: "https://placehold.co/600x400/png", alt: "Produto A", description: "Qualidade garantida e excelência." },
@@ -240,7 +242,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     ],
     defaultProps: {
       title: "Nossos Queridinhos",
-      subtitle: "Descubra os sabores que fazem a fama da nossa marca em todo o país.",
+      subtitle: "Conheça os produtos em destaque da nossa marca.",
       cardBgColor: "",
       cardBorderColor: "",
       tagBgColor: "",
@@ -251,9 +253,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
 
   menu: {
     type: "menu",
-    label: "Cardápio",
-    description: "Grade de produtos com filtro por categorias e download de PDF",
-    icon: UtensilsCrossed,
+    label: "Produtos / Catálogo",
+    description: "Grade de produtos com filtro por categorias",
+    icon: LayoutGrid,
     maxInstances: 1,
     previewImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop",
     fields: [
@@ -387,7 +389,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     ],
     defaultProps: {
       title: "Faça seu pedido agora!",
-      description: "Peça pelo iFood e receba em casa.",
+      description: "Entre em contato e saiba mais.",
       buttonText: "Pedir Agora",
       buttonLink: "#",
       ...COMMON_APPEARANCE_DEFAULTS,
@@ -443,7 +445,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     type: "footer",
     label: "Rodapé",
     description: "Rodapé do site com links, redes sociais e informações da empresa.",
-    icon: Layout,
+    icon: PanelBottomOpen,
     fields: [
       { key: "companyName", label: "Nome da Empresa", type: "text", placeholder: "Empresa Exemplo Ltda", category: "content" },
       { key: "cnpj", label: "CNPJ", type: "text", placeholder: "00.000.000/0001-00", category: "content" },
@@ -457,7 +459,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       description: "Oferecemos os melhores produtos e serviços com qualidade e dedicação.",
       siteName: "Meu Site",
       ...COMMON_APPEARANCE_DEFAULTS,
-      section_bg_type: "white",
+      section_bg_type: "#FFFFFF",
     },
     maxInstances: 1,
   },

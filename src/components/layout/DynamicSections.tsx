@@ -10,6 +10,7 @@ import { Gallery } from "@/components/sections/Gallery";
 import { CTABanner } from "@/components/sections/CTABanner";
 import { TextBlock } from "@/components/sections/TextBlock";
 import { Navbar } from "@/components/layout/Navbar";
+import { FooterBlock } from "@/components/sections/FooterBlock";
 
 interface PageSection {
   id: string;
@@ -36,6 +37,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   gallery: Gallery,
   cta_banner: CTABanner,
   text_block: TextBlock,
+  footer: FooterBlock,
 };
 
 export function DynamicSections({ sections, settings }: DynamicSectionsProps) {

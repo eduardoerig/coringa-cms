@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, PlusCircle, Layers, Palette, AlertTriangle, X } from "lucide-react";
+import { useConfirm } from "@/hooks/useConfirm";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { SectionLibrary } from "@/components/editor/SectionLibrary";
@@ -20,7 +22,8 @@ type Toast = { id: number; message: string; type: "success" | "error" };
 
 
 export default function FocusedEditorPage() {
-  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectSection, selectedSectionId } = useEditorStore();
+  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectSection, selectedSectionId, removeSection } = useEditorStore();
+  const { confirm, confirmState, respondConfirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>("library");
   const [isPublished, setIsPublished] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
@@ -30,11 +33,11 @@ export default function FocusedEditorPage() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const supabase = createClient();
 
-  const addToast = (message: string, type: Toast["type"] = "success") => {
+  const addToast = useCallback((message: string, type: Toast["type"] = "success") => {
     const id = Date.now();
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
-  };
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -91,7 +94,6 @@ export default function FocusedEditorPage() {
           return;
         }
 
-        const { theme } = useEditorStore.getState();
         if (Object.keys(theme).length > 0) {
           const themeUpdates = Object.entries(theme).map(([key, value]) => {
             let label = "Configuração de Tema";
@@ -123,7 +125,7 @@ export default function FocusedEditorPage() {
         setSaving(false);
       }
     },
-    [sections, supabase, setSaving]
+    [sections, theme, supabase, setSaving, addToast]
   );
 
   useEffect(() => {
@@ -136,12 +138,18 @@ export default function FocusedEditorPage() {
         const activeElement = document.activeElement;
         if (activeElement?.tagName === "INPUT" || activeElement?.tagName === "TEXTAREA" || activeElement?.getAttribute("contenteditable") === "true") return;
 
-        const { selectedSectionId, removeSection } = useEditorStore.getState();
-        if (selectedSectionId) {
+        const { selectedSectionId: currentId } = useEditorStore.getState();
+        if (currentId) {
           e.preventDefault();
-          if (window.confirm("Deseja realmente remover esta seção?")) {
-            removeSection(selectedSectionId);
-          }
+          (async () => {
+            const ok = await confirm({
+              title: "Remover seção?",
+              message: "Esta ação não pode ser desfeita.",
+              variant: "danger",
+              confirmLabel: "Remover",
+            });
+            if (ok) removeSection(currentId);
+          })();
         }
       }
     };
@@ -194,7 +202,18 @@ export default function FocusedEditorPage() {
           <div className="flex items-center gap-4">
             <Link
               href="/admin/editor"
-              onClick={(e) => { if (isDirty && !window.confirm("Há alterações não salvas. Deseja sair mesmo assim?")) e.preventDefault(); }}
+              onClick={async (e) => {
+                if (isDirty) {
+                  e.preventDefault();
+                  const ok = await confirm({
+                    title: "Sair sem salvar?",
+                    message: "Há alterações não salvas. Deseja sair mesmo assim?",
+                    variant: "danger",
+                    confirmLabel: "Sair",
+                  });
+                  if (ok) window.location.href = "/admin/editor";
+                }
+              }}
               className="group flex items-center gap-2 text-zinc-400 hover:text-zinc-900 transition-all font-black text-[10px] uppercase tracking-widest"
             >
               <div className="w-8 h-8 rounded-xl bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-900 group-hover:text-white transition-all">
@@ -342,34 +361,6 @@ export default function FocusedEditorPage() {
             </div>
             
             <div className="mt-auto flex flex-col gap-6 mb-4">
-              {/* Estilo */}
-              <div className="flex flex-col items-center gap-1 group">
-                <button
-                  onClick={() => {
-                    selectSection("global_theme");
-                    setLeftSidebarCollapsed(true);
-                  }}
-                  className={cn(
-                    "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 relative",
-                    selectedSectionId === "global_theme" 
-                      ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 scale-105" 
-                      : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
-                  )}
-                  title="Cores e Estilo"
-                >
-                  <Palette className={cn("w-[14px] h-[14px] transition-transform", selectedSectionId === "global_theme" ? "scale-105" : "group-hover:scale-105")} />
-                  {selectedSectionId === "global_theme" && (
-                    <motion.div layoutId="nav-pill" className="absolute -left-5 w-1 h-5 bg-zinc-900 rounded-r-full shadow-[4px_0_15px_rgba(0,0,0,0.1)]" />
-                  )}
-                </button>
-                <span className={cn(
-                  "text-[7px] font-normal uppercase tracking-tight transition-colors duration-300",
-                  selectedSectionId === "global_theme" ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600"
-                )}>
-                  Estilo
-                </span>
-              </div>
-
                <button
                 onClick={() => {
                   setLeftSidebarCollapsed(!leftSidebarCollapsed);
@@ -418,11 +409,12 @@ export default function FocusedEditorPage() {
             className="flex-shrink-0 overflow-hidden border-l border-text-100 bg-white z-40 shadow-[-20px_0_40px_rgba(0,0,0,0.02)]"
           >
             <div className="w-[420px] h-full overflow-y-auto custom-scrollbar">
-              <PropertiesPanel />
+              <PropertiesPanel key={selectedSectionId ?? "none"} />
             </div>
           </motion.div>
         </div>
       </div>
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
     </FranchiseProvider>
   );
 }

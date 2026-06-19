@@ -52,19 +52,26 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
           )}
         </AnimatePresence>
 
-        {/* Floating toolbar — alinhada à esquerda se for última seção */}
+        {/* Hidden section badge */}
+        {!section.visible && (
+          <div className="absolute top-3 left-3 z-[60] bg-zinc-900/85 text-white text-[9px] font-black px-2 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 pointer-events-none">
+            <EyeOff className="w-3 h-3" /> Oculto no site
+          </div>
+        )}
+
+        {/* Floating toolbar — inside section, top-right */}
         <AnimatePresence>
           {isSelected && (
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-              className="absolute top-4 right-0 z-[110] translate-x-[calc(100%-4px)] flex flex-col gap-1 p-1.5 bg-zinc-900 text-white rounded-2xl shadow-2xl border border-white/10">
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              className="absolute top-3 right-3 z-[110] flex flex-row gap-1 p-1.5 bg-zinc-900 text-white rounded-2xl shadow-2xl border border-white/10">
               <button onClick={(e) => { e.stopPropagation(); if (index > 0) moveSection(index, index - 1); }} disabled={index === 0} className="p-2 rounded-xl hover:bg-white/10 disabled:opacity-20 transition-colors" title="Mover para cima"><ChevronUp className="w-4 h-4" /></button>
               <button onClick={(e) => { e.stopPropagation(); if (index < sections.length - 1) moveSection(index, index + 1); }} disabled={index === sections.length - 1} className="p-2 rounded-xl hover:bg-white/10 disabled:opacity-20 transition-colors" title="Mover para baixo"><ChevronDown className="w-4 h-4" /></button>
-              <div className="h-px bg-white/10 my-0.5" />
+              <div className="w-px h-4 bg-white/20 mx-0.5 self-center" />
               <button onClick={(e) => { e.stopPropagation(); toggleVisibility(section.id); }} className="p-2 rounded-xl hover:bg-white/10 transition-colors" title={section.visible ? "Ocultar" : "Mostrar"}>
                 {section.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
               <button onClick={(e) => { e.stopPropagation(); duplicateSection(section.id); }} className="p-2 rounded-xl hover:bg-white/10 transition-colors" title="Duplicar"><Copy className="w-4 h-4" /></button>
-              <div className="h-px bg-white/10 my-0.5" />
+              <div className="w-px h-4 bg-white/20 mx-0.5 self-center" />
               <button onClick={(e) => { e.stopPropagation(); setShowDelete(true); }} className="p-2 rounded-xl hover:bg-red-500 transition-colors" title="Remover"><Trash2 className="w-4 h-4" /></button>
             </motion.div>
           )}

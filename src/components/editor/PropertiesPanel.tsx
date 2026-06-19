@@ -3,6 +3,8 @@ import { useEditorStore } from "@/stores/editorStore";
 import { sectionRegistry, type PropField } from "./sections/registry";
 import { RichTextEditor } from "./RichTextEditor";
 import { ImageUploader } from "./ImageUploader";
+import { useConfirm } from "@/hooks/useConfirm";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 import { X, Plus, Trash2, ChevronUp, ChevronDown, Palette, Settings2, Sparkles, Layout, Check, ChevronDown as Down, Keyboard, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -16,6 +18,9 @@ export function PropertiesPanel() {
   const [activeTab, setActiveTab] = useState<TabType>("content");
   const selectedSection = useMemo(() => sections.find((s) => s.id === selectedSectionId), [sections, selectedSectionId]);
   const entry = selectedSection ? sectionRegistry[selectedSection.type] : null;
+
+  const { confirm, confirmState, respondConfirm } = useConfirm();
+  const { resetTheme } = useEditorStore();
 
   if (selectedSectionId === "global_theme") {
     return (
@@ -36,27 +41,21 @@ export function PropertiesPanel() {
           <Accordion title="Paleta de Cores" icon={<Palette className="w-4 h-4" />} defaultOpen>
             <div className="space-y-5">
               <p className="text-[10px] text-zinc-400">
-                O gerenciamento de cores migrou para a aba <strong>Paleta Global</strong> no painel lateral esquerdo.
+                O gerenciamento de cores e tipografia está na aba <strong>Paleta Global</strong> no painel lateral esquerdo.
               </p>
             </div>
           </Accordion>
-          <Accordion title="Tipografia" icon={<Settings2 className="w-4 h-4" />}>
-            <div className="space-y-5">
-              <FieldRenderer field={{ key: "theme_font_sans", label: "Fonte Corpo", type: "select", options: [{ value: "inter", label: "Inter" }, { value: "roboto", label: "Roboto" }, { value: "poppins", label: "Poppins" }] }} value={theme.theme_font_sans || "inter"} onChange={(v) => updateTheme("theme_font_sans", v as string)} />
-              <FieldRenderer field={{ key: "theme_font_display", label: "Fonte Títulos", type: "select", options: [{ value: "space-grotesk", label: "Space Grotesk" }, { value: "inter", label: "Inter" }, { value: "outfit", label: "Outfit" }] }} value={theme.theme_font_display || "space-grotesk"} onChange={(v) => updateTheme("theme_font_display", v as string)} />
-            </div>
-          </Accordion>
-          
+
           <div className="pt-2">
             <button
               onClick={async () => {
-                if(confirm("Tem certeza que deseja resetar todas as cores para o padrão?")) {
-                  await updateTheme("theme_primary_color", "#000000");
-                  await updateTheme("theme_bg_color", "#FFFFFF");
-                  await updateTheme("theme_tertiary_color", "#333333");
-                  await updateTheme("theme_custom_colors", "[]");
-                  window.location.reload();
-                }
+                const ok = await confirm({
+                  title: "Resetar tema?",
+                  message: "Isso irá redefinir todas as cores para o padrão neutro.",
+                  variant: "danger",
+                  confirmLabel: "Resetar",
+                });
+                if (ok) resetTheme();
               }}
               className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 rounded-xl text-xs font-bold uppercase tracking-wider transition-all"
             >
@@ -67,7 +66,7 @@ export function PropertiesPanel() {
           <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
             <p className="text-[10px] text-zinc-500 flex items-center gap-1.5 mb-2 font-bold"><Keyboard className="w-3 h-3" /> Atalhos</p>
             <div className="space-y-1.5">
-              {[["Ctrl+S", "Salvar"], ["Ctrl+Z", "Desfazer"], ["Delete", "Remover seção"]].map(([k, v]) => (
+              {[["Ctrl+S", "Salvar"], ["Delete", "Remover seção"]].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between">
                   <span className="text-[10px] text-zinc-400">{v}</span>
                   <kbd className="text-[9px] font-black bg-white border border-zinc-200 px-1.5 py-0.5 rounded-md text-zinc-600 shadow-sm">{k}</kbd>
@@ -76,6 +75,7 @@ export function PropertiesPanel() {
             </div>
           </div>
         </div>
+        <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
       </div>
     );
   }
@@ -340,9 +340,9 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
       
       {/* Paleta Global - Amostras */}
       <div className="flex flex-wrap gap-1.5 pl-11">
-        {palette.map((swatch, idx) => (
+        {palette.map((swatch) => (
           <button
-            key={idx}
+            key={swatch.id}
             onClick={() => onChange(swatch.id)}
             title={swatch.label}
             className="w-5 h-5 rounded-full border border-zinc-200 hover:scale-110 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-1"

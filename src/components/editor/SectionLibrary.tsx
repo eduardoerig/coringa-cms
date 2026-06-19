@@ -3,7 +3,7 @@
 import { sectionTypes, type SectionRegistryEntry } from "./sections/registry";
 import { useEditorStore } from "@/stores/editorStore";
 import { cn } from "@/lib/utils";
-import { Palette, Plus, Search, Layout, Info, ChevronRight, Layers, Check } from "lucide-react";
+import { Plus, Search, Info, Layers, Check } from "lucide-react";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -31,7 +31,7 @@ const CATEGORY_COLOR: Record<string, string> = {
 };
 
 export function SectionLibrary() {
-  const { sections, addSection, selectSection, selectedSectionId } = useEditorStore();
+  const { sections, addSection } = useEditorStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [addedId, setAddedId] = useState<string | null>(null);
 
@@ -99,57 +99,6 @@ export function SectionLibrary() {
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar">
-        {/* Configurações Globais */}
-        <div className="px-3 pt-4 pb-2">
-          <p className="px-1 text-[9px] font-black text-zinc-400 uppercase tracking-[0.15em] mb-2">
-            Global
-          </p>
-          <button
-            onClick={() => selectSection("global_theme")}
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-left transition-all border group relative overflow-hidden",
-              selectedSectionId === "global_theme"
-                ? "bg-zinc-900 text-white border-zinc-900 shadow-lg"
-                : "bg-white border-zinc-100 hover:border-zinc-300 hover:shadow-sm"
-            )}
-          >
-            <div
-              className={cn(
-                "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
-                selectedSectionId === "global_theme"
-                  ? "bg-white/20 text-white"
-                  : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200"
-              )}
-            >
-              <Palette className="w-4 h-4" />
-            </div>
-            <div className="min-w-0">
-              <div
-                className={cn(
-                  "text-[13px] font-bold truncate",
-                  selectedSectionId === "global_theme" ? "text-white" : "text-zinc-900"
-                )}
-              >
-                Tema e Paleta de Cores
-              </div>
-              <div
-                className={cn(
-                  "text-[10px] font-medium",
-                  selectedSectionId === "global_theme" ? "text-white/70" : "text-zinc-400"
-                )}
-              >
-                Cores globais, tipografia
-              </div>
-            </div>
-            <ChevronRight
-              className={cn(
-                "w-4 h-4 ml-auto shrink-0 transition-colors",
-                selectedSectionId === "global_theme" ? "text-white/60" : "text-zinc-300"
-              )}
-            />
-          </button>
-        </div>
-
         {/* Seções por categoria */}
         {CATEGORY_ORDER.map((cat) => {
           const entries = grouped[cat];

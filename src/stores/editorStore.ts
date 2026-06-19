@@ -36,6 +36,7 @@ export interface EditorState {
   setSaving: (saving: boolean) => void;
   setTheme: (theme: Record<string, string>) => void;
   updateTheme: (key: string, value: string) => void;
+  resetTheme: () => void;
   reset: () => void;
 }
 
@@ -140,10 +141,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setSaving: (saving) => set({ isSaving: saving }),
 
   setTheme: (theme) => set({ theme, isDirty: false }),
-  
+
   updateTheme: (key, value) => {
     const { theme } = get();
     set({ theme: { ...theme, [key]: value }, isDirty: true });
+  },
+
+  resetTheme: () => {
+    const { theme } = get();
+    set({
+      theme: {
+        ...theme,
+        theme_primary_color: "#000000",
+        theme_bg_color: "#FFFFFF",
+        theme_tertiary_color: "#333333",
+        theme_custom_colors: "[]",
+      },
+      isDirty: true,
+    });
   },
 
   reset: () =>

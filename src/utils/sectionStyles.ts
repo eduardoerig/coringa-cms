@@ -2,12 +2,14 @@
  * Utilitário para gerar classes de background e padding baseadas nos campos comuns
  */
 export function getSectionStyles(props: Record<string, any>) {
-  const bgType = props?.section_bg_type || "white";
+  const rawBgType = props?.section_bg_type || "white";
+  // Normalize legacy named value to hex for consistency
+  const bgType = rawBgType === "white" ? "#FFFFFF" : rawBgType;
   const padding = props?.section_padding || "medium";
 
   // Check if it's a custom hex color, css variable or rgb (starts with #, var, rgb)
   const isCustomColor = typeof bgType === 'string' && (bgType.startsWith('#') || bgType.startsWith('var(--') || bgType.startsWith('rgb'));
-  
+
   const bgClasses = {
     white: "bg-white",
     rose_light: "bg-[#FFF8F6]", // Off-white rosado (Camarim)
