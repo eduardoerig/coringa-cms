@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
-import { IceCream, Tags, Users, ExternalLink, Clock, Loader2 } from "lucide-react";
+import { Package, Tags, Users, ExternalLink, Clock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -52,9 +52,9 @@ export default function AdminDashboard() {
   }, [supabase]);
 
   const statCards = [
-    { title: "Total de Produtos", icon: IceCream, value: stats.products, color: "bg-orange-500/10 text-orange-400", href: "/admin/products" },
+    { title: "Total de Produtos", icon: Package, value: stats.products, color: "bg-orange-500/10 text-orange-400", href: "/admin/products" },
     { title: "Categorias",        icon: Tags,     value: stats.categories, color: "bg-blue-500/10 text-blue-400",   href: "/admin/categories" },
-    { title: "Leads de Franquia", icon: Users,    value: stats.leads,     color: "bg-green-500/10 text-green-400", href: "/admin/leads" },
+    { title: "Leads",             icon: Users,    value: stats.leads,     color: "bg-green-500/10 text-green-400", href: "/admin/leads" },
   ];
 
   function timeAgo(dateStr: string) {
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
           >
             <Link
               href={stat.href}
-              className="bg-white p-6 rounded-2xl border border-text-100 shadow-sm flex items-center gap-6 hover:shadow-md hover:border-primary/20 transition-all duration-200 group block"
+              className="bg-surface-100 p-6 rounded-2xl border border-[#1C1C2E] shadow-sm flex items-center gap-6 hover:shadow-md hover:border-primary/20 transition-all duration-200 group block"
             >
               <div className={`w-14 h-14 rounded-full flex items-center justify-center ${stat.color} group-hover:scale-110 transition-transform`}>
                 <stat.icon className="w-7 h-7" />
@@ -116,11 +116,11 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Últimos Produtos */}
-        <div className="bg-white rounded-2xl border border-text-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-text-100">
+        <div className="bg-surface-100 rounded-2xl border border-[#1C1C2E] shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-[#1C1C2E]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400">
-                <IceCream className="w-5 h-5" />
+                <Package className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-display font-bold text-text-900">Últimos Produtos</h2>
             </div>
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </div>
           ) : recentProducts.length > 0 ? (
-            <ul className="divide-y divide-text-100">
+            <ul className="divide-y divide-[#1C1C2E]">
               {recentProducts.map(product => (
                 <li key={product.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50/50 transition-colors">
                   <span className="text-sm font-medium text-text-900 truncate max-w-[200px]">{product.title}</span>
@@ -149,8 +149,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* Últimos Leads */}
-        <div className="bg-white rounded-2xl border border-text-100 shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b border-text-100">
+        <div className="bg-surface-100 rounded-2xl border border-[#1C1C2E] shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b border-[#1C1C2E]">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-400">
                 <Users className="w-5 h-5" />
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
               <Loader2 className="w-5 h-5 animate-spin text-primary" />
             </div>
           ) : recentLeads.length > 0 ? (
-            <ul className="divide-y divide-text-100">
+            <ul className="divide-y divide-[#1C1C2E]">
               {recentLeads.map(lead => (
                 <li key={lead.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-surface-50/50 transition-colors">
                   <div className="min-w-0">

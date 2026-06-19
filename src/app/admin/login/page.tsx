@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { IceCream } from "lucide-react";
+import { Layers } from "lucide-react";
 
 export default function LoginAdmin() {
   const [email, setEmail] = useState("");
@@ -36,7 +36,7 @@ export default function LoginAdmin() {
     <div className="min-h-screen bg-surface-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center text-primary mb-4">
-          <IceCream className="w-16 h-16" />
+          <Layers className="w-16 h-16" />
         </div>
         <h2 className="mt-2 text-center text-3xl font-sans font-black text-text-900 tracking-tight">
           Acesso Restrito
@@ -78,7 +78,7 @@ export default function LoginAdmin() {
             </div>
 
             {error && (
-              <div className="text-primary text-sm font-medium text-center bg-red-50 py-2 rounded-lg">
+              <div className="text-red-500 text-sm font-medium text-center bg-red-500/10 py-2 rounded-lg">
                 {error}
               </div>
             )}

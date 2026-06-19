@@ -50,7 +50,7 @@ export default function LeadsAdmin() {
       if (data) setLeads(data);
       setLoading(false);
     })();
-  }, [supabase]);
+  }, [supabase, addToast]);
 
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
@@ -82,7 +82,7 @@ export default function LeadsAdmin() {
       const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false });
       if (data) setLeads(data);
     }
-  }, [supabase]);
+  }, [supabase, addToast]);
 
   const handleExportCSV = useCallback(() => {
     const headers = ["Nome", "Email", "Telefone", "Mensagem", "Status", "Data"];
@@ -122,21 +122,21 @@ export default function LeadsAdmin() {
     <div className="max-w-6xl mx-auto p-4 pt-24 md:p-10 md:pt-24 space-y-6 overflow-y-auto h-full custom-scrollbar">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Leads (Franquia)</h1>
+          <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Leads</h1>
           <p className="text-text-500 mt-1">Gerencie os contatos recebidos pelo formulário do site.</p>
         </div>
         <button
           onClick={handleExportCSV}
           disabled={filteredLeads.length === 0}
-          className="flex items-center gap-2 bg-white border border-text-200 text-text-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:border-green-400 hover:text-green-700 hover:bg-green-50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 bg-surface-100 border border-text-200 text-text-700 px-5 py-2.5 rounded-xl font-bold text-sm hover:border-green-400 hover:text-green-400 hover:bg-green-500/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Download className="w-4 h-4" />
           Exportar CSV
         </button>
       </div>
 
-      <div className="bg-white border border-text-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-text-100 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <div className="bg-surface-100 border border-[#1C1C2E] rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-[#1C1C2E] flex flex-col sm:flex-row items-start sm:items-center gap-3">
           <div className="relative flex-1 max-w-md w-full">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-300" />
             <input 
@@ -169,9 +169,9 @@ export default function LeadsAdmin() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-surface-50 text-text-500 text-xs uppercase tracking-wider">
+              <tr className="bg-surface-200 text-text-500 text-xs uppercase tracking-wider">
                 <th className="px-6 py-4 font-medium">Contato</th>
                 <th className="px-6 py-4 font-medium">Dados</th>
                 <th className="px-6 py-4 font-medium">Mensagem</th>
@@ -179,7 +179,7 @@ export default function LeadsAdmin() {
                 <th className="px-6 py-4 font-medium">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-text-100">
+            <tbody className="divide-y divide-[#1C1C2E]">
               {loading ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-text-400">
@@ -230,7 +230,7 @@ export default function LeadsAdmin() {
                         
                         {openDropdownId === lead.id && (
                           <div 
-                            className="absolute right-0 top-full mt-1 bg-white border border-text-100 rounded-xl shadow-xl z-20 py-1 min-w-[140px]"
+                            className="absolute right-0 top-full mt-1 bg-surface-100 border border-[#1C1C2E] rounded-xl shadow-xl z-20 py-1 min-w-[140px]"
                             onClick={e => e.stopPropagation()}
                           >
                             {statusOptions.map(opt => (

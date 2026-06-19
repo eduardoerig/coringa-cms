@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, IceCream, Tags, Users, Settings, LogOut, ExternalLink, Menu, X, Paintbrush } from "lucide-react";
+import { LayoutDashboard, Package, Tags, Users, Settings, LogOut, ExternalLink, Menu, X, Paintbrush } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -11,9 +11,9 @@ import { useState, useEffect } from "react";
 const menuItems = [
   { name: "Visão Geral", icon: LayoutDashboard, path: "/admin" },
   { name: "Editor de Página", icon: Paintbrush, path: "/admin/editor" },
-  { name: "Produtos", icon: IceCream, path: "/admin/products" },
+  { name: "Produtos", icon: Package, path: "/admin/products" },
   { name: "Categorias", icon: Tags, path: "/admin/categories" },
-  { name: "Leads (Franquia)", icon: Users, path: "/admin/leads" },
+  { name: "Leads", icon: Users, path: "/admin/leads" },
   { name: "Configurações", icon: Settings, path: "/admin/settings" },
 ];
 
@@ -41,7 +41,7 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
-      <div className="h-20 flex items-center px-8 border-b border-text-100 justify-between">
+      <div className="h-20 flex items-center px-8 border-b border-[#1C1C2E] justify-between">
         <span className="text-xl font-display font-black text-primary tracking-tight">Coringa <span className="text-text-900">Admin</span></span>
         {/* Botão fechar apenas no mobile */}
         <button
@@ -76,7 +76,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-text-100 space-y-1">
+      <div className="p-4 border-t border-[#1C1C2E] space-y-1">
         <a 
           href="/" 
           target="_blank"
@@ -102,14 +102,14 @@ export function Sidebar() {
       {/* Hamburger button — visible only on mobile */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-[60] p-2.5 bg-white border border-text-100 rounded-xl shadow-sm text-text-900 hover:bg-surface-50 transition-colors"
+        className="md:hidden fixed top-4 left-4 z-[60] p-2.5 bg-surface-100 border border-[#1C1C2E] rounded-xl shadow-sm text-text-900 hover:bg-surface-50 transition-colors"
         aria-label="Abrir menu"
       >
         <Menu className="w-5 h-5" />
       </button>
 
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-text-100 min-h-screen flex-col">
+      <aside className="hidden md:flex w-64 bg-surface-100 border-r border-[#1C1C2E] min-h-screen flex-col">
         {sidebarContent}
       </aside>
 
@@ -124,7 +124,7 @@ export function Sidebar() {
       {/* Mobile drawer */}
       <aside 
         className={cn(
-          "md:hidden fixed top-0 left-0 h-full w-72 bg-white z-[80] flex flex-col shadow-2xl transition-transform duration-300 ease-out",
+          "md:hidden fixed top-0 left-0 h-full w-72 bg-surface-100 z-[80] flex flex-col shadow-2xl transition-transform duration-300 ease-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

@@ -34,7 +34,6 @@ const darkCss = `
   /* Divisores de tabela — usa general sibling (~) igual ao Tailwind divide-y */
   .admin-root .divide-text-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1C1C2E !important; }
   .admin-root thead tr { border-bottom: 1px solid #1C1C2E !important; }
-  .admin-root table { border-collapse: collapse; }
   .admin-root th, .admin-root td { border-color: #1C1C2E !important; }
 
   /* Textos com opacity-mix ficam quase invisíveis em dark — forçar valores sólidos */

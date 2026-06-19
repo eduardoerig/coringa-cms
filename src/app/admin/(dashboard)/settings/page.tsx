@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { createClient } from "@/utils/supabase/client";
 import {
   Save,
@@ -62,11 +62,7 @@ export default function SettingsAdmin() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  useEffect(() => {
-    fetchSettings();
-  }, [supabase]);
-
-  async function fetchSettings() {
+  const fetchSettings = useCallback(async () => {
     const { data, error } = await supabase
       .from('site_settings')
       .select('*')
@@ -81,7 +77,11 @@ export default function SettingsAdmin() {
       setOriginalSettings(map);
     }
     setLoading(false);
-  }
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleUpdateValue = (key: string, value: string) => {
     setSettings(prev => prev.map(s => s.key === key ? { ...s, value } : s));

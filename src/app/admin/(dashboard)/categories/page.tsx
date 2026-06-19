@@ -104,6 +104,10 @@ export default function CategoriesAdmin() {
       addToast("O slug é obrigatório.", "error");
       return;
     }
+    if (!/^[a-z0-9-]+$/.test(formData.slug.trim())) {
+      addToast("O slug deve conter apenas letras minúsculas, números e hífens.", "error");
+      return;
+    }
 
     setIsSaving(true);
     let errorResult;
@@ -144,7 +148,7 @@ export default function CategoriesAdmin() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-display font-black text-text-900 tracking-tight">Categorias</h1>
-          <p className="text-text-500 mt-1">Gerencie as categorias do cardápio.</p>
+          <p className="text-text-500 mt-1">Gerencie as categorias dos produtos do site.</p>
         </div>
         <button
           onClick={openCreateModal}
@@ -155,8 +159,8 @@ export default function CategoriesAdmin() {
         </button>
       </div>
 
-      <div className="bg-white border border-text-100 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        <div className="p-4 border-b border-text-100 flex items-center justify-between gap-3">
+      <div className="bg-surface-100 border border-[#1C1C2E] rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="p-4 border-b border-[#1C1C2E] flex items-center justify-between gap-3">
           <div className="relative flex-1 max-w-md">
             <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-text-300" />
             <input
@@ -173,15 +177,15 @@ export default function CategoriesAdmin() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-surface-50 text-text-500 text-xs uppercase tracking-wider">
+              <tr className="bg-surface-200 text-text-500 text-xs uppercase tracking-wider">
                 <th className="px-6 py-4 font-medium">Nome da Categoria</th>
                 <th className="px-6 py-4 font-medium">Slug (URL)</th>
                 <th className="px-6 py-4 font-medium text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-text-100">
+            <tbody className="divide-y divide-[#1C1C2E]">
               {loading ? (
                 <tr>
                   <td colSpan={3} className="p-8 text-center text-text-400">
@@ -230,8 +234,8 @@ export default function CategoriesAdmin() {
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
-            <div className="p-6 border-b border-text-100 flex items-center justify-between">
+          <div className="bg-surface-100 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="p-6 border-b border-[#1C1C2E] flex items-center justify-between">
               <h2 className="text-xl font-bold text-text-900">
                 {modalMode === 'create' ? 'Nova Categoria' : 'Editar Categoria'}
               </h2>
@@ -269,7 +273,7 @@ export default function CategoriesAdmin() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-text-100 bg-surface-50 flex justify-end gap-3">
+            <div className="p-6 border-t border-[#1C1C2E] bg-surface-200 flex justify-end gap-3">
               <button
                 onClick={() => setIsModalOpen(false)}
                 className="px-5 py-2.5 text-sm font-bold text-text-600 hover:bg-text-100 rounded-xl transition-colors"
