@@ -1,11 +1,12 @@
 "use client";
 
 import { sectionTypes, type SectionRegistryEntry } from "./sections/registry";
-import { useEditorStore } from "@/stores/editorStore";
+import { useEditorStore, type DragState } from "@/stores/editorStore";
 import { cn } from "@/lib/utils";
 import { Plus, Search, Info, Layers, Check } from "lucide-react";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useDraggable } from "@dnd-kit/core";
 
 // ---- Thumbnails gerados (caminhos locais → servidos via next/image não é possível fora de public)
 // Usamos as imagens de preview do registry ou fallback SVG
@@ -29,6 +30,115 @@ const CATEGORY_COLOR: Record<string, string> = {
   Conteúdo: "bg-violet-50 text-violet-600 border-violet-100",
   Conversão: "bg-amber-50 text-amber-700 border-amber-100",
 };
+
+function LibraryItem({
+  entry,
+  cat,
+  disabled,
+  isJustAdded,
+  onAdd,
+}: {
+  entry: SectionRegistryEntry;
+  cat: string;
+  disabled: boolean;
+  isJustAdded: boolean;
+  onAdd: (entry: SectionRegistryEntry) => void;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `new:${entry.type}`,
+    data: { kind: "new", sectionType: entry.type } satisfies DragState,
+    disabled,
+  });
+  const Icon = entry.icon;
+
+  return (
+    <button
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      onClick={() => onAdd(entry)}
+      disabled={disabled}
+      className={cn(
+        "w-full rounded-2xl text-left transition-all border overflow-hidden group relative touch-none",
+        disabled
+          ? "opacity-40 grayscale cursor-not-allowed border-transparent bg-zinc-50"
+          : "bg-white border-zinc-100 hover:border-zinc-300 hover:shadow-md active:scale-[0.98] cursor-grab",
+        isDragging && "opacity-50"
+      )}
+    >
+      {/* Thumbnail */}
+      {entry.previewImage && (
+        <div className="w-full h-24 overflow-hidden bg-zinc-100 relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={entry.previewImage}
+            alt={entry.label}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+          <span
+            className={cn(
+              "absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
+              CATEGORY_COLOR[cat]
+            )}
+          >
+            {cat}
+          </span>
+          {!disabled && (
+            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm">
+              <Plus className="w-3.5 h-3.5 text-zinc-900" />
+            </div>
+          )}
+          {disabled && (
+            <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center">
+              <span className="text-[9px] font-black text-white uppercase tracking-wider bg-zinc-900/60 px-2 py-1 rounded-full">
+                Já adicionado
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!entry.previewImage && (
+        <div className="w-full h-16 overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-50 flex items-center justify-center">
+          <Icon className="w-8 h-8 text-zinc-300" />
+        </div>
+      )}
+
+      {/* Info row */}
+      <div className="flex items-center gap-3 px-3 py-2.5">
+        <div
+          className={cn(
+            "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
+            disabled
+              ? "bg-zinc-100 text-zinc-300"
+              : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-900 group-hover:text-white"
+          )}
+        >
+          {isJustAdded ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[12px] font-bold text-zinc-900 truncate">{entry.label}</div>
+          <div className="text-[10px] text-zinc-400 font-medium truncate leading-tight">
+            {entry.description}
+          </div>
+        </div>
+        <AnimatePresence>
+          {isJustAdded && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center"
+            >
+              <Check className="w-3 h-3 text-white" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </button>
+  );
+}
 
 export function SectionLibrary() {
   const { sections, addSection } = useEditorStore();
@@ -109,104 +219,16 @@ export function SectionLibrary() {
                 {cat}
               </p>
               <div className="space-y-1.5">
-                {entries.map((entry) => {
-                  const disabled = !canAdd(entry);
-                  const Icon = entry.icon;
-                  const isJustAdded = addedId === entry.type;
-
-                  return (
-                    <motion.button
-                      key={entry.type}
-                      onClick={() => handleAdd(entry)}
-                      disabled={disabled}
-                      whileHover={disabled ? {} : { scale: 1.01 }}
-                      whileTap={disabled ? {} : { scale: 0.98 }}
-                      className={cn(
-                        "w-full rounded-2xl text-left transition-all border overflow-hidden group relative",
-                        disabled
-                          ? "opacity-40 grayscale cursor-not-allowed border-transparent bg-zinc-50"
-                          : "bg-white border-zinc-100 hover:border-zinc-300 hover:shadow-md active:shadow-sm cursor-pointer"
-                      )}
-                    >
-                      {/* Thumbnail */}
-                      {entry.previewImage && (
-                        <div className="w-full h-24 overflow-hidden bg-zinc-100 relative">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={entry.previewImage}
-                            alt={entry.label}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                          {/* Category badge */}
-                          <span
-                            className={cn(
-                              "absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border",
-                              CATEGORY_COLOR[cat]
-                            )}
-                          >
-                            {cat}
-                          </span>
-                          {/* Add button */}
-                          {!disabled && (
-                            <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                              <Plus className="w-3.5 h-3.5 text-zinc-900" />
-                            </div>
-                          )}
-                          {/* Already added overlay */}
-                          {disabled && (
-                            <div className="absolute inset-0 bg-zinc-900/40 flex items-center justify-center">
-                              <span className="text-[9px] font-black text-white uppercase tracking-wider bg-zinc-900/60 px-2 py-1 rounded-full">
-                                Já adicionado
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* No thumbnail fallback */}
-                      {!entry.previewImage && (
-                        <div className="w-full h-16 overflow-hidden bg-gradient-to-br from-zinc-100 to-zinc-50 flex items-center justify-center">
-                          <Icon className="w-8 h-8 text-zinc-300" />
-                        </div>
-                      )}
-
-                      {/* Info row */}
-                      <div className="flex items-center gap-3 px-3 py-2.5">
-                        <div
-                          className={cn(
-                            "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all",
-                            disabled
-                              ? "bg-zinc-100 text-zinc-300"
-                              : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-900 group-hover:text-white"
-                          )}
-                        >
-                          {isJustAdded ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[12px] font-bold text-zinc-900 truncate">
-                            {entry.label}
-                          </div>
-                          <div className="text-[10px] text-zinc-400 font-medium truncate leading-tight">
-                            {entry.description}
-                          </div>
-                        </div>
-                        <AnimatePresence>
-                          {isJustAdded && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              exit={{ scale: 0 }}
-                              className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center"
-                            >
-                              <Check className="w-3 h-3 text-white" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+                {entries.map((entry) => (
+                  <LibraryItem
+                    key={entry.type}
+                    entry={entry}
+                    cat={cat}
+                    disabled={!canAdd(entry)}
+                    isJustAdded={addedId === entry.type}
+                    onAdd={handleAdd}
+                  />
+                ))}
               </div>
             </div>
           );

@@ -34,6 +34,7 @@ export function TextBlock({ props }: TextBlockProps) {
       <div className="max-w-3xl mx-auto px-6 relative z-10">
         {title && (
           <motion.h2
+            data-field="title"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -46,6 +47,7 @@ export function TextBlock({ props }: TextBlockProps) {
 
         {content && (
           <motion.div
+            data-field="content"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

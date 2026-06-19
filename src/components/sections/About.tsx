@@ -49,14 +49,16 @@ export function About({ settings, props: editorProps, isEditor }: AboutProps) {
               className="text-xs font-bold uppercase tracking-[0.2em] mb-4 block"
               style={{ color: accentColor || (styles.isDark ? 'rgba(255,255,255,0.6)' : 'var(--color-tertiary)') }}
             >A Nossa História</span>
-            <h2 
+            <h2
+              data-field="title"
               className="text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8"
               style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
             >
               {title}
             </h2>
-            
-            <div 
+
+            <div
+              data-field="content"
               className="space-y-6 text-lg leading-relaxed mb-10"
               style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
             >
@@ -69,7 +71,7 @@ export function About({ settings, props: editorProps, isEditor }: AboutProps) {
               )}
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex gap-4" data-field="buttonText">
               <AboutButton
                 href={buttonLink}
                 bgColor={btnBgColor}
@@ -89,7 +91,7 @@ export function About({ settings, props: editorProps, isEditor }: AboutProps) {
             className="relative"
           >
             <div className={`absolute inset-0 rounded-[30px] rotate-3 scale-105 z-0 ${styles.isDark ? 'bg-white/5' : 'bg-surface-100'}`} />
-            <div className={`relative z-10 w-full overflow-hidden rounded-[40px] shadow-2xl flex flex-col items-center border-[8px] ${styles.isDark ? 'border-white/10' : 'border-white'}`}>
+            <div data-field="image" className={`relative z-10 w-full overflow-hidden rounded-[40px] shadow-2xl flex flex-col items-center border-[8px] ${styles.isDark ? 'border-white/10' : 'border-white'}`}>
               <Image 
                 src={imageSrc} 
                 alt="Nossa História"

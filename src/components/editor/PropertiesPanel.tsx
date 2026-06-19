@@ -14,10 +14,36 @@ import { motion, AnimatePresence } from "framer-motion";
 type TabType = "content" | "design";
 
 export function PropertiesPanel() {
-  const { sections, selectedSectionId, selectSection, updateSectionProps, theme, updateTheme } = useEditorStore();
+  const { sections, selectedSectionId, selectSection, updateSectionProps, theme, updateTheme, selectedBlock } = useEditorStore();
   const [activeTab, setActiveTab] = useState<TabType>("content");
   const selectedSection = useMemo(() => sections.find((s) => s.id === selectedSectionId), [sections, selectedSectionId]);
   const entry = selectedSection ? sectionRegistry[selectedSection.type] : null;
+
+  // Edição por bloco: ao selecionar um campo no canvas, abre a aba certa e realça o campo
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const [prevBlockSig, setPrevBlockSig] = useState<string | null>(null);
+  const blockSig =
+    selectedBlock && selectedBlock.sectionId === selectedSectionId
+      ? `${selectedBlock.fieldKey}#${selectedBlock.itemIndex ?? ""}`
+      : null;
+  if (blockSig !== prevBlockSig) {
+    setPrevBlockSig(blockSig);
+    if (selectedBlock && selectedBlock.sectionId === selectedSectionId && entry) {
+      const field = entry.fields.find((f) => f.key === selectedBlock.fieldKey);
+      if (field) {
+        setActiveTab(field.category === "appearance" ? "design" : "content");
+        setHighlightedKey(selectedBlock.fieldKey);
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!highlightedKey) return;
+    const el = document.querySelector(`[data-field-key="${highlightedKey}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setHighlightedKey(null), 2200);
+    return () => clearTimeout(t);
+  }, [highlightedKey]);
 
   const { confirm, confirmState, respondConfirm } = useConfirm();
   const { resetTheme } = useEditorStore();
@@ -134,14 +160,20 @@ export function PropertiesPanel() {
             {contentFields.length > 0 && (
               <Accordion title="Conteúdo" icon={<Sparkles className="w-4 h-4" />} defaultOpen>
                 <div className="space-y-5">
-                  {contentFields.map((f) => <FieldRenderer key={f.key} field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />)}
+                  {contentFields.map((f) => (
+                    <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", highlightedKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
+                      <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
+                    </div>
+                  ))}
                 </div>
               </Accordion>
             )}
             {arrayFields.map((f) => (
-              <Accordion key={f.key} title={f.label} icon={<Plus className="w-4 h-4" />} count={Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0}>
-                <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
-              </Accordion>
+              <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", highlightedKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white")}>
+                <Accordion title={f.label} icon={<Plus className="w-4 h-4" />} count={Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0}>
+                  <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
+                </Accordion>
+              </div>
             ))}
           </>
         ) : (
@@ -150,12 +182,13 @@ export function PropertiesPanel() {
               <Accordion title="Cores e Estilo" icon={<Palette className="w-4 h-4" />} defaultOpen>
                 <div className="space-y-4">
                   {appearanceFields.map((f) => (
-                    <AppearanceFieldRenderer
-                      key={f.key}
-                      field={f}
-                      value={selectedSection.props[f.key]}
-                      onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
-                    />
+                    <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", highlightedKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
+                      <AppearanceFieldRenderer
+                        field={f}
+                        value={selectedSection.props[f.key]}
+                        onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
+                      />
+                    </div>
                   ))}
                 </div>
               </Accordion>
@@ -221,12 +254,12 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
       { id: "var(--theme-surface-50)", label: "Fundo", color: theme.theme_bg_color },
       { id: "var(--theme-tertiary)", label: "Terciária", color: theme.theme_tertiary_color },
     ];
-    
+
     let customs: any[] = [];
     try {
       if (theme.theme_custom_colors) customs = JSON.parse(theme.theme_custom_colors);
-    } catch (e) {}
-    
+    } catch (e) { }
+
     customs.forEach(c => {
       if (c.hex && c.id) {
         rawPalette.push({ id: `var(--${c.id})`, label: c.name || "Customizada", color: c.hex });
@@ -337,7 +370,7 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
           </button>
         )}
       </div>
-      
+
       {/* Paleta Global - Amostras */}
       <div className="flex flex-wrap gap-1.5 pl-11">
         {palette.map((swatch) => (

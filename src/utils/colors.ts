@@ -1,5 +1,7 @@
 const HEX_REGEX = /^#[0-9A-Fa-f]{3,8}$/;
-const CSS_ID_REGEX = /^[a-zA-Z][a-zA-Z0-9-]*$/;
+// Permite letras, dígitos, hífen e underscore — os ids de cores customizadas usam `_`
+// (ex.: `color_l8x2k` gerado em ColorPalettePanel). Sem o `_`, a variável CSS nunca era injetada.
+const CSS_ID_REGEX = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
 
 export function safeCssColor(value: string, fallback: string): string {
   return HEX_REGEX.test(value?.trim()) ? value.trim() : fallback;

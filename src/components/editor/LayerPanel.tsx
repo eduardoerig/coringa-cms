@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useEditorStore } from "@/stores/editorStore";
 import { sectionRegistry } from "./sections/registry";
 import { cn } from "@/lib/utils";

@@ -169,7 +169,7 @@ export function ColorPalettePanel() {
                         className="w-8 h-8 rounded-full shadow-inner border border-zinc-200 shrink-0 overflow-hidden relative cursor-pointer"
                         style={{ backgroundColor: editHex }}
                       >
-                         <input
+                        <input
                           type="color"
                           value={editHex}
                           onChange={(e) => setEditHex(e.target.value)}

@@ -167,23 +167,26 @@ export function Hero({ settings, props: editorProps, isEditor }: HeroProps) {
               color: badgeTextColor || (layoutVariant === "full_bg" || styles.isDark ? '#FFFFFF' : 'var(--color-primary)'),
               backdropFilter: layoutVariant === "full_bg" ? 'blur(12px)' : undefined,
             }}
+            data-field="badge"
           >
             {badge}
           </motion.span>
-          
-          <h1 
+
+          <h1
+            data-field="title"
             className="text-4xl md:text-6xl lg:text-7xl font-display font-black tracking-tight leading-[0.9] mb-6"
-            style={{ 
+            style={{
               color: titleColor || (layoutVariant === "full_bg" ? '#FFFFFF' : styles.isDark ? '#FFFFFF' : 'var(--color-text-900)'),
               textShadow: layoutVariant === "full_bg" ? '0 2px 20px rgba(0,0,0,0.3)' : undefined,
             }}
           >
             {title}
           </h1>
-          
-          <p 
+
+          <p
+            data-field="subtitle"
             className="text-lg md:text-xl leading-relaxed mb-10 max-w-xl mx-auto"
-            style={{ 
+            style={{
               color: subtitleColor || (layoutVariant === "full_bg" ? 'rgba(255,255,255,0.9)' : styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)'),
               textShadow: layoutVariant === "full_bg" ? '0 1px 10px rgba(0,0,0,0.2)' : undefined,
             }}

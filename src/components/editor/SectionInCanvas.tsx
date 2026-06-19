@@ -1,10 +1,12 @@
 "use client";
-import { useEditorStore, type PageSection } from "@/stores/editorStore";
+import { useEditorStore, type PageSection, type DragState } from "@/stores/editorStore";
 import { sectionRegistry, sectionComponentMap } from "./sections/registry";
-import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Props { section: PageSection; index: number; isSelected: boolean; onSelect: () => void; }
 
@@ -29,16 +31,45 @@ function DeleteConfirm({ onConfirm, onCancel }: { onConfirm: () => void; onCance
 }
 
 export function SectionInCanvas({ section, index, isSelected, onSelect }: Props) {
-  const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme } = useEditorStore();
+  const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme, canvasMode, selectBlock } = useEditorStore();
   const [showDelete, setShowDelete] = useState(false);
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+    data: { kind: "reorder", sectionId: section.id } satisfies DragState,
+  });
   const entry = sectionRegistry[section.type];
   const Component = sectionComponentMap[section.type];
   if (!entry || !Component) return null;
 
+  // Modo preview: renderiza apenas seções visíveis, sem nenhum chrome do editor.
+  // `.canvas-render` isola o conteúdo do site do tema dark do editor (ver admin/layout.tsx).
+  if (canvasMode === "preview") {
+    if (!section.visible) return null;
+    return (
+      <div className="canvas-render">
+        <Component props={section.props} settings={theme} isEditor={false} />
+      </div>
+    );
+  }
+
+  const sortableStyle = { transform: CSS.Transform.toString(transform), transition };
+
+  // Clique num elemento com data-field → seleciona aquele campo (edição por bloco)
+  const handleFieldClick = (e: React.MouseEvent) => {
+    e.preventDefault(); // evita navegação de links dentro da seção no editor
+    const fieldEl = (e.target as HTMLElement).closest("[data-field]");
+    if (!fieldEl) return;
+    e.stopPropagation();
+    const fieldKey = fieldEl.getAttribute("data-field");
+    if (!fieldKey) return;
+    const itemAttr = fieldEl.getAttribute("data-item-index");
+    selectBlock({ sectionId: section.id, fieldKey, itemIndex: itemAttr != null ? Number(itemAttr) : undefined });
+  };
+
   return (
     <>
       <AnimatePresence>{showDelete && <DeleteConfirm onConfirm={() => { removeSection(section.id); setShowDelete(false); }} onCancel={() => setShowDelete(false)} />}</AnimatePresence>
-      <div onClick={(e) => { e.stopPropagation(); onSelect(); }} className={cn("group relative transition-all duration-300", isSelected ? "ring-[3px] ring-zinc-900 ring-offset-0 z-20" : "hover:ring-2 hover:ring-zinc-400/40", !section.visible && "opacity-40 grayscale-[0.5]")}>
+      <div ref={setNodeRef} style={sortableStyle} onClick={(e) => { e.stopPropagation(); onSelect(); }} className={cn("group relative transition-all duration-300", isSelected ? "ring-[3px] ring-zinc-900 ring-offset-0 z-20" : "hover:ring-2 hover:ring-zinc-400/40", !section.visible && "opacity-40 grayscale-[0.5]", isDragging && "opacity-50 z-50")}>
         {/* Top label */}
         <AnimatePresence>
           {isSelected && (
@@ -64,6 +95,8 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
           {isSelected && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
               className="absolute top-3 right-3 z-[110] flex flex-row gap-1 p-1.5 bg-zinc-900 text-white rounded-2xl shadow-2xl border border-white/10">
+              <button {...attributes} {...listeners} onClick={(e) => e.stopPropagation()} className="p-2 rounded-xl hover:bg-white/10 transition-colors cursor-grab active:cursor-grabbing touch-none" title="Arraste para reordenar"><GripVertical className="w-4 h-4" /></button>
+              <div className="w-px h-4 bg-white/20 mx-0.5 self-center" />
               <button onClick={(e) => { e.stopPropagation(); if (index > 0) moveSection(index, index - 1); }} disabled={index === 0} className="p-2 rounded-xl hover:bg-white/10 disabled:opacity-20 transition-colors" title="Mover para cima"><ChevronUp className="w-4 h-4" /></button>
               <button onClick={(e) => { e.stopPropagation(); if (index < sections.length - 1) moveSection(index, index + 1); }} disabled={index === sections.length - 1} className="p-2 rounded-xl hover:bg-white/10 disabled:opacity-20 transition-colors" title="Mover para baixo"><ChevronDown className="w-4 h-4" /></button>
               <div className="w-px h-4 bg-white/20 mx-0.5 self-center" />
@@ -79,7 +112,15 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
 
         {/* Component */}
         <div className={cn("relative transition-all duration-300", isSelected && "rounded-sm overflow-hidden")}>
-          <div className="pointer-events-none editor-preview">
+          <div
+            className={cn(
+              "editor-preview canvas-render",
+              isSelected
+                ? "pointer-events-auto [&_[data-field]:hover]:outline [&_[data-field]:hover]:outline-2 [&_[data-field]:hover]:outline-offset-2 [&_[data-field]:hover]:outline-zinc-900/50 [&_[data-field]:hover]:cursor-pointer"
+                : "pointer-events-none"
+            )}
+            onClickCapture={isSelected ? handleFieldClick : undefined}
+          >
             <Component props={section.props} settings={theme} isEditor={true} />
           </div>
           {!isSelected && <div className="absolute inset-0 z-50 cursor-pointer" />}
