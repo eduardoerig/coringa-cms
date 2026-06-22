@@ -25,8 +25,13 @@ Não há framework de testes nem Prettier configurados.
 - **Auth:** Supabase email/senha. `/admin/*` é protegido pelo proxy (redireciona para `/admin/login`).
   Não há camada de papéis — qualquer usuário autenticado é admin com acesso total.
 - **Page builder:** o editor (`src/components/editor/`) usa o store Zustand `src/stores/editorStore.ts`,
-  que mantém histórico de undo/redo. Para adicionar um tipo de seção: crie o bloco em
-  `src/components/sections/` e registre-o em `src/components/editor/sections/registry.ts`.
+  que mantém histórico de undo/redo (com coalescing por campo). Para adicionar um tipo de seção: crie o
+  bloco em `src/components/sections/` e registre-o em `src/components/editor/sections/registry.ts`.
+- **Rascunho × publicado:** `page_layouts.sections` é o **rascunho** (gravado pelo auto-save do editor);
+  `page_layouts.published_sections` é a versão **ao vivo** lida pela landing (`src/app/page.tsx` só lê
+  `published_sections` quando `is_published`). O botão "Publicar" copia rascunho→`published_sections`;
+  "Despublicar" desliga `is_published`. Bancos antigos: rode `supabase/add-draft-publish.sql`.
+  (O tema em `site_settings` ainda é aplicado ao vivo, sem essa separação.)
 - **Theming:** cores semânticas ficam na tabela `site_settings` e são injetadas como CSS variables
   num `<style>` no root layout (`src/app/layout.tsx`). Tailwind 4 via `@tailwindcss/postcss`.
 - Sanitize qualquer HTML vindo do usuário com DOMPurify antes de renderizar.

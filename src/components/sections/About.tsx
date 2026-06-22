@@ -2,9 +2,13 @@
 
 import Image from "next/image";
 import { motion, useInView } from "framer-motion";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import DOMPurify from "isomorphic-dompurify";
-import { getSectionStyles } from "@/utils/sectionStyles";
+import { getSectionStyles, SOFT } from "@/utils/sectionStyles";
+import { cn } from "@/lib/utils";
+import { Eyebrow } from "./primitives/Eyebrow";
+import { SectionHeading } from "./primitives/SectionHeading";
+import { SoftButton } from "./primitives/SoftButton";
 
 interface AboutProps {
   settings?: Record<string, string>;
@@ -12,11 +16,12 @@ interface AboutProps {
   isEditor?: boolean;
 }
 
-export function About({ settings, props: editorProps, isEditor }: AboutProps) {
+export function About({ props: editorProps, isEditor }: AboutProps) {
   const styles = getSectionStyles(editorProps || {});
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
+  const eyebrow = (editorProps?.eyebrow as string) ?? "A nossa história";
   const title = (editorProps?.title as string) || "Nossa História";
   const text = (editorProps?.content as string) || "Nascemos com o sonho de oferecer o melhor para nossos clientes. Com dedicação e paixão, construímos uma trajetória de sucesso e tradição no mercado.";
   const buttonText = (editorProps?.buttonText as string) || "Conheça a história completa";
@@ -35,118 +40,87 @@ export function About({ settings, props: editorProps, isEditor }: AboutProps) {
   const decalText = (editorProps?.decalText as string) || "De Excelência";
 
   return (
-    <section id="sobre" ref={ref} className={`relative overflow-hidden ${styles.container}`} style={styles.style}>
+    <section id="sobre" ref={ref} className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6">
-        
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center">
-          
-          <motion.div 
-            initial={isEditor ? false : { opacity: 0, x: -50 }}
-            animate={isEditor || isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -50 }}
-            transition={{ duration: 0.8 }}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+
+          {/* Texto */}
+          <motion.div
+            initial={isEditor ? false : { opacity: 0, y: 16 }}
+            animate={isEditor || isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <span 
-              className="text-xs font-bold uppercase tracking-[0.2em] mb-4 block"
-              style={{ color: accentColor || (styles.isDark ? 'rgba(255,255,255,0.6)' : 'var(--color-tertiary)') }}
-            >A Nossa História</span>
-            <h2
-              data-field="title"
-              className="text-3xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-8"
-              style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
-            >
+            {eyebrow && (
+              <div className="mb-5">
+                <Eyebrow color={accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow>
+              </div>
+            )}
+
+            <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title" className="mb-7">
               {title}
-            </h2>
+            </SectionHeading>
 
             <div
               data-field="content"
-              className="space-y-6 text-lg leading-relaxed mb-10"
-              style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
+              className="space-y-5 text-base md:text-lg leading-relaxed mb-10"
+              style={{ color: subtitleColor || (styles.isDark ? "rgba(255,255,255,0.8)" : "var(--color-text-500)") }}
             >
               {isHtml ? (
                 <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }} />
               ) : (
-                text.split('\n').map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))
+                text.split("\n").map((paragraph, i) => <p key={i}>{paragraph}</p>)
               )}
             </div>
 
-            <div className="flex gap-4" data-field="buttonText">
-              <AboutButton
-                href={buttonLink}
-                bgColor={btnBgColor}
-                textColor={btnTextColor}
-                isDark={styles.isDark}
-              >
+            <div data-field="buttonText" className="inline-block">
+              <SoftButton href={buttonLink} target="_blank" bgColor={btnBgColor} textColor={btnTextColor} isDark={styles.isDark}>
                 <span>{buttonText}</span>
-                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-              </AboutButton>
+                <svg className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </SoftButton>
             </div>
           </motion.div>
 
-          <motion.div 
-            initial={isEditor ? false : { opacity: 0, scale: 0.95 }}
-            animate={isEditor || isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+          {/* Imagem + selo */}
+          <motion.div
+            initial={isEditor ? false : { opacity: 0, scale: 0.97 }}
+            animate={isEditor || isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
             className="relative"
           >
-            <div className={`absolute inset-0 rounded-[30px] rotate-3 scale-105 z-0 ${styles.isDark ? 'bg-white/5' : 'bg-surface-100'}`} />
-            <div data-field="image" className={`relative z-10 w-full overflow-hidden rounded-[40px] shadow-2xl flex flex-col items-center border-[8px] ${styles.isDark ? 'border-white/10' : 'border-white'}`}>
-              <Image 
-                src={imageSrc} 
+            {/* moldura macia atrás */}
+            <div
+              className={cn("absolute -inset-3 -rotate-2 z-0", SOFT.image)}
+              style={{ backgroundColor: `color-mix(in srgb, ${accentColor || "var(--color-primary)"} 10%, transparent)` }}
+            />
+            <div data-field="image" className={cn("relative z-10 w-full overflow-hidden bg-white", SOFT.image, SOFT.shadow, SOFT.ring)}>
+              <Image
+                src={imageSrc}
                 alt="Nossa História"
-                width={800} 
-                height={800} 
-                className="w-full object-cover object-center max-h-[500px]" 
+                width={800}
+                height={800}
+                className="w-full object-cover object-center max-h-[520px]"
               />
             </div>
-            {/* Decal */}
-            <div className={`absolute -bottom-4 -left-2 md:-bottom-6 md:-left-6 p-3 md:p-4 rounded-2xl md:rounded-3xl shadow-xl z-20 flex items-center gap-3 md:gap-4 ${styles.isDark ? 'bg-[#1a1a1a] border border-white/10' : 'bg-white'}`}>
-              <div 
-                className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-lg md:text-xl"
+
+            {/* Selo macio */}
+            <div className={cn("absolute -bottom-5 -left-3 md:-left-6 p-4 flex items-center gap-3 md:gap-4 bg-white", SOFT.cardSm, SOFT.shadow, SOFT.ring, styles.isDark && "!bg-[#1a1a1a]")}>
+              <div
+                data-field="decalNumber"
+                className="w-11 h-11 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg md:text-xl"
                 style={{
-                  backgroundColor: accentColor || btnBgColor || 'var(--color-primary)',
-                  color: btnTextColor || '#FFFFFF',
+                  backgroundColor: accentColor || btnBgColor || "var(--color-primary)",
+                  color: btnTextColor || "#FFFFFF",
                 }}
               >{decalNumber}</div>
               <div>
-                <div className={`text-[10px] md:text-xs font-bold uppercase tracking-widest leading-none ${styles.isDark ? 'text-white/40' : 'text-text-400'}`}>{decalLabel}</div>
-                <div className={`font-display font-bold text-base md:text-lg ${styles.isDark ? 'text-white' : 'text-text-900'}`}>{decalText}</div>
+                <div data-field="decalLabel" className={cn("text-[11px] font-semibold tracking-wide leading-none mb-1", styles.isDark ? "text-white/50" : "text-text-400")}>{decalLabel}</div>
+                <div data-field="decalText" className={cn("font-display font-semibold text-base md:text-lg", styles.isDark ? "text-white" : "text-text-900")}>{decalText}</div>
               </div>
             </div>
           </motion.div>
-          
+
         </div>
       </div>
     </section>
-  );
-}
-
-// Botão do About com hover dinâmico
-function AboutButton({ href, bgColor, textColor, isDark, children }: { 
-  href: string; bgColor: string; textColor: string; isDark: boolean; children: React.ReactNode;
-}) {
-  const [hovered, setHovered] = useState(false);
-
-  const baseBg = bgColor || (isDark ? '#FFFFFF' : 'var(--color-primary-bg)');
-  const baseText = textColor || (isDark ? 'var(--color-text-900)' : 'var(--color-primary)');
-
-  return (
-    <a 
-      href={href} 
-      target="_blank" 
-      rel="noreferrer" 
-      className="group rounded-full font-bold px-8 py-4 flex items-center gap-2 transition-all duration-300"
-      style={{
-        backgroundColor: baseBg,
-        color: baseText,
-        filter: hovered ? 'brightness(0.85)' : 'brightness(1)',
-        boxShadow: isDark && hovered ? '0 25px 50px -12px rgba(0,0,0,0.25)' : undefined,
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {children}
-    </a>
   );
 }

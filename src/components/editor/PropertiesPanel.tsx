@@ -6,44 +6,34 @@ import { ImageUploader } from "./ImageUploader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Palette, Settings2, Sparkles, Layout, Check, ChevronDown as Down, Keyboard, RotateCcw } from "lucide-react";
+import { X, Plus, Trash2, ChevronUp, ChevronDown, Palette, Settings2, Layout, ChevronDown as Down, Keyboard, RotateCcw, Type, AlignLeft, MousePointerClick, Image as ImageIcon, Tag, LayoutGrid, SlidersHorizontal, Store, Share2, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-type TabType = "content" | "design";
-
 export function PropertiesPanel() {
-  const { sections, selectedSectionId, selectSection, updateSectionProps, theme, updateTheme, selectedBlock } = useEditorStore();
-  const [activeTab, setActiveTab] = useState<TabType>("content");
+  const { sections, selectedSectionId, selectSection, updateSectionProps, selectedBlock } = useEditorStore();
   const selectedSection = useMemo(() => sections.find((s) => s.id === selectedSectionId), [sections, selectedSectionId]);
   const entry = selectedSection ? sectionRegistry[selectedSection.type] : null;
 
-  // Edição por bloco: ao selecionar um campo no canvas, abre a aba certa e realça o campo
-  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
-  const [prevBlockSig, setPrevBlockSig] = useState<string | null>(null);
-  const blockSig =
-    selectedBlock && selectedBlock.sectionId === selectedSectionId
-      ? `${selectedBlock.fieldKey}#${selectedBlock.itemIndex ?? ""}`
-      : null;
-  if (blockSig !== prevBlockSig) {
-    setPrevBlockSig(blockSig);
-    if (selectedBlock && selectedBlock.sectionId === selectedSectionId && entry) {
-      const field = entry.fields.find((f) => f.key === selectedBlock.fieldKey);
-      if (field) {
-        setActiveTab(field.category === "appearance" ? "design" : "content");
-        setHighlightedKey(selectedBlock.fieldKey);
-      }
-    }
-  }
+  // Bloco ativo = campo/item selecionado no canvas que pertence a esta seção.
+  // O realce permanece enquanto o bloco estiver selecionado (sem timeout).
+  const activeBlock =
+    selectedBlock && selectedBlock.sectionId === selectedSectionId ? selectedBlock : null;
+  const targetKey = activeBlock?.fieldKey ?? null;
+  const targetItem = activeBlock?.itemIndex;
+  const targetField = entry?.fields.find((f) => f.key === targetKey) ?? null;
 
+  // Rola até o campo (ou item de lista) alvo quando a seleção muda no canvas.
   useEffect(() => {
-    if (!highlightedKey) return;
-    const el = document.querySelector(`[data-field-key="${highlightedKey}"]`);
+    if (!targetKey) return;
+    const selector =
+      targetItem != null
+        ? `[data-item-key="${targetKey}#${targetItem}"]`
+        : `[data-field-key="${targetKey}"]`;
+    const el = document.querySelector(selector);
     el?.scrollIntoView({ behavior: "smooth", block: "center" });
-    const t = setTimeout(() => setHighlightedKey(null), 2200);
-    return () => clearTimeout(t);
-  }, [highlightedKey]);
+  }, [targetKey, targetItem]);
 
   const { confirm, confirmState, respondConfirm } = useConfirm();
   const { resetTheme } = useEditorStore();
@@ -92,7 +82,7 @@ export function PropertiesPanel() {
           <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
             <p className="text-[10px] text-zinc-500 flex items-center gap-1.5 mb-2 font-bold"><Keyboard className="w-3 h-3" /> Atalhos</p>
             <div className="space-y-1.5">
-              {[["Ctrl+S", "Salvar"], ["Delete", "Remover seção"]].map(([k, v]) => (
+              {[["Ctrl+S", "Salvar"], ["Ctrl+D", "Duplicar seção"], ["Delete", "Remover seção"], ["Esc", "Desselecionar"]].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between">
                   <span className="text-[10px] text-zinc-400">{v}</span>
                   <kbd className="text-[9px] font-black bg-white border border-zinc-200 px-1.5 py-0.5 rounded-md text-zinc-600 shadow-sm">{k}</kbd>
@@ -115,7 +105,7 @@ export function PropertiesPanel() {
         <p className="text-[13px] font-black text-zinc-900 mb-2">Nada selecionado</p>
         <p className="text-xs text-zinc-400 leading-relaxed max-w-[200px] mb-6">Clique em uma seção no canvas para editar suas propriedades.</p>
         <div className="w-full max-w-[220px] space-y-1.5 text-left">
-          {[["Ctrl+S", "Salvar alterações"], ["Delete", "Remover seção selecionada"]].map(([k, v]) => (
+          {[["Ctrl+S", "Salvar alterações"], ["Ctrl+D", "Duplicar seção"], ["Delete", "Remover seção"], ["Esc", "Desselecionar"]].map(([k, v]) => (
             <div key={k} className="flex items-center justify-between bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
               <span className="text-[10px] text-zinc-500 font-medium">{v}</span>
               <kbd className="text-[9px] font-black bg-white border border-zinc-200 px-1.5 py-0.5 rounded-md text-zinc-600">{k}</kbd>
@@ -126,100 +116,129 @@ export function PropertiesPanel() {
     );
   }
 
-  // Separar campos por classificação usando o campo `category`
-  const arrayFields = entry.fields.filter((f) => f.type === "array");
-  const appearanceFields = entry.fields.filter((f) => f.category === "appearance");
-  const contentFields = entry.fields.filter((f) => f.category !== "appearance" && f.type !== "array");
+  // Agrupar campos por elemento (group), preservando a ordem de primeira aparição.
+  const groups: { name: string; fields: PropField[] }[] = [];
+  const groupIndex = new Map<string, number>();
+  for (const f of entry.fields) {
+    const g = f.group ?? "Conteúdo";
+    let i = groupIndex.get(g);
+    if (i === undefined) { i = groups.length; groupIndex.set(g, i); groups.push({ name: g, fields: [] }); }
+    groups[i].fields.push(f);
+  }
+  const targetGroup = targetField?.group ?? null;
 
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
-      <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/50">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm">
+      <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm shrink-0">
             <Layout className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-zinc-900 text-[13px] truncate">{entry.label}</h3>
-            <p className="text-[9px] text-zinc-400 font-bold uppercase tracking-widest">Edição de Bloco</p>
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">
+              {targetField ? (
+                <span className="text-zinc-600">Editando · {targetField.label}</span>
+              ) : (
+                "Clique p/ selecionar · 2× p/ editar"
+              )}
+            </p>
           </div>
-          <button onClick={() => selectSection(null)} className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-zinc-100 transition-colors">
+          <button onClick={() => selectSection(null)} aria-label="Fechar painel" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-zinc-100 transition-colors shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex gap-1 p-1 bg-zinc-100 rounded-xl">
-          {(["content", "design"] as TabType[]).map((t) => (
-            <button key={t} onClick={() => setActiveTab(t)} className={cn("flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all", activeTab === t ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400 hover:text-zinc-600")}>
-              {t === "content" ? "Conteúdo" : "Aparência"}
-            </button>
-          ))}
-        </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-        {activeTab === "content" ? (
-          <>
-            {contentFields.length > 0 && (
-              <Accordion title="Conteúdo" icon={<Sparkles className="w-4 h-4" />} defaultOpen>
-                <div className="space-y-5">
-                  {contentFields.map((f) => (
-                    <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", highlightedKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
-                      <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
-                    </div>
-                  ))}
-                </div>
-              </Accordion>
-            )}
-            {arrayFields.map((f) => (
-              <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", highlightedKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white")}>
-                <Accordion title={f.label} icon={<Plus className="w-4 h-4" />} count={Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0}>
+
+      {/* Painel unificado: Conteúdo, Itens e Aparência numa só rolagem */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 divide-y divide-zinc-100 custom-scrollbar">
+        {contentFields.length > 0 && (
+          <Accordion
+            title="Conteúdo"
+            icon={<Sparkles className="w-4 h-4" />}
+            defaultOpen
+            forceOpen={contentFields.some((f) => f.key === targetKey)}
+          >
+            <div className="space-y-3.5">
+              {contentFields.map((f) => (
+                <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
                   <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
-                </Accordion>
-              </div>
-            ))}
-          </>
-        ) : (
-          <>
-            {appearanceFields.length > 0 && (
-              <Accordion title="Cores e Estilo" icon={<Palette className="w-4 h-4" />} defaultOpen>
-                <div className="space-y-4">
-                  {appearanceFields.map((f) => (
-                    <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", highlightedKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
-                      <AppearanceFieldRenderer
-                        field={f}
-                        value={selectedSection.props[f.key]}
-                        onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
-                      />
-                    </div>
-                  ))}
                 </div>
-              </Accordion>
-            )}
-            <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
-              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1.5"><Sparkles className="w-3 h-3" /> Dica de Design</p>
-              <p className="text-[11px] text-zinc-500 leading-relaxed">Deixe os campos de cor vazios para usar as cores do Tema Global automaticamente. Preencha apenas o que quiser personalizar nesta seção.</p>
+              ))}
             </div>
-          </>
+          </Accordion>
+        )}
+
+        {arrayFields.map((f) => (
+          <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && targetItem == null && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white")}>
+            <Accordion
+              title={`Itens · ${f.label}`}
+              icon={<Plus className="w-4 h-4" />}
+              count={Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0}
+              forceOpen={targetKey === f.key}
+            >
+              <ArrayFieldRenderer
+                field={f}
+                value={(selectedSection.props[f.key] as Record<string, unknown>[]) || []}
+                onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
+                openIndex={targetKey === f.key ? targetItem : undefined}
+              />
+            </Accordion>
+          </div>
+        ))}
+
+        {appearanceFields.length > 0 && (
+          <Accordion
+            title="Aparência"
+            icon={<Palette className="w-4 h-4" />}
+            forceOpen={appearanceFields.some((f) => f.key === targetKey)}
+          >
+            <div className="space-y-2.5">
+              {appearanceFields.map((f) => (
+                <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
+                  <AppearanceFieldRenderer
+                    field={f}
+                    value={selectedSection.props[f.key]}
+                    onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Deixe um campo de cor vazio para herdar a cor do Tema Global. Preencha só o que quiser personalizar nesta seção.
+              </p>
+            </div>
+          </Accordion>
         )}
       </div>
     </div>
   );
 }
 
-function Accordion({ title, icon, children, defaultOpen = false, count }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean; count?: number; }) {
+function Accordion({ title, icon, children, defaultOpen = false, count, forceOpen }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean; count?: number; forceOpen?: boolean; }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  // Abre automaticamente quando o grupo passa a conter o alvo selecionado no canvas
+  // (ajuste de estado durante render — padrão React, sem efeito).
+  const [prevForce, setPrevForce] = useState(forceOpen);
+  if (forceOpen !== prevForce) {
+    setPrevForce(forceOpen);
+    if (forceOpen) setIsOpen(true);
+  }
   return (
-    <div className="border border-zinc-100 rounded-2xl overflow-hidden bg-white">
-      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50/80 hover:bg-zinc-50 transition-colors">
-        <div className="flex items-center gap-2.5">
-          <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isOpen ? "bg-zinc-900 text-white" : "bg-white text-zinc-400 border border-zinc-100")}>{icon}</div>
-          <span className="text-[11px] font-black uppercase tracking-widest text-zinc-800">{title}</span>
-          {count !== undefined && <span className="text-[9px] font-black bg-zinc-100 px-1.5 py-0.5 rounded-full text-zinc-500">{count}</span>}
+    <div className="rounded-xl bg-white">
+      <button onClick={() => setIsOpen(!isOpen)} className="w-full flex items-center justify-between px-1 py-2 group/acc">
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-400 group-hover/acc:text-zinc-600 transition-colors">{icon}</span>
+          <span className="text-[12px] font-semibold tracking-tight text-zinc-700">{title}</span>
+          {count !== undefined && <span className="text-[10px] font-semibold bg-zinc-100 px-1.5 py-0.5 rounded-full text-zinc-500">{count}</span>}
         </div>
         <ChevronDown className={cn("w-4 h-4 text-zinc-300 transition-transform duration-300", isOpen && "rotate-180")} />
       </button>
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isOpen && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }}>
-            <div className="p-4 border-t border-zinc-50">{children}</div>
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }}>
+            <div className="pt-1 pb-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -255,12 +274,14 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
       { id: "var(--theme-tertiary)", label: "Terciária", color: theme.theme_tertiary_color },
     ];
 
-    let customs: any[] = [];
+    let customs: { id: string; hex: string; name?: string }[] = [];
     try {
       if (theme.theme_custom_colors) customs = JSON.parse(theme.theme_custom_colors);
-    } catch (e) { }
+    } catch {
+      /* JSON inválido — ignora */
+    }
 
-    customs.forEach(c => {
+    customs.forEach((c) => {
       if (c.hex && c.id) {
         rawPalette.push({ id: `var(--${c.id})`, label: c.name || "Customizada", color: c.hex });
       }
@@ -308,9 +329,12 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
   const [editing, setEditing] = useState(false);
   const [hexInput, setHexInput] = useState(displayHex);
 
-  useEffect(() => {
+  // Mantém o input em sincronia quando o valor externo muda (ajuste durante render).
+  const [prevDisplayHex, setPrevDisplayHex] = useState(displayHex);
+  if (displayHex !== prevDisplayHex) {
+    setPrevDisplayHex(displayHex);
     setHexInput(displayHex);
-  }, [displayHex]);
+  }
 
   const handleHexCommit = () => {
     const clean = hexInput.trim();
@@ -327,6 +351,8 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
             type="color"
             value={hasValue ? pickerHex : "#CCCCCC"}
             onChange={(e) => { onChange(e.target.value); setHexInput(e.target.value); }}
+            aria-label={label}
+            title={label}
             className="w-8 h-8 rounded-lg border-2 border-white shadow-sm cursor-pointer p-0 bg-transparent ring-1 ring-zinc-200 hover:ring-zinc-400 transition-all"
           />
           {!hasValue && (
@@ -389,26 +415,25 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
 
 
 function FieldRenderer({ field, value, onChange }: { field: PropField; value: unknown; onChange: (v: unknown) => void; }) {
-  const { theme } = useEditorStore();
   switch (field.type) {
     case "text":
       return (
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black text-zinc-700 uppercase tracking-widest block">{field.label}</label>
-          <input type="text" value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all" />
+          <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
+          <input type="text" value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all" />
         </div>
       );
     case "textarea":
       return (
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black text-zinc-700 uppercase tracking-widest block">{field.label}</label>
-          <textarea value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} rows={3} className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all resize-none" />
+          <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
+          <textarea value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder} rows={3} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all resize-none" />
         </div>
       );
     case "richtext":
       return (
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black text-zinc-700 uppercase tracking-widest block">{field.label}</label>
+          <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
           <RichTextEditor content={(value as string) || ""} onChange={onChange} />
         </div>
       );
@@ -416,9 +441,9 @@ function FieldRenderer({ field, value, onChange }: { field: PropField; value: un
       const opts = [...(field.options || [])];
       return (
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black text-zinc-700 uppercase tracking-widest block">{field.label}</label>
+          <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
           <div className="relative">
-            <select value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all appearance-none cursor-pointer pr-8">
+            <select value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all appearance-none cursor-pointer pr-8">
               {opts.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
             <Down className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-400 pointer-events-none" />
@@ -433,8 +458,8 @@ function FieldRenderer({ field, value, onChange }: { field: PropField; value: un
     case "url":
       return (
         <div className="space-y-1.5">
-          <label className="text-[10px] font-black text-zinc-700 uppercase tracking-widest block">{field.label}</label>
-          <input type="text" value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder || "https://..."} className="w-full px-3 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all" />
+          <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
+          <input type="text" value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder || "https://..."} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all" />
         </div>
       );
     case "array":
@@ -444,10 +469,24 @@ function FieldRenderer({ field, value, onChange }: { field: PropField; value: un
   }
 }
 
-function ArrayFieldRenderer({ field, value, onChange }: { field: PropField; value: Record<string, unknown>[]; onChange: (v: unknown) => void; }) {
+function ArrayFieldRenderer({ field, value, onChange, openIndex }: { field: PropField; value: Record<string, unknown>[]; onChange: (v: unknown) => void; openIndex?: number; }) {
   const items = Array.isArray(value) ? value : [];
-  const addItem = () => { const b: Record<string, unknown> = {}; field.itemFields?.forEach((f) => { b[f.key] = ""; }); onChange([...items, b]); };
-  const removeItem = (i: number) => onChange(items.filter((_, idx) => idx !== i));
+  // Qual item está expandido (um por vez). Sincroniza com o alvo do clique no canvas
+  // via ajuste de estado durante render (padrão React, sem efeito).
+  const [open, setOpen] = useState<number | null>(openIndex ?? null);
+  const [prevOpenIndex, setPrevOpenIndex] = useState(openIndex);
+  if (openIndex !== prevOpenIndex) {
+    setPrevOpenIndex(openIndex);
+    if (openIndex != null) setOpen(openIndex);
+  }
+
+  const addItem = () => {
+    const b: Record<string, unknown> = {};
+    field.itemFields?.forEach((f) => { b[f.key] = ""; });
+    onChange([...items, b]);
+    setOpen(items.length); // abre o item recém-criado
+  };
+  const removeItem = (i: number) => { onChange(items.filter((_, idx) => idx !== i)); setOpen(null); };
   const updateItem = (i: number, k: string, v: unknown) => onChange(items.map((item, idx) => idx === i ? { ...item, [k]: v } : item));
   const moveItem = (i: number, dir: "up" | "down") => {
     if (dir === "up" && i === 0) return;
@@ -455,22 +494,50 @@ function ArrayFieldRenderer({ field, value, onChange }: { field: PropField; valu
     const n = [...items]; const si = dir === "up" ? i - 1 : i + 1;
     [n[i], n[si]] = [n[si], n[i]]; onChange(n);
   };
+
+  // Rótulo do cabeçalho: primeiro campo de texto preenchido, ou "Item N".
+  const labelOf = (item: Record<string, unknown>, i: number) => {
+    const tf = field.itemFields?.find((f) => f.type === "text" || f.type === "url");
+    const v = tf ? String(item[tf.key] ?? "").trim() : "";
+    return v || `Item ${i + 1}`;
+  };
+
   return (
-    <div className="space-y-3">
-      {items.map((item, i) => (
-        <div key={i} className="bg-zinc-50 border border-zinc-100 rounded-2xl p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-wider">Item #{i + 1}</span>
-            <div className="flex items-center gap-1">
-              <button type="button" onClick={() => moveItem(i, "up")} disabled={i === 0} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronUp className="w-3.5 h-3.5" /></button>
-              <button type="button" onClick={() => moveItem(i, "down")} disabled={i === items.length - 1} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronDown className="w-3.5 h-3.5" /></button>
-              <div className="w-px h-3 bg-zinc-200 mx-1" />
-              <button type="button" onClick={() => removeItem(i)} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+    <div className="space-y-2">
+      {items.map((item, i) => {
+        const isOpen = open === i;
+        const isTarget = openIndex === i;
+        return (
+          <div
+            key={i}
+            data-item-key={`${field.key}#${i}`}
+            className={cn(
+              "scroll-mt-4 bg-zinc-50 border rounded-2xl overflow-hidden transition-all",
+              isTarget ? "border-zinc-900 ring-2 ring-zinc-900 ring-offset-2 ring-offset-white" : "border-zinc-100"
+            )}
+          >
+            <div className="flex items-center gap-1.5 px-3 py-2.5">
+              <button type="button" onClick={() => setOpen(isOpen ? null : i)} className="flex-1 flex items-center gap-2 min-w-0 text-left">
+                <span className="text-[9px] font-black text-zinc-400 w-4 shrink-0">#{i + 1}</span>
+                <span className="text-[12px] font-bold text-zinc-700 truncate">{labelOf(item, i)}</span>
+              </button>
+              <button type="button" aria-label="Mover para cima" onClick={() => moveItem(i, "up")} disabled={i === 0} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronUp className="w-3.5 h-3.5" /></button>
+              <button type="button" aria-label="Mover para baixo" onClick={() => moveItem(i, "down")} disabled={i === items.length - 1} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronDown className="w-3.5 h-3.5" /></button>
+              <button type="button" aria-label="Remover item" onClick={() => removeItem(i)} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-300 hover:text-red-500 hover:bg-red-50 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+              <button type="button" aria-label={isOpen ? "Recolher item" : "Expandir item"} onClick={() => setOpen(isOpen ? null : i)} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-white transition-all"><Down className={cn("w-3.5 h-3.5 transition-transform", isOpen && "rotate-180")} /></button>
             </div>
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2, ease: "easeInOut" }}>
+                  <div className="px-3 pb-3 pt-1 space-y-4 border-t border-zinc-100">
+                    {field.itemFields?.map((sf) => <FieldRenderer key={sf.key} field={sf} value={item[sf.key]} onChange={(v) => updateItem(i, sf.key, v)} />)}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-          {field.itemFields?.map((sf) => <FieldRenderer key={sf.key} field={sf} value={item[sf.key]} onChange={(v) => updateItem(i, sf.key, v)} />)}
-        </div>
-      ))}
+        );
+      })}
       <button type="button" onClick={addItem} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border-2 border-dashed border-zinc-200 text-zinc-400 text-xs font-bold uppercase tracking-wider hover:border-zinc-400 hover:text-zinc-600 hover:bg-zinc-50 transition-all">
         <Plus className="w-4 h-4" /> Adicionar Item
       </button>

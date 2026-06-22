@@ -5,8 +5,11 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { CardSkeleton } from "@/components/ui/Skeletons";
-import { getSectionStyles } from "@/utils/sectionStyles";
+import { getSectionStyles, SOFT } from "@/utils/sectionStyles";
 import { cn } from "@/lib/utils";
+import { Eyebrow } from "./primitives/Eyebrow";
+import { SectionHeading } from "./primitives/SectionHeading";
+import { Lede } from "./primitives/Lede";
 
 interface HighlightItem {
   id: string | number;
@@ -28,7 +31,7 @@ const defaultHighlights: HighlightItem[] = [
   { id: 4, name: "Produto Exemplo 4", tag: "Destaque", image: "https://placehold.co/400x400/eeeeee/999999?text=Produto+4" },
 ];
 
-export function Highlights({ settings, props: editorProps, isEditor }: HighlightsProps) {
+export function Highlights({ props: editorProps, isEditor }: HighlightsProps) {
   const styles = getSectionStyles(editorProps || {});
   const ref = useRef(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -41,15 +44,15 @@ export function Highlights({ settings, props: editorProps, isEditor }: Highlight
   const handleScroll = () => {
     const el = scrollRef.current;
     if (!el) return;
-    const cardWidth = 280 + 24; // card width + gap
+    const cardWidth = 280 + 24;
     const index = Math.round(el.scrollLeft / cardWidth);
     setActiveIndex(Math.min(index, items.length - 1));
   };
 
+  const eyebrow = (editorProps?.eyebrow as string) ?? "Destaques";
   const title = (editorProps?.title as string) || "Nossos Queridinhos";
   const subtitle = (editorProps?.subtitle as string) || "Descubra os produtos que fazem o maior sucesso entre nossos clientes.";
 
-  // Cores dinâmicas — tokens semânticos
   const titleColor = (editorProps?.titleColor as string) || "";
   const subtitleColor = (editorProps?.subtitleColor as string) || "";
   const accentColor = (editorProps?.accentColor as string) || "";
@@ -61,23 +64,17 @@ export function Highlights({ settings, props: editorProps, isEditor }: Highlight
 
   useEffect(() => {
     let isMounted = true;
-    
     async function fetchHighlights() {
       try {
         const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('is_featured', true)
-          .order('created_at', { ascending: false });
-
+          .from("products").select("*").eq("is_featured", true).order("created_at", { ascending: false });
         if (error) throw error;
-
         if (isMounted && data && data.length > 0) {
           setItems(data.map((p: any) => ({
             id: p.id,
             name: p.title,
-            tag: p.tag || 'Destaque',
-            image: p.image_url || 'https://placehold.co/400x400/eeeeee/999999?text=Sem+Imagem'
+            tag: p.tag || "Destaque",
+            image: p.image_url || "https://placehold.co/400x400/eeeeee/999999?text=Sem+Imagem",
           })));
         }
       } catch (err) {
@@ -86,254 +83,138 @@ export function Highlights({ settings, props: editorProps, isEditor }: Highlight
         if (isMounted) setLoading(false);
       }
     }
-    
     fetchHighlights();
-    
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [supabase]);
 
-  // Resolve a cor de destaque para uso em estilos inline
-  const resolvedAccent = accentColor || undefined;
-  const resolvedBtn = btnBgColor || undefined;
+  const accent = accentColor || "var(--color-primary)";
+  const dotActive = btnBgColor || accent;
 
   return (
-    <section id="destaques" ref={ref} className={`relative overflow-hidden ${styles.container}`} style={styles.style}>
+    <section id="destaques" ref={ref} className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6">
-        
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.div
-            initial={isEditor ? false : { opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <span 
-              className={`text-xs font-bold uppercase tracking-[0.2em] mb-4 block`}
-              style={{ color: resolvedAccent || (styles.isDark ? 'rgba(255,255,255,0.6)' : 'var(--color-tertiary)') }}
-            >Destaques</span>
-            <h2 
-              className={`text-4xl md:text-5xl lg:text-[56px] leading-[1.1] font-display font-black tracking-tight mb-6`}
-              style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
-            >
-              {title}
-            </h2>
-            <p 
-              className={`text-lg leading-relaxed`}
-              style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
-            >
-              {subtitle}
-            </p>
-          </motion.div>
-        </div>
+        <motion.div
+          initial={isEditor ? false : { opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="text-center max-w-2xl mx-auto mb-14"
+        >
+          {eyebrow && <div className="mb-5"><Eyebrow color={accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow></div>}
+          <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title" className="mb-5 mx-auto">{title}</SectionHeading>
+          <Lede color={subtitleColor} isDark={styles.isDark} dataField="subtitle" className="mx-auto">{subtitle}</Lede>
+        </motion.div>
 
-        {/* Skeleton loading */}
         {loading ? (
           <div className="flex overflow-x-auto gap-6 pb-12 pt-4 px-4 -mx-4 scrollbar-hide">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex-none w-[260px] md:w-[280px]">
-                <CardSkeleton />
-              </div>
-            ))}
+            {[1, 2, 3, 4].map((i) => (<div key={i} className="flex-none w-[260px] md:w-[280px]"><CardSkeleton /></div>))}
           </div>
         ) : items.length === 0 ? (
-          /* Empty state */
           <div className="text-center py-16">
-            <div className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${styles.isDark ? 'bg-white/10 text-white/40' : 'bg-surface-100 text-text-300'}`}>
-              <svg className="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-              </svg>
+            <div className={cn("w-16 h-16 mx-auto mb-5 rounded-2xl flex items-center justify-center", styles.isDark ? "bg-white/10 text-white/40" : "bg-surface-100 text-text-300")}>
+              <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>
             </div>
-            <h3 className={`font-display font-bold text-xl mb-2 ${styles.isDark ? 'text-white' : 'text-text-900'}`}>Nenhum destaque ainda</h3>
-            <p className={`text-sm ${styles.isDark ? 'text-white/40' : 'text-text-400'}`}>Os produtos em destaque aparecerão aqui em breve.</p>
+            <h3 className={cn("font-display font-semibold text-lg mb-1", styles.isDark ? "text-white" : "text-text-900")}>Nenhum destaque ainda</h3>
+            <p className={cn("text-sm", styles.isDark ? "text-white/40" : "text-text-400")}>Os produtos em destaque aparecerão aqui.</p>
           </div>
         ) : (
           <>
-            <div className="relative group/carousel">
-              {/* Seta esquerda */}
-              <button
-                onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
-                className={cn(
-                  "hidden md:flex absolute -left-4 md:-left-8 lg:-left-14 top-1/2 -translate-y-1/2 z-30",
-                  "w-12 h-12 border rounded-full items-center justify-center shadow-xl transition-all duration-300",
-                  "hover:scale-110 active:scale-95"
-                )}
-                style={{
-                  backgroundColor: styles.isDark ? 'rgba(255,255,255,0.1)' : '#FFFFFF',
-                  borderColor: styles.isDark ? 'rgba(255,255,255,0.2)' : 'var(--color-text-100)',
-                  color: styles.isDark ? '#FFFFFF' : 'var(--color-text-500)',
-                  '--hover-bg': resolvedBtn || resolvedAccent || 'var(--color-primary)',
-                } as React.CSSProperties}
-                onMouseEnter={(e) => { 
-                  const hc = resolvedBtn || resolvedAccent || 'var(--color-primary)';
-                  e.currentTarget.style.backgroundColor = hc;
-                  e.currentTarget.style.borderColor = hc;
-                  e.currentTarget.style.color = '#FFFFFF';
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.backgroundColor = styles.isDark ? 'rgba(255,255,255,0.1)' : '#FFFFFF';
-                  e.currentTarget.style.borderColor = styles.isDark ? 'rgba(255,255,255,0.2)' : 'var(--color-text-100)';
-                  e.currentTarget.style.color = styles.isDark ? '#FFFFFF' : 'var(--color-text-500)';
-                }}
-                aria-label="Anterior"
-              >
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-
-              <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory pt-4 px-4 -mx-4 scrollbar-hide scroll-smooth"
-              >
-                {items.map((item: HighlightItem, i: number) => (
-                  <HighlightCard 
-                    key={item.id}
-                    item={item}
-                    index={i}
-                    isEditor={isEditor}
-                    isInView={isInView}
-                    styles={styles}
-                    cardBgColor={cardBgColor}
-                    cardBorderColor={cardBorderColor}
-                    tagBgColor={tagBgColor}
-                    tagTextColor={tagTextColor}
-                    accentColor={resolvedAccent}
-                    btnColor={resolvedBtn}
+            <div className="relative">
+              <CarouselArrow side="left" onClick={() => scrollRef.current?.scrollBy({ left: -300, behavior: "smooth" })} isDark={styles.isDark} accent={accent} />
+              <div ref={scrollRef} onScroll={handleScroll} className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory pt-4 px-4 -mx-4 scrollbar-hide scroll-smooth">
+                {items.map((item, i) => (
+                  <HighlightCard
+                    key={item.id} item={item} index={i} isEditor={isEditor} isInView={isInView} isDark={styles.isDark}
+                    cardBgColor={cardBgColor} cardBorderColor={cardBorderColor} tagBgColor={tagBgColor} tagTextColor={tagTextColor} accent={accent} btnColor={btnBgColor || accent}
                   />
                 ))}
               </div>
-
-              {/* Seta direita */}
-              <button
-                onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
-                className={cn(
-                  "hidden md:flex absolute -right-4 md:-right-8 lg:-right-14 top-1/2 -translate-y-1/2 z-30",
-                  "w-12 h-12 border rounded-full items-center justify-center shadow-xl transition-all duration-300",
-                  "hover:scale-110 active:scale-95"
-                )}
-                style={{
-                  backgroundColor: styles.isDark ? 'rgba(255,255,255,0.1)' : '#FFFFFF',
-                  borderColor: styles.isDark ? 'rgba(255,255,255,0.2)' : 'var(--color-text-100)',
-                  color: styles.isDark ? '#FFFFFF' : 'var(--color-text-500)',
-                }}
-                onMouseEnter={(e) => { 
-                  const hc = resolvedBtn || resolvedAccent || 'var(--color-primary)';
-                  e.currentTarget.style.backgroundColor = hc;
-                  e.currentTarget.style.borderColor = hc;
-                  e.currentTarget.style.color = '#FFFFFF';
-                }}
-                onMouseLeave={(e) => { 
-                  e.currentTarget.style.backgroundColor = styles.isDark ? 'rgba(255,255,255,0.1)' : '#FFFFFF';
-                  e.currentTarget.style.borderColor = styles.isDark ? 'rgba(255,255,255,0.2)' : 'var(--color-text-100)';
-                  e.currentTarget.style.color = styles.isDark ? '#FFFFFF' : 'var(--color-text-500)';
-                }}
-                aria-label="Próximo"
-              >
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
+              <CarouselArrow side="right" onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })} isDark={styles.isDark} accent={accent} />
             </div>
 
-            {/* Dots indicadores */}
             <div className="flex items-center justify-center gap-2 mt-6">
-            {items.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  const el = scrollRef.current;
-                  if (!el) return;
-                  const cardWidth = 280 + 24; // card + gap
-                  el.scrollTo({ left: i * cardWidth, behavior: "smooth" });
-                }}
-                className="rounded-full transition-all duration-300"
-                style={activeIndex === i ? {
-                  width: '24px',
-                  height: '8px',
-                  backgroundColor: resolvedBtn || resolvedAccent || 'var(--color-primary)',
-                } : {
-                  width: '8px',
-                  height: '8px',
-                  backgroundColor: styles.isDark ? 'rgba(255,255,255,0.2)' : 'var(--color-text-200)',
-                }}
-                aria-label={`Ir para destaque ${i + 1}`}
-              />
-            ))}
+              {items.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { const el = scrollRef.current; if (el) el.scrollTo({ left: i * (280 + 24), behavior: "smooth" }); }}
+                  className="rounded-full transition-all duration-300"
+                  style={activeIndex === i
+                    ? { width: "24px", height: "8px", backgroundColor: dotActive }
+                    : { width: "8px", height: "8px", backgroundColor: styles.isDark ? "rgba(255,255,255,0.2)" : "var(--color-text-200)" }}
+                  aria-label={`Ir para destaque ${i + 1}`}
+                />
+              ))}
             </div>
           </>
         )}
-
       </div>
     </section>
   );
 }
 
-// Card extraído para componente separado para gerenciar hovers
-function HighlightCard({ item, index, isEditor, isInView, styles, cardBgColor, cardBorderColor, tagBgColor, tagTextColor, accentColor, btnColor }: {
-  item: HighlightItem; index: number; isEditor?: boolean; isInView: boolean; styles: any;
-  cardBgColor: string; cardBorderColor: string; tagBgColor: string; tagTextColor: string; accentColor?: string; btnColor?: string;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const hoverColor = btnColor || accentColor || 'var(--color-primary)';
-
+function CarouselArrow({ side, onClick, isDark, accent }: { side: "left" | "right"; onClick: () => void; isDark: boolean; accent: string }) {
   return (
-    <motion.div 
-      key={item.id}
-      initial={isEditor ? false : { opacity: 0, y: 50, rotateX: -10 }}
-      animate={isEditor || isInView ? { opacity: 1, y: 0, rotateX: 0 } : { opacity: 0, y: 50, rotateX: -10 }}
-      transition={{ duration: 0.7, delay: index * 0.15 }}
+    <button
+      onClick={onClick}
+      aria-label={side === "left" ? "Anterior" : "Próximo"}
       className={cn(
-        "group relative flex-none w-[260px] md:w-[280px] snap-start rounded-[32px] overflow-hidden shadow-sm transition-all duration-500 cursor-pointer isolate",
-        styles.isDark 
-          ? 'bg-white/5' 
-          : 'bg-white'
+        "hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-11 h-11 rounded-full items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95",
+        side === "left" ? "-left-4 lg:-left-12" : "-right-4 lg:-right-12",
+        SOFT.shadow
       )}
       style={{
-        backgroundColor: cardBgColor || undefined,
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: cardBorderColor || (styles.isDark ? 'rgba(255,255,255,0.1)' : 'var(--color-text-100)'),
+        backgroundColor: isDark ? "rgba(255,255,255,0.1)" : "#FFFFFF",
+        color: isDark ? "#FFFFFF" : "var(--color-text-500)",
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = accent; e.currentTarget.style.color = "#FFFFFF"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isDark ? "rgba(255,255,255,0.1)" : "#FFFFFF"; e.currentTarget.style.color = isDark ? "#FFFFFF" : "var(--color-text-500)"; }}
+    >
+      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d={side === "left" ? "M15 18l-6-6 6-6" : "M9 18l6-6-6-6"} /></svg>
+    </button>
+  );
+}
+
+function HighlightCard({ item, index, isEditor, isInView, isDark, cardBgColor, cardBorderColor, tagBgColor, tagTextColor, accent, btnColor }: {
+  item: HighlightItem; index: number; isEditor?: boolean; isInView: boolean; isDark: boolean;
+  cardBgColor: string; cardBorderColor: string; tagBgColor: string; tagTextColor: string; accent: string; btnColor: string;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <motion.div
+      initial={isEditor ? false : { opacity: 0, y: 30 }}
+      animate={isEditor || isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+      transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
+      className={cn("group relative flex-none w-[260px] md:w-[280px] snap-start overflow-hidden transition-all duration-300", SOFT.card, SOFT.shadow)}
+      style={{
+        backgroundColor: cardBgColor || (isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF"),
+        border: `1px solid ${cardBorderColor || (isDark ? "rgba(255,255,255,0.08)" : "var(--color-text-100)")}`,
+        transform: hovered ? "translateY(-6px)" : "none",
+        boxShadow: hovered ? "0 22px 44px -16px rgba(0,0,0,0.22)" : undefined,
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-surface-200/80 rounded-full opacity-0 blur-xl group-hover:blur-3xl group-hover:scale-[15] group-hover:opacity-100 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-none -z-10" />
-      
-      <div className={cn(
-        "relative h-[240px] w-full overflow-hidden z-10 rounded-t-[32px]"
-      )}>
-        <img 
-          src={item.image} 
-          alt={item.name} 
-          className="w-full h-full object-cover z-20 group-hover:scale-105 transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]" 
-        />
+      <div className="relative h-[230px] w-full overflow-hidden">
+        <img src={item.image} alt={item.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
       </div>
-
-      <div className="p-6 relative z-10">
+      <div className="p-5">
         <div className="flex items-center justify-between mb-3">
-          <span 
-            className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md"
+          <span
+            className="text-[10px] font-semibold tracking-wide px-2.5 py-1 rounded-full"
             style={{
-              backgroundColor: tagBgColor || (styles.isDark ? 'rgba(255,255,255,0.1)' : (accentColor ? accentColor + '1A' : 'var(--color-tertiary, #D4AF37)') + '1A'),
-              color: tagTextColor || (styles.isDark ? 'rgba(255,255,255,0.6)' : (accentColor || 'var(--color-tertiary)')),
+              backgroundColor: tagBgColor || `color-mix(in srgb, ${accent} 12%, transparent)`,
+              color: tagTextColor || (isDark ? "rgba(255,255,255,0.8)" : accent),
             }}
           >{item.tag}</span>
-          <div 
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
+          <div className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300"
             style={{
-              backgroundColor: hovered ? hoverColor : (styles.isDark ? 'rgba(255,255,255,0.1)' : 'var(--color-surface-100)'),
-              color: hovered ? '#FFFFFF' : (styles.isDark ? 'rgba(255,255,255,0.6)' : 'var(--color-text-400)'),
-              transform: hovered && !styles.isDark ? 'scale(1.1)' : 'scale(1)',
-            }}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              backgroundColor: hovered ? btnColor : (isDark ? "rgba(255,255,255,0.1)" : "var(--color-surface-100)"),
+              color: hovered ? "#FFFFFF" : (isDark ? "rgba(255,255,255,0.6)" : "var(--color-text-400)"),
+            }}>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
           </div>
         </div>
-        <h3 
-          className="font-display font-bold text-xl leading-tight transition-colors duration-300"
-          style={{
-            color: hovered ? hoverColor : (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)'),
-          }}
-        >{item.name}</h3>
+        <h3 className="font-display font-semibold text-lg leading-tight" style={{ color: isDark ? "#FFFFFF" : "var(--color-text-900)" }}>{item.name}</h3>
       </div>
     </motion.div>
   );

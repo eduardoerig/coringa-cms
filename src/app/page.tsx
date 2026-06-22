@@ -51,11 +51,13 @@ export default async function Home() {
   const supabase = await createClient();
   const { data: layout } = await supabase
     .from("page_layouts")
-    .select("sections, is_published")
+    .select("published_sections, is_published")
     .eq("id", "home")
     .single();
 
-  const sections = layout?.is_published ? layout.sections : null;
+  // A landing pública só renderiza a versão publicada (published_sections),
+  // nunca o rascunho em edição (sections).
+  const sections = layout?.is_published ? layout.published_sections : null;
 
   return (
     <main className="min-h-screen bg-surface-50">

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, PlusCircle, Layers, Palette, AlertTriangle, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, Pencil } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, AlertTriangle, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, EyeOff, Pencil } from "lucide-react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import { LayerPanel } from "@/components/editor/LayerPanel";
 import { EditorCanvas } from "@/components/editor/EditorCanvas";
 import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
 import { ColorPalettePanel } from "@/components/editor/ColorPalettePanel";
+import { StudioSidebar, type StudioTab } from "@/components/editor/StudioSidebar";
 import { useEditorStore, type DragState, type PageSection } from "@/stores/editorStore";
 import { sectionRegistry } from "@/components/editor/sections/registry";
 import { createClient } from "@/utils/supabase/client";
@@ -20,15 +21,16 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   closestCenter,
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 
-type Tab = "library" | "layers" | "palette";
+type Tab = StudioTab;
 
 type Toast = { id: number; message: string; type: "success" | "error" };
 
@@ -50,10 +52,13 @@ function DragGhost({ dragState, sections }: { dragState: DragState; sections: Pa
 
 
 export default function FocusedEditorPage() {
-  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectSection, selectedSectionId, removeSection, undo, redo, past, future, clearHistory, canvasMode, setCanvasMode, viewport, setViewport, addSectionAtIndex, reorderSections, dragState, setDragState } = useEditorStore();
+  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectedSectionId, removeSection, undo, redo, past, future, clearHistory, canvasMode, setCanvasMode, viewport, setViewport, addSectionAtIndex, reorderSections, dragState, setDragState } = useEditorStore();
   const isPreview = canvasMode === "preview";
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const handleDragStart = (event: DragStartEvent) => {
     const data = event.active.data.current as DragState | undefined;
@@ -83,12 +88,36 @@ export default function FocusedEditorPage() {
   const { confirm, confirmState, respondConfirm } = useConfirm();
   const [activeTab, setActiveTab] = useState<Tab>("library");
   const [isPublished, setIsPublished] = useState(false);
+  const [publishedSections, setPublishedSections] = useState<PageSection[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [now, setNow] = useState(0); // ts atual p/ "salvo há X"; 0 até o 1º tick
   const supabase = createClient();
+  const saveLockRef = useRef<Promise<unknown>>(Promise.resolve());
+
+  // Atualiza o rótulo de "salvo há X" periodicamente.
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 30000);
+    return () => clearInterval(i);
+  }, []);
+
+  const savedAgoLabel = () => {
+    if (!lastSavedAt) return "Tudo salvo";
+    const mins = Math.floor((now - lastSavedAt) / 60000);
+    if (mins < 1) return "Salvo agora";
+    if (mins === 1) return "Salvo há 1 min";
+    if (mins < 60) return `Salvo há ${mins} min`;
+    return "Tudo salvo";
+  };
+
+  // Há rascunho com alterações ainda não publicadas?
+  const hasUnpublishedChanges = useMemo(
+    () => JSON.stringify(sections) !== JSON.stringify(publishedSections),
+    [sections, publishedSections]
+  );
 
   const addToast = useCallback((message: string, type: Toast["type"] = "success") => {
     const id = Date.now();
@@ -106,6 +135,7 @@ export default function FocusedEditorPage() {
 
       if (layoutData) {
         setSections(layoutData.sections || []);
+        setPublishedSections(layoutData.published_sections || []);
         setIsPublished(layoutData.is_published ?? false);
       }
 
@@ -129,22 +159,31 @@ export default function FocusedEditorPage() {
   }, [supabase, setSections, setTheme, clearHistory]);
 
   const handleSave = useCallback(
-    async (publish?: boolean) => {
+    (action: "save" | "publish" | "unpublish" = "save") => {
+      // Serializa saves: cada chamada espera a anterior terminar (evita corridas
+      // entre o auto-save e o publicar/despublicar).
+      const run = saveLockRef.current.catch(() => {}).then(async () => {
       setSaving(true);
       try {
+        // `sections` é sempre o rascunho. Só "publish" promove o rascunho para
+        // `published_sections` (versão lida pela landing pública).
         const payload: Record<string, unknown> = {
+          id: "home",
+          name: "Página Principal",
           sections,
           updated_at: new Date().toISOString(),
         };
 
-        if (publish !== undefined) {
-          payload.is_published = publish;
-          setIsPublished(publish);
+        if (action === "publish") {
+          payload.published_sections = sections;
+          payload.is_published = true;
+        } else if (action === "unpublish") {
+          payload.is_published = false;
         }
 
         const { error } = await supabase
           .from("page_layouts")
-          .upsert({ id: "home", name: "Página Principal", ...payload });
+          .upsert(payload);
 
         if (error) {
           console.error("Erro ao salvar layout:", error);
@@ -152,35 +191,51 @@ export default function FocusedEditorPage() {
           return;
         }
 
-        if (Object.keys(theme).length > 0) {
-          const themeUpdates = Object.entries(theme).map(([key, value]) => {
-            let label = "Configuração de Tema";
-            const type = "color";
-            if (key === "dashboard_primary_color") label = "Cor Primária Admin";
-            if (key === "dashboard_bg_color") label = "Cor de Fundo Admin";
-            if (key === "theme_primary_color") label = "Cor Primária";
-            if (key === "theme_bg_color") label = "Cor de Fundo";
+        if (action === "publish") {
+          setIsPublished(true);
+          setPublishedSections(JSON.parse(JSON.stringify(sections)));
+          addToast("Site publicado com sucesso.");
+        } else if (action === "unpublish") {
+          setIsPublished(false);
+          addToast("Site despublicado. Não está mais visível ao público.");
+        }
 
-            return supabase
-              .from("site_settings")
-              .upsert({
-                key,
-                value,
-                group: "aparencia",
-                label,
-                type,
-                updated_at: new Date().toISOString()
-              });
-          });
+        // Salva o tema só quando ele realmente mudou — num único upsert em lote.
+        if (useEditorStore.getState().isThemeDirty && Object.keys(theme).length > 0) {
+          const THEME_LABELS: Record<string, string> = {
+            dashboard_primary_color: "Cor Primária Admin",
+            dashboard_bg_color: "Cor de Fundo Admin",
+            theme_primary_color: "Cor Primária",
+            theme_bg_color: "Cor de Fundo",
+          };
+          const rows = Object.entries(theme).map(([key, value]) => ({
+            key,
+            value,
+            group: "aparencia",
+            label: THEME_LABELS[key] ?? "Configuração de Tema",
+            type: "color",
+            updated_at: new Date().toISOString(),
+          }));
 
-          await Promise.all(themeUpdates);
+          const { error: themeError } = await supabase.from("site_settings").upsert(rows);
+          if (themeError) {
+            console.error("Erro ao salvar tema:", themeError);
+            addToast("Erro ao salvar o tema. Verifique o console.", "error");
+            return;
+          }
+          useEditorStore.getState().setThemeDirty(false);
         }
 
         useEditorStore.getState().setDirty(false);
-        setLastSavedAt(Date.now());
+        const savedAt = Date.now();
+        setLastSavedAt(savedAt);
+        setNow(savedAt);
       } finally {
         setSaving(false);
       }
+      });
+      saveLockRef.current = run;
+      return run;
     },
     [sections, theme, supabase, setSaving, addToast]
   );
@@ -193,6 +248,17 @@ export default function FocusedEditorPage() {
     }, 1500);
     return () => clearTimeout(t);
   }, [isDirty, isSaving, loading, sections, theme, handleSave]);
+
+  // Avisa antes de fechar/recarregar a aba se houver algo pendente.
+  useEffect(() => {
+    if (!isDirty && !isSaving) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty, isSaving]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -215,12 +281,31 @@ export default function FocusedEditorPage() {
         redo();
       }
 
+      // Ctrl/Cmd+D — duplica a seção selecionada
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+        const { selectedSectionId: currentId, duplicateSection } = useEditorStore.getState();
+        if (currentId && currentId !== "global_theme") {
+          e.preventDefault();
+          duplicateSection(currentId);
+        }
+      }
+
+      // Esc — sai do preview ou limpa a seleção
+      if (e.key === "Escape") {
+        const state = useEditorStore.getState();
+        if (state.canvasMode === "preview") {
+          state.setCanvasMode("edit");
+        } else if (state.selectedSectionId) {
+          state.selectSection(null);
+        }
+      }
+
       if (e.key === "Delete" || e.key === "Backspace") {
         const activeElement = document.activeElement;
         if (activeElement?.tagName === "INPUT" || activeElement?.tagName === "TEXTAREA" || activeElement?.getAttribute("contenteditable") === "true") return;
 
         const { selectedSectionId: currentId } = useEditorStore.getState();
-        if (currentId) {
+        if (currentId && currentId !== "global_theme") {
           e.preventDefault();
           (async () => {
             const ok = await confirm({
@@ -292,7 +377,8 @@ export default function FocusedEditorPage() {
                   <button
                     key={v}
                     onClick={() => setViewport(v)}
-                    title={`Visualizar em ${v}`}
+                    aria-label={`Visualizar em ${v}`}
+                  title={`Visualizar em ${v}`}
                     className={cn(
                       "p-1.5 rounded-lg transition-all",
                       viewport === v ? "bg-indigo-500 text-white" : "text-zinc-400 hover:text-white"
@@ -343,11 +429,27 @@ export default function FocusedEditorPage() {
               <p className="text-[10px] text-text-400 font-bold mt-1">Editando: Home Page</p>
             </div>
 
+            {/* Status de publicação */}
+            {(() => {
+              const pub = !isPublished
+                ? { cls: "bg-zinc-100 text-zinc-500", dot: "bg-zinc-400", label: "Não publicado" }
+                : hasUnpublishedChanges
+                  ? { cls: "bg-amber-50 text-amber-700", dot: "bg-amber-500", label: "Alterações não publicadas" }
+                  : { cls: "bg-green-50 text-green-700", dot: "bg-green-500", label: "Publicado e atualizado" };
+              return (
+                <span className={cn("flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest", pub.cls)}>
+                  <span className={cn("w-1.5 h-1.5 rounded-full", pub.dot)} />
+                  {pub.label}
+                </span>
+              );
+            })()}
+
             <div className="h-6 w-px bg-text-100 mx-2" />
             <div className="flex items-center gap-1">
               <button
                 onClick={undo}
                 disabled={past.length === 0}
+                aria-label="Desfazer"
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                 title="Desfazer (Ctrl+Z)"
               >
@@ -356,6 +458,7 @@ export default function FocusedEditorPage() {
               <button
                 onClick={redo}
                 disabled={future.length === 0}
+                aria-label="Refazer"
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
                 title="Refazer (Ctrl+Shift+Z)"
               >
@@ -371,6 +474,7 @@ export default function FocusedEditorPage() {
                 <button
                   key={v}
                   onClick={() => setViewport(v)}
+                  aria-label={`Visualizar em ${v}`}
                   title={`Visualizar em ${v}`}
                   className={cn(
                     "p-1.5 rounded-lg transition-all",
@@ -408,24 +512,51 @@ export default function FocusedEditorPage() {
                 >
                   {status === "saving" && <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Salvando…</>}
                   {status === "unsaved" && <><Save className="w-3.5 h-3.5" /> Salvar agora</>}
-                  {(status === "saved" || status === "idle") && <><Check className="w-3.5 h-3.5" /> Tudo salvo</>}
+                  {(status === "saved" || status === "idle") && <><Check className="w-3.5 h-3.5" /> {savedAgoLabel()}</>}
                 </button>
               );
             })()}
 
-            <button
-              onClick={() => handleSave(true)}
-              disabled={isSaving}
-              className={cn(
-                "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all",
-                isPublished
-                  ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 active:scale-95"
-              )}
-            >
-              <Globe className="w-4 h-4" />
-              {isPublished ? "Publicado" : "Publicar Site"}
-            </button>
+            {/* Despublicar — só quando está no ar */}
+            {isPublished && (
+              <button
+                onClick={async () => {
+                  const ok = await confirm({
+                    title: "Despublicar site?",
+                    message: "O site deixará de ficar visível para o público. O rascunho é mantido.",
+                    variant: "danger",
+                    confirmLabel: "Despublicar",
+                  });
+                  if (ok) handleSave("unpublish");
+                }}
+                disabled={isSaving}
+                title="Tirar o site do ar"
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider text-text-500 hover:text-red-600 hover:bg-red-50 transition-all"
+              >
+                <EyeOff className="w-3.5 h-3.5" /> Despublicar
+              </button>
+            )}
+
+            {(() => {
+              // Botão principal: publicar (primeira vez) ou publicar alterações.
+              const upToDate = isPublished && !hasUnpublishedChanges;
+              return (
+                <button
+                  onClick={() => handleSave("publish")}
+                  disabled={isSaving || upToDate}
+                  title={upToDate ? "Site já está atualizado no ar" : "Publicar a versão atual para o público"}
+                  className={cn(
+                    "flex items-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all",
+                    upToDate
+                      ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
+                      : "bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 active:scale-95"
+                  )}
+                >
+                  <Globe className="w-4 h-4" />
+                  {!isPublished ? "Publicar Site" : hasUnpublishedChanges ? "Publicar Alterações" : "Publicado"}
+                </button>
+              );
+            })()}
           </div>
         </div>
 
@@ -438,106 +569,13 @@ export default function FocusedEditorPage() {
         >
         <div className="flex flex-1 overflow-hidden relative">
           {/* Studio Sidebar Nav */}
-          <div className={cn("w-16 border-r border-text-100 bg-white flex flex-col items-center py-8 gap-6 z-50 shadow-[1px_0_0_rgba(0,0,0,0.05)]", isPreview && "hidden")}>
-            {/* Biblioteca */}
-            <div className="flex flex-col items-center gap-1 group">
-              <button
-                onClick={() => {
-                  setActiveTab("library");
-                  setLeftSidebarCollapsed(false);
-                  if (selectedSectionId === "global_theme") selectSection(null);
-                }}
-                className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 relative",
-                  activeTab === "library" && !leftSidebarCollapsed
-                    ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 scale-105"
-                    : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
-                )}
-                title="Biblioteca de Seções"
-              >
-                <PlusCircle className={cn("w-[14px] h-[14px] transition-transform", activeTab === "library" && !leftSidebarCollapsed ? "scale-105" : "group-hover:scale-105")} />
-                {activeTab === "library" && !leftSidebarCollapsed && (
-                  <motion.div layoutId="nav-pill" className="absolute -left-5 w-1 h-5 bg-zinc-900 rounded-r-full shadow-[4px_0_15px_rgba(0,0,0,0.1)]" />
-                )}
-              </button>
-              <span className={cn(
-                "text-[7px] font-normal uppercase tracking-tight transition-colors duration-300",
-                activeTab === "library" && !leftSidebarCollapsed ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600"
-              )}>
-                Adicionar
-              </span>
-            </div>
-
-            {/* Camadas */}
-            <div className="flex flex-col items-center gap-1 group">
-              <button
-                onClick={() => {
-                  setActiveTab("layers");
-                  setLeftSidebarCollapsed(false);
-                  if (selectedSectionId === "global_theme") selectSection(null);
-                }}
-                className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 relative",
-                  activeTab === "layers" && !leftSidebarCollapsed
-                    ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 scale-105"
-                    : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
-                )}
-                title="Estrutura de Camadas"
-              >
-                <Layers className={cn("w-[14px] h-[14px] transition-transform", activeTab === "layers" && !leftSidebarCollapsed ? "scale-105" : "group-hover:scale-105")} />
-                {activeTab === "layers" && !leftSidebarCollapsed && (
-                  <motion.div layoutId="nav-pill" className="absolute -left-5 w-1 h-5 bg-zinc-900 rounded-r-full shadow-[4px_0_15px_rgba(0,0,0,0.1)]" />
-                )}
-              </button>
-              <span className={cn(
-                "text-[7px] font-normal uppercase tracking-tight transition-colors duration-300",
-                activeTab === "layers" && !leftSidebarCollapsed ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600"
-              )}>
-                Camadas
-              </span>
-            </div>
-
-            {/* Paleta */}
-            <div className="flex flex-col items-center gap-1 group">
-              <button
-                onClick={() => {
-                  setActiveTab("palette");
-                  setLeftSidebarCollapsed(false);
-                  if (selectedSectionId === "global_theme") selectSection(null);
-                }}
-                className={cn(
-                  "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 relative",
-                  activeTab === "palette" && !leftSidebarCollapsed
-                    ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 scale-105"
-                    : "text-zinc-400 hover:bg-zinc-50 hover:text-zinc-900"
-                )}
-                title="Paleta Global"
-              >
-                <Palette className={cn("w-[14px] h-[14px] transition-transform", activeTab === "palette" && !leftSidebarCollapsed ? "scale-105" : "group-hover:scale-105")} />
-                {activeTab === "palette" && !leftSidebarCollapsed && (
-                  <motion.div layoutId="nav-pill" className="absolute -left-5 w-1 h-5 bg-zinc-900 rounded-r-full shadow-[4px_0_15px_rgba(0,0,0,0.1)]" />
-                )}
-              </button>
-              <span className={cn(
-                "text-[7px] font-normal uppercase tracking-tight transition-colors duration-300",
-                activeTab === "palette" && !leftSidebarCollapsed ? "text-zinc-900" : "text-zinc-400 group-hover:text-zinc-600"
-              )}>
-                Paleta
-              </span>
-            </div>
-
-            <div className="mt-auto flex flex-col gap-6 mb-4">
-              <button
-                onClick={() => {
-                  setLeftSidebarCollapsed(!leftSidebarCollapsed);
-                }}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 transition-all border border-zinc-100"
-                title={leftSidebarCollapsed ? "Expandir" : "Recolher"}
-              >
-                <ArrowLeft className={cn("w-3 h-3 transition-transform duration-500", leftSidebarCollapsed && "rotate-180")} />
-              </button>
-            </div>
-          </div>
+          <StudioSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            collapsed={leftSidebarCollapsed}
+            setCollapsed={setLeftSidebarCollapsed}
+            hidden={isPreview}
+          />
 
           {/* Focused Side Panel Content */}
           <motion.div
@@ -559,6 +597,7 @@ export default function FocusedEditorPage() {
             {/* Right Panel Toggle Button - Floating */}
             <button
               onClick={() => setRightSidebarCollapsed(!rightSidebarCollapsed)}
+              aria-label={rightSidebarCollapsed ? "Mostrar painel de propriedades" : "Ocultar painel de propriedades"}
               className={cn(
                 "absolute right-6 top-1/2 -translate-y-1/2 z-50 w-10 h-10 bg-white border border-text-100 shadow-2xl rounded-2xl flex items-center justify-center text-text-400 hover:text-text-900 hover:scale-110 transition-all active:scale-95",
                 rightSidebarCollapsed && "translate-x-2",

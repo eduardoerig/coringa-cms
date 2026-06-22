@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { getSectionStyles } from "@/utils/sectionStyles";
 import DOMPurify from "isomorphic-dompurify";
+import { SectionHeading } from "./primitives/SectionHeading";
 
 interface TextBlockProps {
   props: {
@@ -21,28 +22,26 @@ export function TextBlock({ props }: TextBlockProps) {
   const styles = getSectionStyles(props || {});
   const { title, content } = props;
 
-  // Cores dinâmicas — tokens semânticos
   const titleColor = props?.titleColor || "";
   const subtitleColor = props?.subtitleColor || "";
   const accentColor = props?.accentColor || "";
-
-  // Resolve a cor de links dinâmicos
-  const linkColor = accentColor || 'var(--color-primary)';
+  const linkColor = accentColor || "var(--color-primary)";
 
   return (
     <section className={`relative overflow-hidden ${styles.container}`} style={styles.style}>
-      <div className="max-w-3xl mx-auto px-6 relative z-10">
+      <div className="max-w-2xl mx-auto px-6 relative z-10">
         {title && (
-          <motion.h2
-            data-field="title"
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-display font-black mb-6"
-            style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="mb-7"
           >
-            {title}
-          </motion.h2>
+            <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title">
+              {title}
+            </SectionHeading>
+          </motion.div>
         )}
 
         {content && (
@@ -51,14 +50,14 @@ export function TextBlock({ props }: TextBlockProps) {
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="prose prose-lg max-w-none"
-            style={{ 
-              color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-600)'),
-              '--tw-prose-headings': titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)'),
-              '--tw-prose-links': linkColor,
-              '--tw-prose-bold': styles.isDark ? '#FFFFFF' : 'var(--color-text-900)',
-              '--tw-prose-quotes': styles.isDark ? 'rgba(255,255,255,0.6)' : undefined,
+            transition={{ delay: 0.1, duration: 0.6, ease: "easeOut" }}
+            className="prose prose-lg max-w-none prose-blockquote:rounded-2xl prose-blockquote:border-l-4 prose-blockquote:bg-black/[0.03] prose-blockquote:py-1 prose-blockquote:px-5 prose-blockquote:not-italic"
+            style={{
+              color: subtitleColor || (styles.isDark ? "rgba(255,255,255,0.8)" : "var(--color-text-600)"),
+              "--tw-prose-headings": titleColor || (styles.isDark ? "#FFFFFF" : "var(--color-text-900)"),
+              "--tw-prose-links": linkColor,
+              "--tw-prose-bold": styles.isDark ? "#FFFFFF" : "var(--color-text-900)",
+              "--tw-prose-quotes": styles.isDark ? "rgba(255,255,255,0.7)" : "var(--color-text-600)",
             } as React.CSSProperties}
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
           />

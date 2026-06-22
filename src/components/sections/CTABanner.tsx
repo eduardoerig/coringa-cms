@@ -1,9 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { getSectionStyles } from "@/utils/sectionStyles";
+import { getSectionStyles, SOFT } from "@/utils/sectionStyles";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { SectionHeading } from "./primitives/SectionHeading";
+import { Lede } from "./primitives/Lede";
+import { SoftButton } from "./primitives/SoftButton";
 
 interface CTABannerProps {
   props: Record<string, any>;
@@ -19,80 +21,52 @@ export function CTABanner({ props: editorProps, isEditor }: CTABannerProps) {
     buttonLink = "#",
   } = editorProps;
 
-  // Cores dinâmicas — tokens semânticos
   const titleColor = (editorProps?.titleColor as string) || "";
   const subtitleColor = (editorProps?.subtitleColor as string) || "";
+  const accentColor = (editorProps?.accentColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const btnTextColor = (editorProps?.btnTextColor as string) || "";
 
+  const tint = accentColor || "var(--color-primary)";
+
   return (
     <section className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
-      <div className="max-w-4xl mx-auto px-6 text-center">
-        <motion.h2
-          initial={isEditor ? false : { opacity: 0, y: 20 }}
+      <div className="max-w-5xl mx-auto px-6">
+        <motion.div
+          initial={isEditor ? false : { opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-4xl font-display font-black mb-4"
-          style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className={cn("relative overflow-hidden text-center px-8 py-14 md:px-16 md:py-20", SOFT.card, SOFT.shadow, SOFT.ring)}
+          style={{ backgroundColor: styles.isDark ? "rgba(255,255,255,0.05)" : `color-mix(in srgb, ${tint} 8%, var(--color-surface-50))` }}
         >
-          {title}
-        </motion.h2>
+          {/* blob suave de fundo */}
+          <div
+            className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl pointer-events-none"
+            style={{ backgroundColor: `color-mix(in srgb, ${tint} 18%, transparent)` }}
+          />
 
-        {description && (
-          <motion.p
-            initial={isEditor ? false : { opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-lg mb-8 max-w-2xl mx-auto"
-            style={{ color: subtitleColor || (styles.isDark ? 'rgba(255,255,255,0.8)' : 'var(--color-text-500)') }}
-          >
-            {description}
-          </motion.p>
-        )}
+          <div className="relative">
+            <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title" className="mb-4 mx-auto max-w-2xl">
+              {title}
+            </SectionHeading>
 
-        <CTAButton
-          href={buttonLink}
-          bgColor={btnBgColor}
-          textColor={btnTextColor}
-          isDark={styles.isDark}
-          isEditor={isEditor}
-        >
-          {buttonText}
-        </CTAButton>
+            {description && (
+              <Lede color={subtitleColor} isDark={styles.isDark} dataField="description" className="mb-9 max-w-2xl mx-auto">
+                {description}
+              </Lede>
+            )}
+
+            <div data-field="buttonText" className="inline-block">
+              <SoftButton href={buttonLink} bgColor={btnBgColor} textColor={btnTextColor} isDark={styles.isDark} className="px-9 py-4 text-base">
+                {buttonText}
+                <svg className="w-5 h-5 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              </SoftButton>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
-  );
-}
-
-// Botão CTA com hover dinâmico
-function CTAButton({ href, bgColor, textColor, isDark, isEditor, children }: {
-  href: string; bgColor: string; textColor: string; isDark: boolean; isEditor?: boolean; children: React.ReactNode;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const baseBg = bgColor || (isDark ? '#FFFFFF' : 'var(--color-primary)');
-  const baseText = textColor || (isDark ? 'var(--color-text-900)' : '#FFFFFF');
-
-  return (
-    <motion.a
-      href={href}
-      initial={isEditor ? false : { opacity: 0, y: 10 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ delay: 0.2 }}
-      className="inline-flex items-center gap-2 font-bold px-8 py-3.5 rounded-full transition-all duration-300"
-      style={{
-        backgroundColor: baseBg,
-        color: baseText,
-        filter: hovered ? 'brightness(0.88)' : 'brightness(1)',
-        transform: hovered ? 'scale(1.05)' : 'scale(1)',
-        boxShadow: hovered ? '0 25px 50px -12px rgba(0,0,0,0.2)' : `0 10px 20px -6px rgba(0,0,0,0.12)`,
-      }}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-    >
-      {children}
-    </motion.a>
   );
 }
 

@@ -1,4 +1,18 @@
 /**
+ * Tokens visuais "Boutique acolhedor" — formas arredondadas e sombras suaves.
+ * Reaproveitados pelas seções para manter coesão.
+ */
+export const SOFT = {
+  card: "rounded-[28px]",
+  cardSm: "rounded-2xl",
+  image: "rounded-[32px]",
+  pill: "rounded-full",
+  shadow: "shadow-[0_8px_30px_rgba(0,0,0,0.06)]",
+  shadowHover: "hover:shadow-[0_18px_40px_-12px_rgba(0,0,0,0.18)]",
+  ring: "ring-1 ring-black/[0.04]",
+} as const;
+
+/**
  * Utilitário para gerar classes de background e padding baseadas nos campos comuns
  */
 export function getSectionStyles(props: Record<string, any>) {

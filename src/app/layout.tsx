@@ -101,7 +101,7 @@ export default async function RootLayout({
   const primaryHover = safeCssColor(settings.theme_button_hover, "#A85068");
 
   const fontSans = settings.theme_font_sans || "inter";
-  const fontDisplay = settings.theme_font_display || "playfair-display";
+  const fontDisplay = settings.theme_font_display || "poppins";
 
   let customTokensCss = "";
   try {

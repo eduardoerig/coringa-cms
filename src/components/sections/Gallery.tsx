@@ -2,8 +2,9 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { getSectionStyles } from "@/utils/sectionStyles";
+import { getSectionStyles, SOFT } from "@/utils/sectionStyles";
 import { cn } from "@/lib/utils";
+import { SectionHeading } from "./primitives/SectionHeading";
 
 interface GalleryImage {
   url: string;
@@ -17,10 +18,7 @@ interface GalleryProps {
 export function Gallery({ props: editorProps }: GalleryProps) {
   const styles = getSectionStyles(editorProps || {});
   const { title, images = [] } = editorProps;
-
-  // Cores dinâmicas — tokens semânticos
   const titleColor = (editorProps?.titleColor as string) || "";
-  const subtitleColor = (editorProps?.subtitleColor as string) || "";
 
   if (images.length === 0) return null;
 
@@ -28,35 +26,39 @@ export function Gallery({ props: editorProps }: GalleryProps) {
     <section className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-6xl mx-auto px-6">
         {title && (
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-display font-black text-center mb-12"
-            style={{ color: titleColor || (styles.isDark ? '#FFFFFF' : 'var(--color-text-900)') }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="text-center mb-12"
           >
-            {title}
-          </motion.h2>
+            <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title" className="mx-auto">
+              {title}
+            </SectionHeading>
+          </motion.div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
           {images.map((img: GalleryImage, i: number) => (
             <motion.div
               key={i}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              data-field="images"
+              data-item-index={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="group relative overflow-hidden rounded-2xl aspect-square bg-surface-50"
+              transition={{ delay: i * 0.06, duration: 0.5, ease: "easeOut" }}
+              className={cn("group relative overflow-hidden aspect-square bg-surface-100 transition-shadow duration-300", SOFT.card, SOFT.shadow, SOFT.shadowHover, SOFT.ring)}
             >
               <Image
                 src={img.url}
                 alt={img.caption || `Imagem ${i + 1}`}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
               />
               {img.caption && (
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4">
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent p-4 pt-10">
                   <p className="text-white text-sm font-medium">{img.caption}</p>
                 </div>
               )}

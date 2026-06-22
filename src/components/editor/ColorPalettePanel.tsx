@@ -22,7 +22,7 @@ export function ColorPalettePanel() {
     try {
       const colorsStr = theme["theme_custom_colors"];
       return colorsStr ? JSON.parse(colorsStr) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   }, [theme]);
@@ -103,6 +103,8 @@ export function ColorPalettePanel() {
                 type="color"
                 value={theme[key] || "#000000"}
                 onChange={(e) => updateTheme(key, e.target.value)}
+                aria-label={label}
+                title={label}
                 className="w-8 h-8 rounded-lg border-2 border-white shadow-sm cursor-pointer p-0 bg-transparent ring-1 ring-zinc-200 hover:ring-zinc-400 transition-all"
               />
               <div>
@@ -133,7 +135,7 @@ export function ColorPalettePanel() {
           <div>
             <label className="text-[10px] font-black text-zinc-600 uppercase tracking-wider block mb-1.5">Fonte Títulos</label>
             <select
-              value={theme["theme_font_display"] || "space-grotesk"}
+              value={theme["theme_font_display"] || "poppins"}
               onChange={(e) => updateTheme("theme_font_display", e.target.value)}
               className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all appearance-none cursor-pointer"
             >

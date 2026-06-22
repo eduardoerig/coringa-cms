@@ -40,6 +40,7 @@ export interface EditorState {
   selectedSectionId: string | null;
   selectedBlock: SelectedBlock | null;
   isDirty: boolean;
+  isThemeDirty: boolean;
   isSaving: boolean;
   theme: Record<string, string>;
 
@@ -65,6 +66,7 @@ export interface EditorState {
   updateSectionProps: (id: string, props: Partial<SectionProps>) => void;
   duplicateSection: (id: string) => void;
   setDirty: (dirty: boolean) => void;
+  setThemeDirty: (dirty: boolean) => void;
   setSaving: (saving: boolean) => void;
   setTheme: (theme: Record<string, string>) => void;
   updateTheme: (key: string, value: string) => void;
@@ -79,7 +81,12 @@ export interface EditorState {
   // History Actions
   undo: () => void;
   redo: () => void;
-  saveHistory: () => void;
+  /**
+   * Tira um snapshot do estado atual para o histórico (chamar ANTES de mutar).
+   * Passe um `coalesceKey` para agrupar edições contínuas do mesmo alvo (ex:
+   * digitar num campo) num único snapshot, evitando que o undo desfaça letra a letra.
+   */
+  saveHistory: (coalesceKey?: string) => void;
   clearHistory: () => void;
 }
 
@@ -88,6 +95,12 @@ export interface EditorState {
 function generateId(): string {
   return `sec_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
 }
+
+// Estado de agrupamento (coalescing) do histórico — fora do store por ser
+// puramente interno e não-reativo.
+let lastCoalesceKey: string | null = null;
+let lastCoalesceAt = 0;
+const COALESCE_WINDOW_MS = 500;
 
 function getDefaultPropsForType(type: string): SectionProps {
   const entry = sectionRegistry[type];
@@ -101,6 +114,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedSectionId: null,
   selectedBlock: null,
   isDirty: false,
+  isThemeDirty: false,
   isSaving: false,
   theme: {},
 
@@ -111,7 +125,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   past: [],
   future: [],
 
-  saveHistory: () => {
+  saveHistory: (coalesceKey?: string) => {
+    const now = Date.now();
+    // Edição contínua do mesmo alvo dentro da janela: não empilha novo snapshot,
+    // preservando o estado anterior à rajada (1 undo desfaz a edição inteira).
+    if (coalesceKey && coalesceKey === lastCoalesceKey && now - lastCoalesceAt < COALESCE_WINDOW_MS) {
+      lastCoalesceAt = now;
+      set({ future: [] });
+      return;
+    }
+    lastCoalesceKey = coalesceKey ?? null;
+    lastCoalesceAt = now;
     const { sections, theme, past } = get();
     const stateCopy = {
       sections: JSON.parse(JSON.stringify(sections)),
@@ -121,9 +145,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ past: newPast, future: [] });
   },
 
-  clearHistory: () => set({ past: [], future: [] }),
+  clearHistory: () => {
+    lastCoalesceKey = null;
+    set({ past: [], future: [] });
+  },
 
   undo: () => {
+    lastCoalesceKey = null;
     const { past, sections, theme, future } = get();
     if (past.length === 0) return;
 
@@ -140,6 +168,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   redo: () => {
+    lastCoalesceKey = null;
     const { past, sections, theme, future } = get();
     if (future.length === 0) return;
 
@@ -235,7 +264,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   updateSectionProps: (id, props) => {
-    get().saveHistory();
+    // Agrupa edições contínuas do(s) mesmo(s) campo(s) da mesma seção num só snapshot.
+    get().saveHistory(`props:${id}:${Object.keys(props).join(",")}`);
     const { sections } = get();
     set({
       sections: sections.map((s) =>
@@ -261,14 +291,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   setDirty: (dirty: boolean) => set({ isDirty: dirty }),
+  setThemeDirty: (dirty: boolean) => set({ isThemeDirty: dirty }),
   setSaving: (saving) => set({ isSaving: saving }),
 
-  setTheme: (theme) => set({ theme, isDirty: false }),
+  setTheme: (theme) => set({ theme, isDirty: false, isThemeDirty: false }),
 
   updateTheme: (key, value) => {
-    get().saveHistory();
+    get().saveHistory(`theme:${key}`);
     const { theme } = get();
-    set({ theme: { ...theme, [key]: value }, isDirty: true });
+    set({ theme: { ...theme, [key]: value }, isDirty: true, isThemeDirty: true });
   },
 
   resetTheme: () => {
@@ -283,6 +314,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         theme_custom_colors: "[]",
       },
       isDirty: true,
+      isThemeDirty: true,
     });
   },
 
@@ -296,6 +328,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedSectionId: null,
       selectedBlock: null,
       isDirty: false,
+      isThemeDirty: false,
       isSaving: false,
       theme: {},
       canvasMode: "edit",

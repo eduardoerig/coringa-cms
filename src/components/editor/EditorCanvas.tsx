@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useEditorStore } from "@/stores/editorStore";
 import { SectionInCanvas } from "./SectionInCanvas";
 import {
@@ -18,6 +18,19 @@ import { useDroppable } from "@dnd-kit/core";
 import { generatePalette, safeCssColor, safeCssTokenId } from "@/utils/colors";
 import { cn } from "@/lib/utils";
 
+// Zoom padrão por dispositivo + persistência por viewport em localStorage.
+const ZOOM_STORAGE_KEY = "coringa.editor.zoom";
+const ZOOM_DEFAULTS: Record<string, number> = { desktop: 0.85, tablet: 0.7, mobile: 0.9 };
+
+function loadZoomMap(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(localStorage.getItem(ZOOM_STORAGE_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
 // Zona de inserção entre seções — destino de drop para blocos novos da biblioteca
 function DropGap({ index }: { index: number }) {
   const { setNodeRef, isOver } = useDroppable({ id: `gap:${index}` });
@@ -31,18 +44,37 @@ function DropGap({ index }: { index: number }) {
 
 export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
   const { sections, selectedSectionId, selectSection, theme, viewport, canvasMode, dragState } = useEditorStore();
-  const [zoom, setZoom] = useState(0.85);
+  // Zoom inicial = preferência salva para o viewport atual, ou o padrão do dispositivo.
+  const [zoom, setZoomState] = useState(() => loadZoomMap()[viewport] ?? ZOOM_DEFAULTS[viewport]);
   const [showGrid, setShowGrid] = useState(true);
   const isPreview = canvasMode === "preview";
   const isDraggingNew = dragState?.kind === "new";
   const { setNodeRef: setEmptyDropRef, isOver: isEmptyDropOver } = useDroppable({ id: "gap:0" });
 
-  // Zoom padrão por dispositivo — ajuste de estado durante render (padrão React
-  // recomendado ao reagir à mudança de uma prop/estado externo, sem useEffect)
+  // setZoom que persiste a escolha por viewport.
+  const setZoom = useCallback(
+    (updater: number | ((prev: number) => number)) => {
+      setZoomState((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater;
+        const map = loadZoomMap();
+        map[viewport] = next;
+        try {
+          localStorage.setItem(ZOOM_STORAGE_KEY, JSON.stringify(map));
+        } catch {
+          /* localStorage indisponível — ignora */
+        }
+        return next;
+      });
+    },
+    [viewport]
+  );
+
+  // Ao trocar de viewport, aplica a preferência salva (ou o padrão) sem sobrescrever
+  // o zoom manual do usuário — ajuste de estado durante render (padrão React).
   const [prevViewport, setPrevViewport] = useState(viewport);
   if (viewport !== prevViewport) {
     setPrevViewport(viewport);
-    setZoom(viewport === "desktop" ? 0.85 : viewport === "tablet" ? 0.7 : 0.9);
+    setZoomState(loadZoomMap()[viewport] ?? ZOOM_DEFAULTS[viewport]);
   }
 
   const primaryColor = safeCssColor(theme.theme_primary_color, "#2563EB");
@@ -53,7 +85,7 @@ export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) 
   const tertiaryColor = safeCssColor(theme.theme_tertiary_color, "#F59E0B");
   const primaryHover = theme.theme_button_hover ? safeCssColor(theme.theme_button_hover, primaryColor) : palette.dark;
   const fontSans = theme.theme_font_sans || "inter";
-  const fontDisplay = theme.theme_font_display || "space-grotesk";
+  const fontDisplay = theme.theme_font_display || "poppins";
 
   // Cores customizadas da Paleta Global → variáveis CSS no canvas (espelha o root layout).
   // Sem isto, valores como `var(--color_xxx)` aplicados a um elemento não resolvem no editor.
@@ -96,16 +128,18 @@ ${customTokensCss}    }
       {!isPreview && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 p-2 bg-[#14141f]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
           <div className="flex items-center gap-1">
-            <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} className="p-2 rounded-xl text-zinc-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"><ZoomOut className="w-4 h-4" /></button>
+            <button onClick={() => setZoom(z => Math.max(0.3, z - 0.1))} aria-label="Diminuir zoom" title="Diminuir zoom" className="p-2 rounded-xl text-zinc-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"><ZoomOut className="w-4 h-4" /></button>
             <div className="flex items-center justify-center min-w-[40px]">
               <span className="text-[11px] font-black text-white">{(zoom * 100).toFixed(0)}%</span>
             </div>
-            <button onClick={() => setZoom(z => Math.min(2, z + 0.1))} className="p-2 rounded-xl text-zinc-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"><ZoomIn className="w-4 h-4" /></button>
-            <button onClick={() => setZoom(1)} className="p-2 rounded-xl text-zinc-400 hover:bg-white/10 hover:text-white transition-all active:rotate-180 duration-500" title="Reset Zoom"><RotateCcw className="w-4 h-4" /></button>
+            <button onClick={() => setZoom(z => Math.min(2, z + 0.1))} aria-label="Aumentar zoom" title="Aumentar zoom" className="p-2 rounded-xl text-zinc-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"><ZoomIn className="w-4 h-4" /></button>
+            <button onClick={() => setZoom(1)} aria-label="Redefinir zoom" className="p-2 rounded-xl text-zinc-400 hover:bg-white/10 hover:text-white transition-all active:rotate-180 duration-500" title="Reset Zoom"><RotateCcw className="w-4 h-4" /></button>
           </div>
           <div className="w-px h-6 bg-white/10" />
           <button
             onClick={() => setShowGrid(!showGrid)}
+            aria-label={showGrid ? "Ocultar grade" : "Mostrar grade"}
+            aria-pressed={showGrid}
             className={cn(
               "p-2.5 rounded-xl transition-all duration-300",
               showGrid ? "bg-indigo-500/20 text-indigo-300" : "text-zinc-400 hover:text-white hover:bg-white/10"
@@ -117,8 +151,11 @@ ${customTokensCss}    }
         </div>
       )}
 
-      {/* Canvas Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-12 scroll-smooth custom-scrollbar relative">
+      {/* Canvas Area — clicar no fundo (fora de uma seção) limpa a seleção */}
+      <div
+        onClick={() => { if (!isPreview && selectedSectionId) selectSection(null); }}
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 lg:p-12 scroll-smooth custom-scrollbar relative"
+      >
         {/* Grid Pattern Background */}
         {showGrid && !isPreview && (
           <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.07]"
@@ -200,6 +237,15 @@ ${customTokensCss}    }
                       <p className="text-text-500 text-sm leading-relaxed mb-8">
                         Adicione blocos para começar a construir seu site.
                       </p>
+                      {!isPreview && onOpenLibrary && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onOpenLibrary(); }}
+                          className="group inline-flex items-center gap-2.5 px-6 py-3 bg-zinc-900 text-white rounded-full shadow-lg hover:bg-primary transition-all duration-300 active:scale-95"
+                        >
+                          <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
+                          <span className="text-sm font-bold tracking-tight">Adicionar primeira seção</span>
+                        </button>
+                      )}
                     </motion.div>
                   </div>
                 ) : (

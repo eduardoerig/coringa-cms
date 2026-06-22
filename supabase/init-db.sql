@@ -182,7 +182,10 @@ CREATE POLICY "admin_delete_leads"
 CREATE TABLE IF NOT EXISTS public.page_layouts (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  -- `sections` = rascunho (editado pelo Studio, gravado pelo auto-save).
+  -- `published_sections` = versão ao vivo, lida pela landing pública.
   sections JSONB NOT NULL DEFAULT '[]',
+  published_sections JSONB NOT NULL DEFAULT '[]',
   is_published BOOLEAN DEFAULT false,
   updated_at TIMESTAMPTZ DEFAULT now(),
   updated_by UUID REFERENCES auth.users(id)
@@ -312,6 +315,9 @@ VALUES (
   true
 )
 ON CONFLICT (id) DO NOTHING;
+
+-- Espelha o rascunho do seed na versão publicada (landing lê published_sections).
+UPDATE public.page_layouts SET published_sections = sections WHERE id = 'home';
 
 
 -- ---------------------------------------------------------------

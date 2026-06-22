@@ -4,7 +4,7 @@ import { sectionRegistry, sectionComponentMap } from "./sections/registry";
 import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -31,8 +31,9 @@ function DeleteConfirm({ onConfirm, onCancel }: { onConfirm: () => void; onCance
 }
 
 export function SectionInCanvas({ section, index, isSelected, onSelect }: Props) {
-  const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme, canvasMode, selectBlock } = useEditorStore();
+  const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme, canvasMode, selectBlock, updateSectionProps } = useEditorStore();
   const [showDelete, setShowDelete] = useState(false);
+  const editingRef = useRef<HTMLElement | null>(null);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
     data: { kind: "reorder", sectionId: section.id } satisfies DragState,
@@ -64,6 +65,63 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
     if (!fieldKey) return;
     const itemAttr = fieldEl.getAttribute("data-item-index");
     selectBlock({ sectionId: section.id, fieldKey, itemIndex: itemAttr != null ? Number(itemAttr) : undefined });
+  };
+
+  // Edição inline: duplo-clique num texto puro (campo text/textarea de nível superior)
+  // torna o elemento editável; o valor é gravado no blur/Enter. Rich text continua no painel.
+  const handleFieldDoubleClick = (e: React.MouseEvent) => {
+    const el = (e.target as HTMLElement).closest("[data-field]") as HTMLElement | null;
+    if (!el || editingRef.current) return;
+    const fieldKey = el.getAttribute("data-field");
+    if (!fieldKey || el.getAttribute("data-item-index") != null) return; // só campos de nível superior
+    const field = entry.fields.find((f) => f.key === fieldKey);
+    if (!field || (field.type !== "text" && field.type !== "textarea")) return;
+    if (el.children.length > 0) return; // só elementos de texto puro (sem ícones/filhos)
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const isMultiline = field.type === "textarea";
+    const original = el.innerText;
+    editingRef.current = el;
+    // "plaintext-only" onde houver suporte (Chrome/Safari); senão "true" (Firefox).
+    try { el.contentEditable = "plaintext-only"; } catch { el.contentEditable = "true"; }
+    if (el.contentEditable !== "plaintext-only") el.contentEditable = "true";
+    el.spellcheck = false;
+    el.style.outline = "2px solid rgb(24 24 27)";
+    el.style.outlineOffset = "2px";
+    el.style.cursor = "text";
+    el.focus();
+    // seleciona todo o conteúdo para substituição rápida
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel?.removeAllRanges();
+    sel?.addRange(range);
+
+    const finish = (commit: boolean) => {
+      el.removeEventListener("blur", onBlur);
+      el.removeEventListener("keydown", onKey);
+      el.contentEditable = "false";
+      el.style.outline = "";
+      el.style.outlineOffset = "";
+      el.style.cursor = "";
+      editingRef.current = null;
+      const value = el.innerText;
+      if (commit) {
+        updateSectionProps(section.id, { [fieldKey]: isMultiline ? value : value.trim() });
+      } else {
+        el.innerText = original; // cancela
+      }
+    };
+    const onBlur = () => finish(true);
+    const onKey = (ev: KeyboardEvent) => {
+      ev.stopPropagation(); // impede atalhos globais (Delete/Esc/Ctrl+Z) durante a edição
+      if (ev.key === "Escape") { ev.preventDefault(); finish(false); el.blur(); }
+      else if (ev.key === "Enter" && !isMultiline) { ev.preventDefault(); finish(true); el.blur(); }
+    };
+    el.addEventListener("blur", onBlur);
+    el.addEventListener("keydown", onKey);
   };
 
   return (
@@ -120,6 +178,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
                 : "pointer-events-none"
             )}
             onClickCapture={isSelected ? handleFieldClick : undefined}
+            onDoubleClick={isSelected ? handleFieldDoubleClick : undefined}
           >
             <Component props={section.props} settings={theme} isEditor={true} />
           </div>
