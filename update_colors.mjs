@@ -1,7 +1,18 @@
+// Script de seed/atualização de tema. Execute carregando o .env.local:
+//   node --env-file=.env.local update_colors.mjs
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://orhjdobroevnidamqcai.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yaGpkb2Jyb2V2bmlkYW1xY2FpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczMDI1NTQsImV4cCI6MjA5Mjg3ODU1NH0.NmLdLmtPuUHkdlmlWEtziFMckGr9_mtoTbyTkvN2U2A';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error(
+    'Defina NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY no ambiente.\n' +
+    'Ex.: node --env-file=.env.local update_colors.mjs'
+  );
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function updateCamarimTheme() {
