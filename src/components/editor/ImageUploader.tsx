@@ -60,6 +60,13 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
     if (file) handleUpload(file);
   };
 
+  // Só limpa o estado ao sair do container de fato — ignora o dragleave que
+  // dispara quando o cursor apenas entra num elemento filho (evita o flicker).
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragOver(false);
+  };
+
   return (
     <div className="space-y-2">
       {label && (
@@ -72,7 +79,7 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
         <div
           className="relative group rounded-xl overflow-hidden border border-text-100 bg-surface-50"
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
+          onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
           <img
@@ -116,7 +123,7 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
         <div
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
+          onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={`flex flex-col items-center justify-center gap-2 py-8 rounded-xl border-2 border-dashed cursor-pointer transition-all ${
             dragOver

@@ -118,7 +118,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
 
   return (
     <>
-      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} tone="light" />
       <div ref={setNodeRef} style={sortableStyle} onClick={(e) => { e.stopPropagation(); onSelect(); }} className={cn("group relative transition-all duration-300", isSelected ? "ring-[3px] ring-zinc-900 ring-offset-0 z-20" : "hover:ring-2 hover:ring-zinc-400/40", !section.visible && "opacity-40 grayscale-[0.5]", isDragging && "opacity-50 z-50")}>
         {/* Top label */}
         <AnimatePresence>

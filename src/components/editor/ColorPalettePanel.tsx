@@ -238,7 +238,7 @@ export function ColorPalettePanel() {
         )}
       </div>
 
-      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} tone="light" />
     </div>
   );
 }

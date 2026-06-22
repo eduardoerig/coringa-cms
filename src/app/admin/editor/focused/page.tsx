@@ -624,7 +624,7 @@ export default function FocusedEditorPage() {
         </DragOverlay>
         </DndContext>
       </div>
-      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} tone="light" />
     </FranchiseProvider>
   );
 }
