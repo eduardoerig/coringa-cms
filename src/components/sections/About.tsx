@@ -107,7 +107,7 @@ export function About({ props: editorProps, isEditor }: AboutProps) {
             </div>
 
             {/* Selo macio */}
-            <div className={cn("absolute -bottom-5 -left-3 md:-left-6 p-4 flex items-center gap-3 md:gap-4 bg-white", SOFT.cardSm, SOFT.shadow, SOFT.ring, styles.isDark && "!bg-[#1a1a1a]")}>
+            <div className={cn("absolute -bottom-5 -left-3 md:-left-6 z-20 p-4 flex items-center gap-3 md:gap-4 bg-white", SOFT.cardSm, SOFT.shadow, SOFT.ring, styles.isDark && "!bg-[#1a1a1a]")}>
               <div
                 data-field="decalNumber"
                 className="w-11 h-11 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg md:text-xl"
