@@ -6,7 +6,7 @@ import { ImageUploader } from "./ImageUploader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
-import { X, Plus, Trash2, ChevronUp, ChevronDown, Palette, Settings2, Layout, ChevronDown as Down, Keyboard, RotateCcw, Type, AlignLeft, MousePointerClick, Image as ImageIcon, Tag, LayoutGrid, SlidersHorizontal, Store, Share2, Square } from "lucide-react";
+import { X, Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Palette, Settings2, Layout, ChevronDown as Down, Keyboard, RotateCcw, Type, MousePointerClick, Image as ImageIcon, Tag, LayoutGrid, SlidersHorizontal, Store, Share2, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +23,24 @@ export function PropertiesPanel() {
   const targetKey = activeBlock?.fieldKey ?? null;
   const targetItem = activeBlock?.itemIndex;
   const targetField = entry?.fields.find((f) => f.key === targetKey) ?? null;
+  const targetGroup = targetField?.group ?? null;
+
+  // Navegação drill-in: qual elemento (group) está aberto no painel. `null` = lista.
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+
+  // Ao trocar de seção, volta para a lista de elementos.
+  const [prevSectionId, setPrevSectionId] = useState(selectedSectionId);
+  if (selectedSectionId !== prevSectionId) {
+    setPrevSectionId(selectedSectionId);
+    setOpenGroup(null);
+  }
+
+  // Ao clicar num elemento no canvas, entra automaticamente na tela dele.
+  const [prevTargetGroup, setPrevTargetGroup] = useState(targetGroup);
+  if (targetGroup !== prevTargetGroup) {
+    setPrevTargetGroup(targetGroup);
+    if (targetGroup) setOpenGroup(targetGroup);
+  }
 
   // Rola até o campo (ou item de lista) alvo quando a seleção muda no canvas.
   useEffect(() => {
@@ -120,27 +138,36 @@ export function PropertiesPanel() {
   const groups: { name: string; fields: PropField[] }[] = [];
   const groupIndex = new Map<string, number>();
   for (const f of entry.fields) {
-    const g = f.group ?? "Conteúdo";
+    const g = f.group ?? "Geral";
     let i = groupIndex.get(g);
     if (i === undefined) { i = groups.length; groupIndex.set(g, i); groups.push({ name: g, fields: [] }); }
     groups[i].fields.push(f);
   }
-  const targetGroup = targetField?.group ?? null;
+  const activeGroup = openGroup ? groups.find((g) => g.name === openGroup) ?? null : null;
+  const groupHasColor = (g: { fields: PropField[] }) => g.fields.some((f) => f.type === "color");
+  const arrayCount = (f: PropField) =>
+    Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0;
 
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
       <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm shrink-0">
-            <Layout className="w-4 h-4" />
-          </div>
+          {activeGroup ? (
+            <button onClick={() => setOpenGroup(null)} aria-label="Voltar para a lista de elementos" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-colors shrink-0">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Layout className="w-4 h-4" />
+            </div>
+          )}
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-zinc-900 text-[13px] truncate">{entry.label}</h3>
+            <h3 className="font-bold text-zinc-900 text-[13px] truncate">{activeGroup ? activeGroup.name : entry.label}</h3>
             <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">
-              {targetField ? (
-                <span className="text-zinc-600">Editando · {targetField.label}</span>
+              {activeGroup ? (
+                <span className="text-zinc-600">{entry.label}</span>
               ) : (
-                "Clique p/ selecionar · 2× p/ editar"
+                "Escolha um elemento p/ editar"
               )}
             </p>
           </div>
@@ -150,70 +177,74 @@ export function PropertiesPanel() {
         </div>
       </div>
 
-      {/* Painel unificado: Conteúdo, Itens e Aparência numa só rolagem */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1 divide-y divide-zinc-100 custom-scrollbar">
-        {contentFields.length > 0 && (
-          <Accordion
-            title="Conteúdo"
-            icon={<Sparkles className="w-4 h-4" />}
-            defaultOpen
-            forceOpen={contentFields.some((f) => f.key === targetKey)}
-          >
-            <div className="space-y-3.5">
-              {contentFields.map((f) => (
-                <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
-                  <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
-                </div>
-              ))}
+      {activeGroup ? (
+        /* Detalhe: todos os campos do elemento (texto + cores da paleta) */
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+          {activeGroup.fields.map((f) => (
+            <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && (f.type !== "array" || targetItem == null) && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
+              {f.type === "array" ? (
+                <ArrayFieldRenderer
+                  field={f}
+                  value={(selectedSection.props[f.key] as Record<string, unknown>[]) || []}
+                  onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
+                  openIndex={targetKey === f.key ? targetItem : undefined}
+                />
+              ) : (
+                <FieldRenderer field={f} value={selectedSection.props[f.key]} onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })} />
+              )}
             </div>
-          </Accordion>
-        )}
-
-        {arrayFields.map((f) => (
-          <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && targetItem == null && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white")}>
-            <Accordion
-              title={`Itens · ${f.label}`}
-              icon={<Plus className="w-4 h-4" />}
-              count={Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0}
-              forceOpen={targetKey === f.key}
-            >
-              <ArrayFieldRenderer
-                field={f}
-                value={(selectedSection.props[f.key] as Record<string, unknown>[]) || []}
-                onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
-                openIndex={targetKey === f.key ? targetItem : undefined}
-              />
-            </Accordion>
-          </div>
-        ))}
-
-        {appearanceFields.length > 0 && (
-          <Accordion
-            title="Aparência"
-            icon={<Palette className="w-4 h-4" />}
-            forceOpen={appearanceFields.some((f) => f.key === targetKey)}
-          >
-            <div className="space-y-2.5">
-              {appearanceFields.map((f) => (
-                <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
-                  <AppearanceFieldRenderer
-                    field={f}
-                    value={selectedSection.props[f.key]}
-                    onChange={(v) => updateSectionProps(selectedSection.id, { [f.key]: v })}
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+          ))}
+          {groupHasColor(activeGroup) && (
+            <div className="mt-2 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
               <p className="text-[11px] text-zinc-500 leading-relaxed">
                 Deixe um campo de cor vazio para herdar a cor do Tema Global. Preencha só o que quiser personalizar nesta seção.
               </p>
             </div>
-          </Accordion>
-        )}
-      </div>
+          )}
+        </div>
+      ) : (
+        /* Lista: um botão por elemento */
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 custom-scrollbar">
+          {groups.map((g) => {
+            const Icon = groupIcon(g.name);
+            const arr = g.fields.find((f) => f.type === "array");
+            return (
+              <button
+                key={g.name}
+                onClick={() => setOpenGroup(g.name)}
+                className="w-full flex items-center gap-3 px-3.5 py-3 bg-white border border-zinc-100 rounded-2xl text-left hover:border-zinc-300 hover:bg-zinc-50 transition-all group/el"
+              >
+                <span className="w-8 h-8 rounded-xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-500 group-hover/el:text-zinc-900 group-hover/el:bg-white transition-colors shrink-0">
+                  <Icon className="w-4 h-4" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-[13px] font-semibold text-zinc-800 truncate">{g.name}</span>
+                  <span className="block text-[10px] text-zinc-400 font-medium truncate">
+                    {arr ? `${arrayCount(arr)} ${arrayCount(arr) === 1 ? "item" : "itens"}` : `${g.fields.length} ${g.fields.length === 1 ? "campo" : "campos"}`}
+                  </span>
+                </span>
+                <ChevronRight className="w-4 h-4 text-zinc-300 group-hover/el:text-zinc-500 transition-colors shrink-0" />
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
+}
+
+// Ícone por nome de elemento (substring, sem novos imports).
+function groupIcon(name: string): React.ComponentType<{ className?: string }> {
+  const n = name.toLowerCase();
+  if (n.includes("botão") || n.includes("cta")) return MousePointerClick;
+  if (n.includes("título") || n.includes("titulo") || n.includes("texto") || n.includes("subtítulo")) return Type;
+  if (n.includes("badge") || n.includes("marca")) return Tag;
+  if (n.includes("seção") || n.includes("secao")) return SlidersHorizontal;
+  if (n.includes("links") || n.includes("menu") || n.includes("itens") || n.includes("produtos")) return LayoutGrid;
+  if (n.includes("rede") || n.includes("social")) return Share2;
+  if (n.includes("imagem") || n.includes("galeria") || n.includes("foto")) return ImageIcon;
+  if (n.includes("loja") || n.includes("franquia")) return Store;
+  return Square;
 }
 
 function Accordion({ title, icon, children, defaultOpen = false, count, forceOpen }: { title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean; count?: number; forceOpen?: boolean; }) {
@@ -244,21 +275,6 @@ function Accordion({ title, icon, children, defaultOpen = false, count, forceOpe
       </AnimatePresence>
     </div>
   );
-}
-
-// ---- Renderer de Aparência: Color picker inline compacto com botão "limpar" ----
-function AppearanceFieldRenderer({ field, value, onChange }: { field: PropField; value: unknown; onChange: (v: unknown) => void; }) {
-  // Campos select e text na aparência continuam com o renderer padrão
-  if (field.type === "select" || field.type === "text" || field.type === "image") {
-    return <FieldRenderer field={field} value={value} onChange={onChange} />;
-  }
-
-  // Para campos de cor: picker inline compacto
-  if (field.type === "color") {
-    return <InlineColorPicker label={field.label} placeholder={field.placeholder} value={(value as string) || ""} onChange={onChange} />;
-  }
-
-  return <FieldRenderer field={field} value={value} onChange={onChange} />;
 }
 
 // ---- Inline Color Picker: Compacto, com preview + hex + botão limpar ----

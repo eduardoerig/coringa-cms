@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
+import { createPortal } from "react-dom";
 import type { ConfirmState } from "@/hooks/useConfirm";
 
 interface Props {
@@ -10,7 +11,11 @@ interface Props {
 }
 
 export function ConfirmDialog({ state, onRespond }: Props) {
-  return (
+  // Renderiza num portal no <body> para que o `fixed` se ancore na viewport,
+  // e não em algum ancestral com `transform` (ex.: o zoom do canvas do editor).
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {state?.open && (
         <motion.div
@@ -68,6 +73,7 @@ export function ConfirmDialog({ state, onRespond }: Props) {
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

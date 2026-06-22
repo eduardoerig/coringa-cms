@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { Upload, X, Loader2 } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import Image from "next/image";
 
 interface ImageUploaderProps {
   value: string;
@@ -50,6 +49,8 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleUpload(file);
+    // Permite reenviar o mesmo arquivo logo em seguida (onChange não dispara p/ valor igual).
+    e.target.value = "";
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -68,19 +69,48 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
       )}
 
       {value ? (
-        <div className="relative group rounded-xl overflow-hidden border border-text-100 bg-surface-50">
+        <div
+          className="relative group rounded-xl overflow-hidden border border-text-100 bg-surface-50"
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={handleDrop}
+        >
           <img
             src={value}
             alt="Preview"
             className="w-full h-32 object-cover"
           />
-          <button
-            type="button"
-            onClick={() => onChange("")}
-            className="absolute top-2 right-2 p-1.5 bg-text-900/70 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-          >
-            <X className="w-4 h-4" />
-          </button>
+
+          {/* Overlay de ações: trocar (abre seletor) ou remover */}
+          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/0 opacity-0 group-hover:opacity-100 group-hover:bg-black/45 transition-all">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-text-900 rounded-lg text-xs font-bold shadow-sm hover:bg-surface-100 transition-colors"
+            >
+              <Upload className="w-3.5 h-3.5" /> Trocar
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-bold shadow-sm hover:bg-red-700 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" /> Remover
+            </button>
+          </div>
+
+          {/* Spinner enquanto substitui */}
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            </div>
+          )}
+
+          {dragOver && (
+            <div className="absolute inset-0 flex items-center justify-center bg-primary/20 border-2 border-dashed border-primary rounded-xl pointer-events-none">
+              <span className="text-xs font-bold text-primary">Solte para trocar</span>
+            </div>
+          )}
         </div>
       ) : (
         <div

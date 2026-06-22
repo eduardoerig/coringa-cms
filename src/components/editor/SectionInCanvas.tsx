@@ -1,39 +1,31 @@
 "use client";
 import { useEditorStore, type PageSection, type DragState } from "@/stores/editorStore";
 import { sectionRegistry, sectionComponentMap } from "./sections/registry";
-import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
+import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useConfirm } from "@/hooks/useConfirm";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 interface Props { section: PageSection; index: number; isSelected: boolean; onSelect: () => void; }
 
-function DeleteConfirm({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/30 backdrop-blur-sm"
-      onClick={onCancel}>
-      <motion.div initial={{ scale: 0.9, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 10 }}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-3xl shadow-2xl p-6 w-[280px] text-center border border-zinc-100">
-        <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4"><AlertCircle className="w-6 h-6 text-red-500" /></div>
-        <h3 className="font-black text-zinc-900 text-sm mb-1">Remover seção?</h3>
-        <p className="text-xs text-zinc-400 mb-5">Esta ação não pode ser desfeita.</p>
-        <div className="flex gap-2">
-          <button onClick={onCancel} className="flex-1 py-2.5 rounded-xl border border-zinc-200 text-xs font-black uppercase tracking-wider text-zinc-600 hover:bg-zinc-50 transition-all">Cancelar</button>
-          <button onClick={onConfirm} className="flex-1 py-2.5 rounded-xl bg-red-500 text-xs font-black uppercase tracking-wider text-white hover:bg-red-600 transition-all">Remover</button>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-}
-
 export function SectionInCanvas({ section, index, isSelected, onSelect }: Props) {
   const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme, canvasMode, selectBlock, updateSectionProps } = useEditorStore();
-  const [showDelete, setShowDelete] = useState(false);
+  const { confirm, confirmState, respondConfirm } = useConfirm();
   const editingRef = useRef<HTMLElement | null>(null);
+
+  const handleRemove = async () => {
+    const ok = await confirm({
+      title: "Remover seção?",
+      message: "Esta seção será removida do layout. Você pode desfazer com Ctrl+Z.",
+      variant: "danger",
+      confirmLabel: "Remover",
+    });
+    if (ok) removeSection(section.id);
+  };
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
     data: { kind: "reorder", sectionId: section.id } satisfies DragState,
@@ -126,7 +118,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
 
   return (
     <>
-      <AnimatePresence>{showDelete && <DeleteConfirm onConfirm={() => { removeSection(section.id); setShowDelete(false); }} onCancel={() => setShowDelete(false)} />}</AnimatePresence>
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
       <div ref={setNodeRef} style={sortableStyle} onClick={(e) => { e.stopPropagation(); onSelect(); }} className={cn("group relative transition-all duration-300", isSelected ? "ring-[3px] ring-zinc-900 ring-offset-0 z-20" : "hover:ring-2 hover:ring-zinc-400/40", !section.visible && "opacity-40 grayscale-[0.5]", isDragging && "opacity-50 z-50")}>
         {/* Top label */}
         <AnimatePresence>
@@ -163,7 +155,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
               </button>
               <button onClick={(e) => { e.stopPropagation(); duplicateSection(section.id); }} className="p-2 rounded-xl hover:bg-white/10 transition-colors" title="Duplicar"><Copy className="w-4 h-4" /></button>
               <div className="w-px h-4 bg-white/20 mx-0.5 self-center" />
-              <button onClick={(e) => { e.stopPropagation(); setShowDelete(true); }} className="p-2 rounded-xl hover:bg-red-500 transition-colors" title="Remover"><Trash2 className="w-4 h-4" /></button>
+              <button onClick={(e) => { e.stopPropagation(); handleRemove(); }} className="p-2 rounded-xl hover:bg-red-500 transition-colors" title="Remover"><Trash2 className="w-4 h-4" /></button>
             </motion.div>
           )}
         </AnimatePresence>

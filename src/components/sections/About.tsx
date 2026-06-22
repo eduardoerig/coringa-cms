@@ -33,11 +33,15 @@ export function About({ props: editorProps, isEditor }: AboutProps) {
   const titleColor = (editorProps?.titleColor as string) || "";
   const subtitleColor = (editorProps?.subtitleColor as string) || "";
   const accentColor = (editorProps?.accentColor as string) || "";
+  const eyebrowColor = (editorProps?.eyebrowColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const btnTextColor = (editorProps?.btnTextColor as string) || "";
   const decalNumber = (editorProps?.decalNumber as string) || "10";
   const decalLabel = (editorProps?.decalLabel as string) || "Anos";
   const decalText = (editorProps?.decalText as string) || "De Excelência";
+  const decalBgColor = (editorProps?.decalBgColor as string) || "";
+  const decalNumberColor = (editorProps?.decalNumberColor as string) || "";
+  const decalTextColor = (editorProps?.decalTextColor as string) || "";
 
   return (
     <section id="sobre" ref={ref} className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
@@ -52,7 +56,7 @@ export function About({ props: editorProps, isEditor }: AboutProps) {
           >
             {eyebrow && (
               <div className="mb-5">
-                <Eyebrow color={accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow>
+                <Eyebrow color={eyebrowColor || accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow>
               </div>
             )}
 
@@ -108,13 +112,13 @@ export function About({ props: editorProps, isEditor }: AboutProps) {
                 data-field="decalNumber"
                 className="w-11 h-11 md:w-12 md:h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg md:text-xl"
                 style={{
-                  backgroundColor: accentColor || btnBgColor || "var(--color-primary)",
-                  color: btnTextColor || "#FFFFFF",
+                  backgroundColor: decalBgColor || accentColor || btnBgColor || "var(--color-primary)",
+                  color: decalNumberColor || btnTextColor || "#FFFFFF",
                 }}
               >{decalNumber}</div>
               <div>
-                <div data-field="decalLabel" className={cn("text-[11px] font-semibold tracking-wide leading-none mb-1", styles.isDark ? "text-white/50" : "text-text-400")}>{decalLabel}</div>
-                <div data-field="decalText" className={cn("font-display font-semibold text-base md:text-lg", styles.isDark ? "text-white" : "text-text-900")}>{decalText}</div>
+                <div data-field="decalLabel" className={cn("text-[11px] font-semibold tracking-wide leading-none mb-1", styles.isDark ? "text-white/50" : "text-text-400")} style={decalTextColor ? { color: decalTextColor } : undefined}>{decalLabel}</div>
+                <div data-field="decalText" className={cn("font-display font-semibold text-base md:text-lg", styles.isDark ? "text-white" : "text-text-900")} style={decalTextColor ? { color: decalTextColor } : undefined}>{decalText}</div>
               </div>
             </div>
           </motion.div>

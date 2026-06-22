@@ -51,6 +51,10 @@ export function MenuSection({ props: editorProps }: MenuSectionProps) {
   const titleColor = (editorProps?.titleColor as string) || "";
   const subtitleColor = (editorProps?.subtitleColor as string) || "";
   const accentColor = (editorProps?.accentColor as string) || "";
+  const eyebrowColor = (editorProps?.eyebrowColor as string) || "";
+  const pdfBtnBgColor = (editorProps?.pdfBtnBgColor as string) || "";
+  const pdfBtnTextColor = (editorProps?.pdfBtnTextColor as string) || "";
+  const pdfBtnBorderColor = (editorProps?.pdfBtnBorderColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const filterActiveBgColor = (editorProps?.filterActiveBgColor as string) || "";
   const filterActiveTextColor = (editorProps?.filterActiveTextColor as string) || "";
@@ -113,7 +117,7 @@ export function MenuSection({ props: editorProps }: MenuSectionProps) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center max-w-2xl mx-auto mb-12"
         >
-          {eyebrow && <div className="mb-5"><Eyebrow color={accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow></div>}
+          {eyebrow && <div className="mb-5"><Eyebrow color={eyebrowColor || accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow></div>}
           <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title" className="mb-5 mx-auto">{title}</SectionHeading>
           <Lede color={subtitleColor} isDark={styles.isDark} dataField="subtitle" className="mx-auto">{subtitle}</Lede>
         </motion.div>
@@ -164,7 +168,7 @@ export function MenuSection({ props: editorProps }: MenuSectionProps) {
 
         <div className="mt-14 text-center relative z-10">
           <span data-field="pdfButtonText" className="inline-block">
-            <SoftButton onClick={handleDownloadPDF} variant="secondary" isDark={styles.isDark} className="px-8 py-3.5">
+            <SoftButton onClick={handleDownloadPDF} variant="secondary" isDark={styles.isDark} bgColor={pdfBtnBgColor} textColor={pdfBtnTextColor} borderColor={pdfBtnBorderColor} className="px-8 py-3.5">
               {isGeneratingPDF ? "Gerando…" : pdfButtonText}
             </SoftButton>
           </span>

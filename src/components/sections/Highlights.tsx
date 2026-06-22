@@ -56,6 +56,7 @@ export function Highlights({ props: editorProps, isEditor }: HighlightsProps) {
   const titleColor = (editorProps?.titleColor as string) || "";
   const subtitleColor = (editorProps?.subtitleColor as string) || "";
   const accentColor = (editorProps?.accentColor as string) || "";
+  const eyebrowColor = (editorProps?.eyebrowColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const cardBorderColor = (editorProps?.cardBorderColor as string) || "";
   const cardBgColor = (editorProps?.cardBgColor as string) || "";
@@ -100,7 +101,7 @@ export function Highlights({ props: editorProps, isEditor }: HighlightsProps) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="text-center max-w-2xl mx-auto mb-14"
         >
-          {eyebrow && <div className="mb-5"><Eyebrow color={accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow></div>}
+          {eyebrow && <div className="mb-5"><Eyebrow color={eyebrowColor || accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow></div>}
           <SectionHeading color={titleColor} isDark={styles.isDark} dataField="title" className="mb-5 mx-auto">{title}</SectionHeading>
           <Lede color={subtitleColor} isDark={styles.isDark} dataField="subtitle" className="mx-auto">{subtitle}</Lede>
         </motion.div>

@@ -2,29 +2,24 @@
 import { useEditorStore } from "@/stores/editorStore";
 import { sectionRegistry } from "./sections/registry";
 import { cn } from "@/lib/utils";
-import { GripVertical, Eye, EyeOff, Trash2, Copy, Layers, AlertCircle, X, Check } from "lucide-react";
-import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { useState } from "react";
-
-function DeleteDialog({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
-  return (
-    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-      className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center gap-3 p-4 border border-red-100 shadow-lg">
-      <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center"><AlertCircle className="w-5 h-5 text-red-500" /></div>
-      <p className="text-[11px] font-black text-zinc-900 uppercase tracking-wider">Remover camada?</p>
-      <div className="flex gap-2 w-full">
-        <button onClick={onCancel} className="flex-1 py-2 rounded-xl border border-zinc-200 text-[10px] font-black uppercase tracking-wider text-zinc-600 hover:bg-zinc-50 transition-all flex items-center justify-center gap-1.5"><X className="w-3 h-3" /> Cancelar</button>
-        <button onClick={onConfirm} className="flex-1 py-2 rounded-xl bg-red-500 text-[10px] font-black uppercase tracking-wider text-white hover:bg-red-600 transition-all flex items-center justify-center gap-1.5"><Trash2 className="w-3 h-3" /> Remover</button>
-      </div>
-    </motion.div>
-  );
-}
+import { GripVertical, Eye, EyeOff, Trash2, Copy, Layers } from "lucide-react";
+import { Reorder } from "framer-motion";
+import { useConfirm } from "@/hooks/useConfirm";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function LayerPanel() {
   const { sections, reorderSections, selectedSectionId, selectSection, removeSection, duplicateSection, toggleVisibility } = useEditorStore();
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const { confirm, confirmState, respondConfirm } = useConfirm();
 
-  const handleRemove = (id: string) => { removeSection(id); setConfirmId(null); };
+  const handleRemove = async (id: string) => {
+    const ok = await confirm({
+      title: "Remover camada?",
+      message: "Esta seção será removida do layout. Você pode desfazer com Ctrl+Z.",
+      variant: "danger",
+      confirmLabel: "Remover",
+    });
+    if (ok) removeSection(id);
+  };
 
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
@@ -53,12 +48,10 @@ export function LayerPanel() {
               const Icon = entry?.icon || Layers;
               const isSelected = selectedSectionId === section.id;
               const title = (section.props?.title as string) || entry?.label || "Seção";
-              const isConfirming = confirmId === section.id;
 
               return (
                 <Reorder.Item key={section.id} value={section} className="relative group">
                   <div onClick={() => selectSection(section.id)} className={cn("flex items-center gap-2.5 p-3 rounded-2xl transition-all border cursor-pointer relative overflow-hidden", isSelected ? "bg-zinc-900 text-white border-zinc-900 shadow-xl" : "bg-white border-transparent hover:bg-zinc-50 hover:border-zinc-200", !section.visible && "opacity-50")}>
-                    <AnimatePresence>{isConfirming && <DeleteDialog onConfirm={() => handleRemove(section.id)} onCancel={() => setConfirmId(null)} />}</AnimatePresence>
                     <div className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-zinc-300 group-hover:text-zinc-400 transition-colors"><GripVertical className={cn("w-4 h-4", isSelected && "text-white/40")} /></div>
                     <span className={cn("text-[9px] font-black w-4 text-right shrink-0", isSelected ? "text-white/40" : "text-zinc-300")}>#{index + 1}</span>
                     <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all", isSelected ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200")}>
@@ -73,7 +66,7 @@ export function LayerPanel() {
                         {section.visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); duplicateSection(section.id); }} className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isSelected ? "hover:bg-white/20 text-white" : "text-zinc-400 hover:bg-white hover:shadow-sm")} title="Duplicar"><Copy className="w-3.5 h-3.5" /></button>
-                      <button onClick={(e) => { e.stopPropagation(); setConfirmId(section.id); }} className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isSelected ? "hover:bg-red-500 text-white" : "text-zinc-400 hover:bg-red-50 hover:text-red-500")} title="Remover"><Trash2 className="w-3.5 h-3.5" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleRemove(section.id); }} className={cn("w-7 h-7 rounded-lg flex items-center justify-center transition-all", isSelected ? "hover:bg-red-500 text-white" : "text-zinc-400 hover:bg-red-50 hover:text-red-500")} title="Remover"><Trash2 className="w-3.5 h-3.5" /></button>
                     </div>
                   </div>
                 </Reorder.Item>
@@ -99,6 +92,8 @@ export function LayerPanel() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog state={confirmState} onRespond={respondConfirm} />
     </div>
   );
 }

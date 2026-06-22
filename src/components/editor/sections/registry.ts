@@ -75,6 +75,7 @@ export { getSectionStyles };
 // ---- Helpers de campos por elemento (cada cor mora no bloco do seu elemento) ----
 
 const TITLE_COLOR: PropField = { key: "titleColor", label: "Cor do título", type: "color", placeholder: "Automático", category: "appearance", group: "Título" };
+const EYEBROW_COLOR: PropField = { key: "eyebrowColor", label: "Cor do rótulo", type: "color", placeholder: "Automático", category: "appearance", group: "Rótulo" };
 const TEXT_COLOR = (group = "Texto"): PropField => ({ key: "subtitleColor", label: "Cor do texto", type: "color", placeholder: "Automático", category: "appearance", group });
 const BTN_COLORS = (group: string): PropField[] => [
   { key: "btnBgColor", label: "Cor do botão", type: "color", placeholder: "Automático", category: "appearance", group },
@@ -250,6 +251,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     previewImage: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "eyebrow", label: "Rótulo (eyebrow)", type: "text", placeholder: "Destaques", group: "Rótulo" },
+      EYEBROW_COLOR,
       { key: "title", label: "Título", type: "text", placeholder: "Nossos Queridinhos", group: "Título" },
       TITLE_COLOR,
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Descubra os sabores...", group: "Subtítulo" },
@@ -266,6 +268,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       eyebrow: "Destaques",
       title: "Nossos Queridinhos",
       subtitle: "Conheça os produtos em destaque da nossa marca.",
+      eyebrowColor: "",
       cardBgColor: "",
       cardBorderColor: "",
       tagBgColor: "",
@@ -283,6 +286,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     previewImage: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "eyebrow", label: "Rótulo (eyebrow)", type: "text", placeholder: "Cardápio", group: "Rótulo" },
+      EYEBROW_COLOR,
       { key: "title", label: "Título", type: "text", placeholder: "Explore nosso Cardápio", group: "Título" },
       TITLE_COLOR,
       { key: "subtitle", label: "Subtítulo", type: "textarea", placeholder: "Mais de 100 opções...", group: "Subtítulo" },
@@ -294,6 +298,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "cardBgColor", label: "Cor de fundo dos cards", type: "color", placeholder: "Automático", category: "appearance", group: "Cards" },
       // Botão do cardápio
       { key: "pdfButtonText", label: "Texto do botão", type: "text", placeholder: "Baixar cardápio", group: "Botão do cardápio" },
+      { key: "pdfBtnBgColor", label: "Cor de fundo", type: "color", placeholder: "Automático", category: "appearance", group: "Botão do cardápio" },
+      { key: "pdfBtnTextColor", label: "Cor do texto", type: "color", placeholder: "Automático", category: "appearance", group: "Botão do cardápio" },
+      { key: "pdfBtnBorderColor", label: "Cor da borda", type: "color", placeholder: "Automático", category: "appearance", group: "Botão do cardápio" },
       // Seção
       ...SECTION_GROUP(BTN_COLORS("Seção")),
     ],
@@ -302,6 +309,10 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       title: "Explore nosso Cardápio",
       subtitle: "Mais de 100 opções preparadas com carinho para você.",
       pdfButtonText: "Baixar cardápio",
+      eyebrowColor: "",
+      pdfBtnBgColor: "",
+      pdfBtnTextColor: "",
+      pdfBtnBorderColor: "",
       cardBgColor: "",
       filterActiveBgColor: "",
       filterActiveTextColor: "",
@@ -317,6 +328,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     previewImage: "https://images.unsplash.com/photo-1542435503-956c469947f6?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "eyebrow", label: "Rótulo (eyebrow)", type: "text", placeholder: "A nossa história", group: "Rótulo" },
+      EYEBROW_COLOR,
       { key: "title", label: "Título", type: "text", placeholder: "Nossa História", group: "Título" },
       TITLE_COLOR,
       { key: "content", label: "Texto", type: "richtext", group: "Texto" },
@@ -331,6 +343,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "decalNumber", label: "Número", type: "text", placeholder: "10", group: "Selo" },
       { key: "decalLabel", label: "Sub", type: "text", placeholder: "Anos", group: "Selo" },
       { key: "decalText", label: "Texto", type: "text", placeholder: "De Excelência", group: "Selo" },
+      { key: "decalBgColor", label: "Cor de fundo do número", type: "color", placeholder: "Automático", category: "appearance", group: "Selo" },
+      { key: "decalNumberColor", label: "Cor do número", type: "color", placeholder: "Automático", category: "appearance", group: "Selo" },
+      { key: "decalTextColor", label: "Cor do texto (sub/texto)", type: "color", placeholder: "Automático", category: "appearance", group: "Selo" },
       // Seção
       ...SECTION_GROUP(),
     ],
@@ -344,6 +359,10 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       decalNumber: "10",
       decalLabel: "Anos",
       decalText: "De Excelência",
+      eyebrowColor: "",
+      decalBgColor: "",
+      decalNumberColor: "",
+      decalTextColor: "",
       ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
@@ -357,6 +376,7 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     previewImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=600&auto=format&fit=crop",
     fields: [
       { key: "eyebrow", label: "Rótulo (eyebrow)", type: "text", placeholder: "Expansão", group: "Rótulo" },
+      EYEBROW_COLOR,
       { key: "title", label: "Título", type: "text", placeholder: "Seja um Franqueado", group: "Título" },
       TITLE_COLOR,
       { key: "description", label: "Descrição", type: "richtext", group: "Descrição" },
@@ -372,6 +392,8 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "label", label: "Label", type: "text", placeholder: "Unidades" },
         ],
       },
+      { key: "statValueColor", label: "Cor do valor", type: "color", placeholder: "Automático", category: "appearance", group: "Estatísticas" },
+      { key: "statLabelColor", label: "Cor do label", type: "color", placeholder: "Automático", category: "appearance", group: "Estatísticas" },
       // Botão
       { key: "buttonText", label: "Texto", type: "text", placeholder: "Quero Abrir uma Unidade", group: "Botão" },
       ...BTN_COLORS("Botão"),
@@ -395,6 +417,9 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       ],
       cardBgColor: "",
       cardBorderColor: "",
+      eyebrowColor: "",
+      statValueColor: "",
+      statLabelColor: "",
       ...COMMON_APPEARANCE_DEFAULTS,
     },
   },

@@ -43,6 +43,7 @@ export function Hero({ props: editorProps, isEditor }: HeroProps) {
   const badgeTextColor = (editorProps?.badgeTextColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const btnTextColor = (editorProps?.btnTextColor as string) || "";
+  const secondaryBtnBgColor = (editorProps?.secondaryBtnBgColor as string) || "";
   const secondaryBtnBorderColor = (editorProps?.secondaryBtnBorderColor as string) || "";
   const secondaryBtnTextColor = (editorProps?.secondaryBtnTextColor as string) || "";
 
@@ -157,6 +158,7 @@ export function Hero({ props: editorProps, isEditor }: HeroProps) {
                 href={ctaSecondaryLink}
                 variant="secondary"
                 isDark={styles.isDark || isOnImage}
+                bgColor={secondaryBtnBgColor}
                 textColor={secondaryBtnTextColor}
                 borderColor={secondaryBtnBorderColor}
                 className="px-8 py-4 text-base"

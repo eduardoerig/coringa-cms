@@ -35,10 +35,13 @@ export function Franchise({ props: editorProps }: FranchiseProps) {
   const titleColor = (editorProps?.titleColor as string) || "";
   const subtitleColor = (editorProps?.subtitleColor as string) || "";
   const accentColor = (editorProps?.accentColor as string) || "";
+  const eyebrowColor = (editorProps?.eyebrowColor as string) || "";
   const btnBgColor = (editorProps?.btnBgColor as string) || "";
   const btnTextColor = (editorProps?.btnTextColor as string) || "";
   const cardBgColor = (editorProps?.cardBgColor as string) || "";
   const cardBorderColor = (editorProps?.cardBorderColor as string) || "";
+  const statValueColor = (editorProps?.statValueColor as string) || "";
+  const statLabelColor = (editorProps?.statLabelColor as string) || "";
 
   const styles = getSectionStyles(editorProps || {});
   const tint = accentColor || "var(--color-primary)";
@@ -64,7 +67,7 @@ export function Franchise({ props: editorProps }: FranchiseProps) {
             >
               {eyebrow && (
                 <div className="mb-5">
-                  <Eyebrow color={accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow>
+                  <Eyebrow color={eyebrowColor || accentColor} isDark={styles.isDark} dataField="eyebrow">{eyebrow}</Eyebrow>
                 </div>
               )}
 
@@ -95,11 +98,11 @@ export function Franchise({ props: editorProps }: FranchiseProps) {
                   >
                     <div
                       className="text-3xl md:text-4xl font-display font-bold mb-1"
-                      style={{ color: titleColor || (styles.isDark ? "#FFFFFF" : "var(--color-text-900)") }}
+                      style={{ color: statValueColor || titleColor || (styles.isDark ? "#FFFFFF" : "var(--color-text-900)") }}
                     >{stat.value}</div>
                     <div
                       className="text-xs font-semibold tracking-wide"
-                      style={{ color: accentColor || (styles.isDark ? "rgba(255,255,255,0.6)" : "var(--color-text-400)") }}
+                      style={{ color: statLabelColor || accentColor || (styles.isDark ? "rgba(255,255,255,0.6)" : "var(--color-text-400)") }}
                     >{stat.label}</div>
                   </div>
                 ))}

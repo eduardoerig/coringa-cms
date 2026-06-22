@@ -40,7 +40,7 @@ export function SoftButton({
           boxShadow: hovered ? "0 18px 40px -12px rgba(0,0,0,0.28)" : "0 8px 30px rgba(0,0,0,0.08)",
         }
       : {
-          backgroundColor: "transparent",
+          backgroundColor: bgColor || "transparent",
           color: secondaryText,
           border: `1px solid ${secondaryBorder}`,
           transform: hovered ? "translateY(-2px)" : "none",
