@@ -176,9 +176,9 @@ export default function SettingsAdmin() {
                     onClick={() => setActiveTab(tab.id)}
                     className={cn(
                       "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all text-left",
-                      activeTab === tab.id 
-                        ? "bg-white text-primary shadow-sm border border-text-100" 
-                        : "text-text-500 hover:bg-white/50 hover:text-primary"
+                      activeTab === tab.id
+                        ? "bg-primary text-white shadow-md shadow-primary/20"
+                        : "text-text-500 hover:bg-surface-100 hover:text-primary"
                     )}
                   >
                     <tab.icon className="w-5 h-5 flex-shrink-0" />
