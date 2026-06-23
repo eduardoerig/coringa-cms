@@ -126,6 +126,19 @@ export function moveBlock(rows: ContainerRow[], blockId: string, dir: "up" | "do
   }));
 }
 
+// Gera ids novos para todas as linhas/colunas/blocos (ao inserir um bloco salvo,
+// evitando colisão de ids com outros containers da página).
+export function regenerateRowIds(rows: ContainerRow[]): ContainerRow[] {
+  return rows.map((r) => ({
+    id: genId("row"),
+    columns: r.columns.map((c) => ({
+      id: genId("col"),
+      width: c.width,
+      blocks: c.blocks.map((b) => ({ id: genId("blk"), type: b.type, props: JSON.parse(JSON.stringify(b.props)) })),
+    })),
+  }));
+}
+
 export function findBlock(rows: ContainerRow[], blockId: string): ContainerBlock | null {
   for (const r of rows) for (const c of r.columns) {
     const b = c.blocks.find((bl) => bl.id === blockId);

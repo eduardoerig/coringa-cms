@@ -1,21 +1,29 @@
 "use client";
 import { useEditorStore, type PageSection, type DragState } from "@/stores/editorStore";
 import { sectionRegistry, sectionComponentMap } from "./sections/registry";
-import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2 } from "lucide-react";
+import { GripVertical, Eye, EyeOff, Trash2, Copy, ChevronUp, ChevronDown, CheckCircle2, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { SaveBlockDialog } from "./SaveBlockDialog";
+import { createSavedBlock, fetchSavedBlocks } from "@/utils/savedBlocks";
 
 interface Props { section: PageSection; index: number; isSelected: boolean; onSelect: () => void; }
 
 export function SectionInCanvas({ section, index, isSelected, onSelect }: Props) {
-  const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme, canvasMode, selectBlock, updateSectionProps } = useEditorStore();
+  const { removeSection, toggleVisibility, duplicateSection, moveSection, sections, theme, canvasMode, selectBlock, updateSectionProps, setSavedBlocks } = useEditorStore();
   const { confirm, confirmState, respondConfirm } = useConfirm();
   const editingRef = useRef<HTMLElement | null>(null);
+  const [saveOpen, setSaveOpen] = useState(false);
+
+  const handleSaveAsBlock = async (name: string) => {
+    const { error } = await createSavedBlock({ name, kind: "section", type: section.type, props: section.props });
+    if (!error) setSavedBlocks(await fetchSavedBlocks());
+  };
 
   const handleRemove = async () => {
     const ok = await confirm({
@@ -119,6 +127,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
   return (
     <>
       <ConfirmDialog state={confirmState} onRespond={respondConfirm} tone="light" />
+      <SaveBlockDialog open={saveOpen} defaultName={entry.label} onSave={handleSaveAsBlock} onClose={() => setSaveOpen(false)} />
       <div ref={setNodeRef} style={sortableStyle} onClick={(e) => { e.stopPropagation(); onSelect(); }} className={cn("group relative transition-all duration-300", isSelected ? "ring-[3px] ring-zinc-900 ring-offset-0 z-20" : "hover:ring-2 hover:ring-zinc-400/40", !section.visible && "opacity-40 grayscale-[0.5]", isDragging && "opacity-50 z-50")}>
         {/* Top label */}
         <AnimatePresence>
@@ -154,6 +163,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
                 {section.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
               </button>
               <button onClick={(e) => { e.stopPropagation(); duplicateSection(section.id); }} className="p-2 rounded-xl hover:bg-white/10 transition-colors" title="Duplicar"><Copy className="w-4 h-4" /></button>
+              <button onClick={(e) => { e.stopPropagation(); setSaveOpen(true); }} className="p-2 rounded-xl hover:bg-white/10 transition-colors" title="Salvar como bloco"><Bookmark className="w-4 h-4" /></button>
               <div className="w-px h-4 bg-white/20 mx-0.5 self-center" />
               <button onClick={(e) => { e.stopPropagation(); handleRemove(); }} className="p-2 rounded-xl hover:bg-red-500 transition-colors" title="Remover"><Trash2 className="w-4 h-4" /></button>
             </motion.div>

@@ -14,6 +14,7 @@ import { ColorPalettePanel } from "@/components/editor/ColorPalettePanel";
 import { StudioSidebar, type StudioTab } from "@/components/editor/StudioSidebar";
 import { useEditorStore, type DragState, type PageSection } from "@/stores/editorStore";
 import { sectionRegistry } from "@/components/editor/sections/registry";
+import { fetchSavedBlocks } from "@/utils/savedBlocks";
 import { createClient } from "@/utils/supabase/client";
 import { cn } from "@/lib/utils";
 import { FranchiseProvider } from "@/context/FranchiseContext";
@@ -52,7 +53,7 @@ function DragGhost({ dragState, sections }: { dragState: DragState; sections: Pa
 
 
 export default function FocusedEditorPage() {
-  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectedSectionId, removeSection, undo, redo, past, future, clearHistory, canvasMode, setCanvasMode, viewport, setViewport, addSectionAtIndex, reorderSections, dragState, setDragState, openInserter } = useEditorStore();
+  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectedSectionId, removeSection, undo, redo, past, future, clearHistory, canvasMode, setCanvasMode, viewport, setViewport, addSectionAtIndex, reorderSections, dragState, setDragState, openInserter, setSavedBlocks } = useEditorStore();
   const isPreview = canvasMode === "preview";
 
   const sensors = useSensors(
@@ -153,11 +154,13 @@ export default function FocusedEditorPage() {
         setTheme(themeMap);
       }
 
+      setSavedBlocks(await fetchSavedBlocks());
+
       clearHistory();
       setLoading(false);
     }
     load();
-  }, [supabase, setSections, setTheme, clearHistory]);
+  }, [supabase, setSections, setTheme, clearHistory, setSavedBlocks]);
 
   // Página vazia → abre a galeria de seções automaticamente (uma vez) para
   // deixar óbvio como começar a montar o layout.

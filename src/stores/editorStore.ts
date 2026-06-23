@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { sectionRegistry } from "@/components/editor/sections/registry";
 import type { ContainerRow } from "@/components/editor/blocks/containerModel";
+import type { SavedBlock } from "@/utils/savedBlocks";
 
 // ---- Types ----
 
@@ -64,6 +65,9 @@ export interface EditorState {
   /** Posição onde a próxima seção/template será inserida (null = anexar ao final). */
   pendingInsertIndex: number | null;
 
+  // Meus blocos (blocos reutilizáveis salvos no Supabase)
+  savedBlocks: SavedBlock[];
+
   // History
   past: HistoryState[];
   future: HistoryState[];
@@ -98,6 +102,7 @@ export interface EditorState {
   setDragState: (drag: DragState | null) => void;
   openInserter: (index?: number | null) => void;
   closeInserter: () => void;
+  setSavedBlocks: (blocks: SavedBlock[]) => void;
 
   // History Actions
   undo: () => void;
@@ -146,6 +151,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   inserterOpen: false,
   pendingInsertIndex: null,
+  savedBlocks: [],
 
   past: [],
   future: [],
@@ -379,6 +385,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setDragState: (drag) => set({ dragState: drag }),
   openInserter: (index = null) => set({ inserterOpen: true, pendingInsertIndex: index }),
   closeInserter: () => set({ inserterOpen: false, pendingInsertIndex: null }),
+  setSavedBlocks: (blocks) => set({ savedBlocks: blocks }),
 
   reset: () =>
     set({
@@ -395,6 +402,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       dragState: null,
       inserterOpen: false,
       pendingInsertIndex: null,
+      savedBlocks: [],
       past: [],
       future: []
     }),

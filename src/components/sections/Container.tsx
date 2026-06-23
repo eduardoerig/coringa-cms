@@ -22,7 +22,9 @@ import {
   type ContainerColumn,
   type ContainerBlock,
 } from "@/components/editor/blocks/containerModel";
-import { Plus, Trash2, ChevronUp, ChevronDown, Columns3, X } from "lucide-react";
+import { Plus, Trash2, ChevronUp, ChevronDown, Columns3, X, Bookmark } from "lucide-react";
+import { SaveBlockDialog } from "@/components/editor/SaveBlockDialog";
+import { createSavedBlock, fetchSavedBlocks, type SavedBlock } from "@/utils/savedBlocks";
 
 interface ContainerProps {
   settings?: Record<string, string>;
@@ -39,9 +41,19 @@ export function Container({ props: editorProps, isEditor, sectionId }: Container
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectNode = useEditorStore((s) => s.selectNode);
   const mutateRows = useEditorStore((s) => s.mutateContainerRows);
+  const savedBlocks = useEditorStore((s) => s.savedBlocks);
+  const setSavedBlocks = useEditorStore((s) => s.setSavedBlocks);
 
   const [blockMenu, setBlockMenu] = useState<{ rowId: string; colId: string } | null>(null);
   const [rowMenu, setRowMenu] = useState(false);
+  const [saveBlock, setSaveBlock] = useState<ContainerBlock | null>(null);
+
+  const savedAtomic = savedBlocks.filter((b) => b.kind === "block");
+  const handleSaveAtomic = async (name: string) => {
+    if (!saveBlock) return;
+    const { error } = await createSavedBlock({ name, kind: "block", type: saveBlock.type, props: saveBlock.props });
+    if (!error) setSavedBlocks(await fetchSavedBlocks());
+  };
 
   const editing = !!isEditor && !!sectionId && selectedSectionId === sectionId;
 
@@ -57,6 +69,12 @@ export function Container({ props: editorProps, isEditor, sectionId }: Container
   const doRemoveColumn = (rowId: string, colId: string) => mutateRows(sid, (r) => removeColumn(r, rowId, colId));
   const doAddBlock = (rowId: string, colId: string, type: string) => {
     const block: ContainerBlock = { id: genId("blk"), type, props: JSON.parse(JSON.stringify(blockRegistry[type].defaultProps)) };
+    mutateRows(sid, (r) => addBlock(r, rowId, colId, block));
+    setBlockMenu(null);
+    selectNode(block.id);
+  };
+  const doAddSavedBlock = (rowId: string, colId: string, saved: SavedBlock) => {
+    const block: ContainerBlock = { id: genId("blk"), type: saved.type, props: JSON.parse(JSON.stringify(saved.props)) };
     mutateRows(sid, (r) => addBlock(r, rowId, colId, block));
     setBlockMenu(null);
     selectNode(block.id);
@@ -83,6 +101,7 @@ export function Container({ props: editorProps, isEditor, sectionId }: Container
         <div className={cn("absolute -top-3 right-1 z-30 flex items-center gap-0.5 p-0.5 bg-zinc-900 rounded-lg shadow-lg", selected ? "flex" : "hidden group-hover/blk:flex")}>
           <button onClick={(e) => { e.stopPropagation(); doMoveBlock(block.id, "up"); }} disabled={isFirst} className="p-1 rounded text-white/80 hover:bg-white/15 disabled:opacity-30" title="Mover para cima"><ChevronUp className="w-3.5 h-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); doMoveBlock(block.id, "down"); }} disabled={isLast} className="p-1 rounded text-white/80 hover:bg-white/15 disabled:opacity-30" title="Mover para baixo"><ChevronDown className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); setSaveBlock(block); }} className="p-1 rounded text-white/80 hover:bg-white/15" title="Salvar como bloco"><Bookmark className="w-3.5 h-3.5" /></button>
           <button onClick={(e) => { e.stopPropagation(); doRemoveBlock(block.id); }} className="p-1 rounded text-white/80 hover:bg-red-500" title="Remover bloco"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
         <BlockRenderer block={block} />
@@ -115,6 +134,27 @@ export function Container({ props: editorProps, isEditor, sectionId }: Container
                   </button>
                 );
               })}
+              {savedAtomic.length > 0 && (
+                <div className="col-span-3 border-t border-zinc-100 pt-1.5 mt-0.5">
+                  <p className="text-[9px] font-black uppercase tracking-wider text-zinc-400 px-1 mb-1">Meus blocos</p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {savedAtomic.map((sb) => {
+                      const Icon = blockRegistry[sb.type]?.icon ?? Plus;
+                      return (
+                        <button
+                          key={sb.id}
+                          onClick={(e) => { e.stopPropagation(); doAddSavedBlock(row.id, col.id, sb); }}
+                          title={sb.name}
+                          className="flex flex-col items-center gap-1 px-1 py-2 rounded-lg text-zinc-600 hover:bg-zinc-900 hover:text-white transition-colors"
+                        >
+                          <Icon className="w-4 h-4" />
+                          <span className="text-[9px] font-bold truncate max-w-full">{sb.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <button onClick={(e) => { e.stopPropagation(); setBlockMenu(null); }} className="col-span-3 text-[10px] font-bold text-zinc-400 hover:text-zinc-700 py-1">Cancelar</button>
             </div>
           ) : (
@@ -210,6 +250,13 @@ export function Container({ props: editorProps, isEditor, sectionId }: Container
           </div>
         )}
       </div>
+
+      <SaveBlockDialog
+        open={!!saveBlock}
+        defaultName={saveBlock ? blockRegistry[saveBlock.type]?.label ?? "Bloco" : ""}
+        onSave={handleSaveAtomic}
+        onClose={() => setSaveBlock(null)}
+      />
     </section>
   );
 }

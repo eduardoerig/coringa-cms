@@ -3,12 +3,16 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, LayoutGrid, Sparkles, Layers, Plus, ArrowLeft } from "lucide-react";
+import { Search, X, LayoutGrid, Sparkles, Layers, Plus, ArrowLeft, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editorStore";
-import { sectionTypes, type SectionRegistryEntry, type PropField } from "../sections/registry";
+import { sectionTypes, sectionRegistry, type SectionRegistryEntry, type PropField } from "../sections/registry";
 import { SectionCard } from "./SectionCard";
+import { SectionThumb } from "./SectionThumb";
 import { pageTemplates, type PageTemplate } from "./templates";
+import { blockRegistry } from "../blocks/blockRegistry";
+import { regenerateRowIds, genId, type ContainerRow } from "../blocks/containerModel";
+import { deleteSavedBlock, fetchSavedBlocks, type SavedBlock } from "@/utils/savedBlocks";
 
 // Categoria de cada tipo de seção (fonte única para os filtros da galeria).
 const SECTION_CATEGORY: Record<string, string> = {
@@ -34,7 +38,7 @@ function sectionRank(type: string): number {
   return i === -1 ? SECTION_PRIORITY.length : i;
 }
 
-type InserterTab = "sections" | "templates";
+type InserterTab = "sections" | "templates" | "my_blocks";
 
 /** Campo de variante de layout da seção, se houver mais de uma opção. */
 function getVariantField(entry: SectionRegistryEntry): PropField | undefined {
@@ -187,6 +191,8 @@ export function SectionInserter() {
   const addSection = useEditorStore((s) => s.addSection);
   const addSectionAtIndex = useEditorStore((s) => s.addSectionAtIndex);
   const addTemplate = useEditorStore((s) => s.addTemplate);
+  const savedBlocks = useEditorStore((s) => s.savedBlocks);
+  const setSavedBlocks = useEditorStore((s) => s.setSavedBlocks);
 
   const [tab, setTab] = useState<InserterTab>("sections");
   const [query, setQuery] = useState("");
@@ -260,6 +266,37 @@ export function SectionInserter() {
   const handleInsertTemplate = (tpl: PageTemplate) => {
     addTemplate(tpl.sections, pendingInsertIndex);
     close();
+  };
+
+  const filteredSaved = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return savedBlocks;
+    return savedBlocks.filter((b) => b.name.toLowerCase().includes(q));
+  }, [query, savedBlocks]);
+
+  const insertSaved = (saved: SavedBlock) => {
+    if (saved.kind === "section") {
+      let props = saved.props;
+      if (saved.type === "container") {
+        props = { ...props, rows: regenerateRowIds((props.rows as ContainerRow[]) ?? []) };
+      }
+      if (pendingInsertIndex == null) addSection(saved.type, undefined, props);
+      else addSectionAtIndex(saved.type, pendingInsertIndex, props);
+    } else {
+      // bloco atômico → embrulha num Container de 1 coluna
+      const rows: ContainerRow[] = [{
+        id: genId("row"),
+        columns: [{ id: genId("col"), width: "1/1", blocks: [{ id: genId("blk"), type: saved.type, props: JSON.parse(JSON.stringify(saved.props)) }] }],
+      }];
+      if (pendingInsertIndex == null) addSection("container", undefined, { rows });
+      else addSectionAtIndex("container", pendingInsertIndex, { rows });
+    }
+    close();
+  };
+
+  const handleDeleteSaved = async (id: string) => {
+    await deleteSavedBlock(id);
+    setSavedBlocks(await fetchSavedBlocks());
   };
 
   const positionLabel =
@@ -336,6 +373,7 @@ export function SectionInserter() {
                     {([
                       ["sections", "Seções", LayoutGrid],
                       ["templates", "Templates", Sparkles],
+                      ["my_blocks", "Meus blocos", Layers],
                     ] as const).map(([id, label, Icon]) => (
                       <button
                         key={id}
@@ -348,10 +386,6 @@ export function SectionInserter() {
                         <Icon className="w-3.5 h-3.5" /> {label}
                       </button>
                     ))}
-                    <span className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12px] font-bold text-zinc-300 cursor-not-allowed">
-                      <Layers className="w-3.5 h-3.5" /> Meus blocos
-                      <span className="text-[8px] font-black uppercase bg-zinc-200 text-zinc-500 px-1.5 py-0.5 rounded-full">em breve</span>
-                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -360,7 +394,7 @@ export function SectionInserter() {
                       <input
                         autoFocus
                         type="text"
-                        placeholder={tab === "sections" ? "Buscar seções..." : "Buscar templates..."}
+                        placeholder={tab === "sections" ? "Buscar seções..." : tab === "templates" ? "Buscar templates..." : "Buscar meus blocos..."}
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         className="w-full pl-9 pr-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all placeholder:text-zinc-300"
@@ -401,14 +435,24 @@ export function SectionInserter() {
                     ) : (
                       <EmptyState query={query} />
                     )
-                  ) : filteredTemplates.length > 0 ? (
+                  ) : tab === "templates" ? (
+                    filteredTemplates.length > 0 ? (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {filteredTemplates.map((tpl) => (
+                          <TemplateCard key={tpl.id} tpl={tpl} onInsert={handleInsertTemplate} />
+                        ))}
+                      </div>
+                    ) : (
+                      <EmptyState query={query} />
+                    )
+                  ) : filteredSaved.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {filteredTemplates.map((tpl) => (
-                        <TemplateCard key={tpl.id} tpl={tpl} onInsert={handleInsertTemplate} />
+                      {filteredSaved.map((sb) => (
+                        <SavedBlockCard key={sb.id} saved={sb} onInsert={insertSaved} onDelete={handleDeleteSaved} />
                       ))}
                     </div>
                   ) : (
-                    <EmptyState query={query} />
+                    <EmptyState query={query} hint="Salve uma seção ou um bloco (botão de marcador no editor) para reutilizá-lo aqui." />
                   )}
                 </div>
               </>
@@ -421,15 +465,49 @@ export function SectionInserter() {
   );
 }
 
-function EmptyState({ query }: { query: string }) {
+function SavedBlockCard({ saved, onInsert, onDelete }: { saved: SavedBlock; onInsert: (s: SavedBlock) => void; onDelete: (id: string) => void }) {
+  const isSection = saved.kind === "section";
+  const BlockIcon = blockRegistry[saved.type]?.icon ?? Layers;
+  const subtitle = isSection ? (sectionRegistry[saved.type]?.label ?? saved.type) : (blockRegistry[saved.type]?.label ?? saved.type);
   return (
-    <div className="py-20 text-center">
+    <div className="group relative flex flex-col rounded-2xl border border-zinc-200 bg-white overflow-hidden transition-all hover:border-zinc-900 hover:shadow-xl hover:-translate-y-0.5">
+      <button type="button" onClick={() => onInsert(saved)} className="text-left">
+        <div className="relative w-full h-32 p-5 flex bg-gradient-to-br from-zinc-100 to-zinc-50">
+          {isSection ? (
+            <SectionThumb type={saved.type} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center"><BlockIcon className="w-9 h-9 text-zinc-300" /></div>
+          )}
+          <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border bg-zinc-50 text-zinc-600 border-zinc-100">
+            {isSection ? "Seção" : "Bloco"}
+          </span>
+        </div>
+        <div className="px-3 py-3">
+          <div className="text-[13px] font-bold text-zinc-900 truncate">{saved.name}</div>
+          <div className="text-[11px] text-zinc-400 font-medium truncate">{subtitle}</div>
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={() => onDelete(saved.id)}
+        title="Excluir bloco"
+        className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-white/90 border border-zinc-200 flex items-center justify-center text-zinc-400 hover:text-red-500 hover:border-red-200 opacity-0 group-hover:opacity-100 transition-all"
+      >
+        <Trash2 className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
+
+function EmptyState({ query, hint }: { query: string; hint?: string }) {
+  return (
+    <div className="py-20 text-center px-8">
       <Layers className="w-10 h-10 text-zinc-200 mx-auto mb-4" />
       <p className="text-sm text-zinc-400 font-medium">
         {query ? (
           <>Nenhum resultado para <strong>&ldquo;{query}&rdquo;</strong></>
         ) : (
-          "Nada por aqui ainda."
+          hint ?? "Nada por aqui ainda."
         )}
       </p>
     </div>
