@@ -2,7 +2,7 @@
 // Reusado pelo render (CanvasSection/CanvasElementRenderer) e pela interação (CanvasEditor).
 // A ordem do array é a ordem de empilhamento (z): o primeiro fica atrás, o último na frente.
 
-export type CanvasElementType = "text" | "image" | "shape" | "button" | "icon";
+export type CanvasElementType = "text" | "image" | "shape" | "button" | "icon" | "embed";
 
 export interface CanvasElement {
   id: string;

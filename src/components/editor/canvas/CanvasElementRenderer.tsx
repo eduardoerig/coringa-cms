@@ -15,7 +15,31 @@ function align(v: unknown): Align {
 
 const ROUNDED_PX: Record<string, number> = { none: 0, md: 12, xl: 28 };
 
-export function CanvasElementRenderer({ element, designWidth }: { element: CanvasElement; designWidth: number }) {
+// Converte links comuns (YouTube/Vimeo) para a URL de embed; demais URLs passam direto.
+function embedUrl(raw: string): string {
+  if (!raw) return "";
+  try {
+    const u = new URL(raw);
+    const host = u.hostname.replace(/^www\./, "");
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const id = u.searchParams.get("v");
+      return id ? `https://www.youtube.com/embed/${id}` : raw;
+    }
+    if (host === "youtu.be") {
+      const id = u.pathname.slice(1);
+      return id ? `https://www.youtube.com/embed/${id}` : raw;
+    }
+    if (host === "vimeo.com") {
+      const id = u.pathname.split("/").filter(Boolean)[0];
+      return id ? `https://player.vimeo.com/video/${id}` : raw;
+    }
+    return raw;
+  } catch {
+    return raw;
+  }
+}
+
+export function CanvasElementRenderer({ element, designWidth, editor = false }: { element: CanvasElement; designWidth: number; editor?: boolean }) {
   const p = element.props || {};
   const u = (px: number) => `${(px / designWidth) * 100}cqw`;
 
@@ -88,6 +112,27 @@ export function CanvasElementRenderer({ element, designWidth }: { element: Canva
             borderRadius: shape === "ellipse" ? "9999px" : u(Number(p.radius) || 0),
             border: bw > 0 ? `${u(bw)} solid ${(p.borderColor as string) || "transparent"}` : undefined,
           }}
+        />
+      );
+    }
+
+    case "embed": {
+      const url = embedUrl((p.url as string) || "");
+      const radius = u(ROUNDED_PX[(p.rounded as string)] ?? 12);
+      if (!url) {
+        return (
+          <div className="w-full h-full bg-surface-100 flex items-center justify-center text-text-300 font-medium" style={{ borderRadius: radius, fontSize: u(13) }}>
+            Adicione um link de vídeo
+          </div>
+        );
+      }
+      return (
+        <iframe
+          src={url}
+          title="Vídeo"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          style={{ width: "100%", height: "100%", border: 0, borderRadius: radius, pointerEvents: editor ? "none" : "auto", display: "block" }}
         />
       );
     }

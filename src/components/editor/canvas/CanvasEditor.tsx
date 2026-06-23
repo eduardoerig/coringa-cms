@@ -571,7 +571,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
                 )}
                 style={{ outlineOffset: "1px" }}
               >
-                <CanvasElementRenderer element={el} designWidth={DW} />
+                <CanvasElementRenderer element={el} designWidth={DW} editor />
               </div>
               {!multi && isPrimary && !isEditing && !el.locked && renderHandles(el)}
             </div>

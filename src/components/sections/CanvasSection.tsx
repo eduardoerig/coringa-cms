@@ -54,7 +54,7 @@ export function CanvasSection({ props: editorProps, isEditor, sectionId }: Canva
               opacity: el.opacity ?? 1,
             }}
           >
-            <CanvasElementRenderer element={el} designWidth={DW} />
+            <CanvasElementRenderer element={el} designWidth={DW} editor={!!isEditor} />
           </div>
         ))}
       </div>

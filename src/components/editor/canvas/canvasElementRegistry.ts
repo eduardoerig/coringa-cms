@@ -1,6 +1,6 @@
 import type { PropField } from "../sections/registry";
 import type { CanvasElementType } from "./canvasModel";
-import { Type, Image as ImageIcon, Square, MousePointerClick, Sparkles } from "lucide-react";
+import { Type, Image as ImageIcon, Square, MousePointerClick, Sparkles, Video } from "lucide-react";
 import { CANVAS_ICON_OPTIONS } from "./canvasIcons";
 
 // Registry dos elementos da Tela Livre (mesmo padrão do blockRegistry).
@@ -151,6 +151,28 @@ export const canvasElementRegistry: Record<CanvasElementType, CanvasElementRegis
     ],
     defaultProps: { name: "Star", color: "" },
     defaultSize: { w: 96, h: 96 },
+  },
+
+  embed: {
+    type: "embed",
+    label: "Vídeo",
+    icon: Video,
+    fields: [
+      { key: "url", label: "Link do vídeo (YouTube, Vimeo ou embed)", type: "url", placeholder: "https://youtube.com/watch?v=..." },
+      {
+        key: "rounded",
+        label: "Cantos",
+        type: "select",
+        category: "appearance",
+        options: [
+          { value: "none", label: "Retos" },
+          { value: "md", label: "Suaves" },
+          { value: "xl", label: "Arredondados" },
+        ],
+      },
+    ],
+    defaultProps: { url: "", rounded: "md" },
+    defaultSize: { w: 480, h: 270 },
   },
 };
 
