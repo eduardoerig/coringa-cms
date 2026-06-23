@@ -62,6 +62,14 @@ export function MenuSection({ props: editorProps }: MenuSectionProps) {
 
   const accent = accentColor || "var(--color-primary)";
 
+  const variant = (editorProps?.layout_variant as string) || "grid";
+  const gridCols =
+    variant === "spacious"
+      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+      : variant === "compact"
+        ? "grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4"
+        : "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6";
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -148,7 +156,7 @@ export function MenuSection({ props: editorProps }: MenuSectionProps) {
 
         {/* Grade */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className={gridCols}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => <MenuCardSkeleton key={i} />)}
           </div>
         ) : filteredItems.length === 0 ? (
@@ -157,7 +165,7 @@ export function MenuSection({ props: editorProps }: MenuSectionProps) {
             <p className={cn("text-sm", styles.isDark ? "text-white/70" : "text-text-400")}>Tente alterar o filtro de categoria.</p>
           </div>
         ) : (
-          <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <motion.div layout className={gridCols}>
             <AnimatePresence>
               {filteredItems.map((item) => (
                 <MenuCard key={item.id} item={item} isDark={styles.isDark} cardBgColor={cardBgColor} accent={accent} />

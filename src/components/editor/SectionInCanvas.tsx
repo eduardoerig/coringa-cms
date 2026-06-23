@@ -172,7 +172,7 @@ export function SectionInCanvas({ section, index, isSelected, onSelect }: Props)
             onClickCapture={isSelected ? handleFieldClick : undefined}
             onDoubleClick={isSelected ? handleFieldDoubleClick : undefined}
           >
-            <Component props={section.props} settings={theme} isEditor={true} />
+            <Component props={section.props} settings={theme} isEditor={true} sectionId={section.id} />
           </div>
           {!isSelected && <div className="absolute inset-0 z-50 cursor-pointer" />}
         </div>

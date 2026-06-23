@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, AlertTriangle, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, EyeOff, Pencil } from "lucide-react";
+import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, AlertTriangle, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, EyeOff, Pencil, Plus } from "lucide-react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { SectionLibrary } from "@/components/editor/SectionLibrary";
+import { SectionInserter } from "@/components/editor/inserter/SectionInserter";
 import { LayerPanel } from "@/components/editor/LayerPanel";
 import { EditorCanvas } from "@/components/editor/EditorCanvas";
 import { PropertiesPanel } from "@/components/editor/PropertiesPanel";
@@ -52,7 +52,7 @@ function DragGhost({ dragState, sections }: { dragState: DragState; sections: Pa
 
 
 export default function FocusedEditorPage() {
-  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectedSectionId, removeSection, undo, redo, past, future, clearHistory, canvasMode, setCanvasMode, viewport, setViewport, addSectionAtIndex, reorderSections, dragState, setDragState } = useEditorStore();
+  const { sections, setSections, isDirty, isSaving, setSaving, theme, setTheme, selectedSectionId, removeSection, undo, redo, past, future, clearHistory, canvasMode, setCanvasMode, viewport, setViewport, addSectionAtIndex, reorderSections, dragState, setDragState, openInserter } = useEditorStore();
   const isPreview = canvasMode === "preview";
 
   const sensors = useSensors(
@@ -86,7 +86,7 @@ export default function FocusedEditorPage() {
     }
   };
   const { confirm, confirmState, respondConfirm } = useConfirm();
-  const [activeTab, setActiveTab] = useState<Tab>("library");
+  const [activeTab, setActiveTab] = useState<Tab>("layers");
   const [isPublished, setIsPublished] = useState(false);
   const [publishedSections, setPublishedSections] = useState<PageSection[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
@@ -97,6 +97,7 @@ export default function FocusedEditorPage() {
   const [now, setNow] = useState(0); // ts atual p/ "salvo há X"; 0 até o 1º tick
   const supabase = createClient();
   const saveLockRef = useRef<Promise<unknown>>(Promise.resolve());
+  const autoOpenedRef = useRef(false);
 
   // Atualiza o rótulo de "salvo há X" periodicamente.
   useEffect(() => {
@@ -157,6 +158,16 @@ export default function FocusedEditorPage() {
     }
     load();
   }, [supabase, setSections, setTheme, clearHistory]);
+
+  // Página vazia → abre a galeria de seções automaticamente (uma vez) para
+  // deixar óbvio como começar a montar o layout.
+  useEffect(() => {
+    if (loading || autoOpenedRef.current) return;
+    if (sections.length === 0) {
+      autoOpenedRef.current = true;
+      openInserter(null);
+    }
+  }, [loading, sections.length, openInserter]);
 
   const handleSave = useCallback(
     (action: "save" | "publish" | "unpublish" = "save") => {
@@ -465,6 +476,15 @@ export default function FocusedEditorPage() {
                 <Redo2 className="w-4 h-4" />
               </button>
             </div>
+
+            <div className="h-6 w-px bg-text-100 mx-1" />
+            <button
+              onClick={() => openInserter(null)}
+              title="Adicionar uma nova seção"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-900 text-white hover:bg-primary transition-all active:scale-95 shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" /> Adicionar Seção
+            </button>
           </div>
 
           <div className="flex items-center gap-3">
@@ -584,7 +604,6 @@ export default function FocusedEditorPage() {
             className={cn("flex-shrink-0 z-40 shadow-[20px_0_40px_rgba(0,0,0,0.02)] overflow-hidden flex bg-white relative", isPreview && "hidden")}
           >
             <div className="w-[360px] h-full overflow-y-auto custom-scrollbar">
-              {activeTab === "library" && <SectionLibrary />}
               {activeTab === "layers" && <LayerPanel />}
               {activeTab === "palette" && <ColorPalettePanel />}
             </div>
@@ -592,7 +611,7 @@ export default function FocusedEditorPage() {
 
           {/* Main Canvas Area */}
           <div className="flex-1 overflow-hidden bg-[#0d0d10] flex flex-col relative">
-            <EditorCanvas onOpenLibrary={() => { setActiveTab("library"); setLeftSidebarCollapsed(false); }} />
+            <EditorCanvas />
 
             {/* Right Panel Toggle Button - Floating */}
             <button
@@ -624,6 +643,7 @@ export default function FocusedEditorPage() {
         </DragOverlay>
         </DndContext>
       </div>
+      <SectionInserter />
       <ConfirmDialog state={confirmState} onRespond={respondConfirm} tone="light" />
     </FranchiseProvider>
   );

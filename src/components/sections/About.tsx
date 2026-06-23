@@ -43,16 +43,21 @@ export function About({ props: editorProps, isEditor }: AboutProps) {
   const decalNumberColor = (editorProps?.decalNumberColor as string) || "";
   const decalTextColor = (editorProps?.decalTextColor as string) || "";
 
+  const variant = (editorProps?.layout_variant as string) || "image_right";
+  const isStacked = variant === "stacked";
+  const imageLeft = variant === "image_left";
+
   return (
     <section id="sobre" ref={ref} className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div className={cn("grid gap-12 lg:gap-20 items-center", isStacked ? "grid-cols-1 max-w-3xl mx-auto text-center" : "grid-cols-1 lg:grid-cols-2")}>
 
           {/* Texto */}
           <motion.div
             initial={isEditor ? false : { opacity: 0, y: 16 }}
             animate={isEditor || isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
+            className={cn(imageLeft && "lg:order-2", isStacked && "order-2")}
           >
             {eyebrow && (
               <div className="mb-5">
@@ -89,7 +94,7 @@ export function About({ props: editorProps, isEditor }: AboutProps) {
             initial={isEditor ? false : { opacity: 0, scale: 0.97 }}
             animate={isEditor || isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
-            className="relative"
+            className={cn("relative", imageLeft && "lg:order-1", isStacked && "order-1 w-full max-w-md mx-auto")}
           >
             {/* moldura macia atrás */}
             <div

@@ -1,8 +1,10 @@
 "use client";
-import { useEditorStore } from "@/stores/editorStore";
-import { sectionRegistry, type PropField } from "./sections/registry";
+import { useEditorStore, type PageSection } from "@/stores/editorStore";
+import { sectionRegistry, type PropField, type SectionRegistryEntry } from "./sections/registry";
 import { RichTextEditor } from "./RichTextEditor";
 import { ImageUploader } from "./ImageUploader";
+import { blockRegistry } from "./blocks/blockRegistry";
+import { findBlock, updateBlock, removeBlock, moveBlock, type ContainerRow } from "./blocks/containerModel";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
@@ -27,19 +29,26 @@ export function PropertiesPanel() {
 
   // Navegação drill-in: qual elemento (group) está aberto no painel. `null` = lista.
   const [openGroup, setOpenGroup] = useState<string | null>(null);
+  // Aba ativa: Conteúdo (textos/imagens) ou Estilo (cores/layout/aparência).
+  const [tab, setTab] = useState<"content" | "style">("content");
 
   // Ao trocar de seção, volta para a lista de elementos.
   const [prevSectionId, setPrevSectionId] = useState(selectedSectionId);
   if (selectedSectionId !== prevSectionId) {
     setPrevSectionId(selectedSectionId);
     setOpenGroup(null);
+    setTab("content");
   }
 
   // Ao clicar num elemento no canvas, entra automaticamente na tela dele.
   const [prevTargetGroup, setPrevTargetGroup] = useState(targetGroup);
   if (targetGroup !== prevTargetGroup) {
     setPrevTargetGroup(targetGroup);
-    if (targetGroup) setOpenGroup(targetGroup);
+    if (targetGroup) {
+      setOpenGroup(targetGroup);
+      // Leva para a aba certa conforme o tipo do campo clicado no canvas.
+      setTab(targetField?.category === "appearance" ? "style" : "content");
+    }
   }
 
   // Rola até o campo (ou item de lista) alvo quando a seleção muda no canvas.
@@ -134,6 +143,11 @@ export function PropertiesPanel() {
     );
   }
 
+  // Container (layout livre): painel dedicado de blocos.
+  if (selectedSection.type === "container") {
+    return <ContainerProperties section={selectedSection} entry={entry} />;
+  }
+
   // Agrupar campos por elemento (group), preservando a ordem de primeira aparição.
   const groups: { name: string; fields: PropField[] }[] = [];
   const groupIndex = new Map<string, number>();
@@ -144,9 +158,16 @@ export function PropertiesPanel() {
     groups[i].fields.push(f);
   }
   const activeGroup = openGroup ? groups.find((g) => g.name === openGroup) ?? null : null;
-  const groupHasColor = (g: { fields: PropField[] }) => g.fields.some((f) => f.type === "color");
   const arrayCount = (f: PropField) =>
     Array.isArray(selectedSection.props[f.key]) ? (selectedSection.props[f.key] as unknown[]).length : 0;
+
+  // Filtro por aba: Conteúdo = tudo que não é aparência; Estilo = aparência.
+  const matchTab = (f: PropField) => (tab === "style" ? f.category === "appearance" : f.category !== "appearance");
+  const visibleGroups = groups
+    .map((g) => ({ name: g.name, shown: g.fields.filter(matchTab) }))
+    .filter((g) => g.shown.length > 0);
+  const detailFields = activeGroup ? activeGroup.fields.filter(matchTab) : [];
+  const changeTab = (t: "content" | "style") => { setTab(t); setOpenGroup(null); };
 
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
@@ -177,10 +198,28 @@ export function PropertiesPanel() {
         </div>
       </div>
 
+      {/* Abas Conteúdo / Estilo */}
+      <div className="px-4 pt-3 pb-1">
+        <div className="flex items-center gap-1 bg-zinc-100 rounded-xl p-1">
+          {([["content", "Conteúdo", Type], ["style", "Estilo", Palette]] as const).map(([id, label, Icon]) => (
+            <button
+              key={id}
+              onClick={() => changeTab(id)}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all",
+                tab === id ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-500 hover:text-zinc-900"
+              )}
+            >
+              <Icon className="w-3.5 h-3.5" /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {activeGroup ? (
         /* Detalhe: todos os campos do elemento (texto + cores da paleta) */
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
-          {activeGroup.fields.map((f) => (
+          {detailFields.map((f) => (
             <div key={f.key} data-field-key={f.key} className={cn("scroll-mt-4 rounded-2xl transition-all", targetKey === f.key && (f.type !== "array" || targetItem == null) && "ring-2 ring-zinc-900 ring-offset-2 ring-offset-white p-2 -m-2")}>
               {f.type === "array" ? (
                 <ArrayFieldRenderer
@@ -194,7 +233,7 @@ export function PropertiesPanel() {
               )}
             </div>
           ))}
-          {groupHasColor(activeGroup) && (
+          {detailFields.some((f) => f.type === "color") && (
             <div className="mt-2 p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
               <p className="text-[11px] text-zinc-500 leading-relaxed">
                 Deixe um campo de cor vazio para herdar a cor do Tema Global. Preencha só o que quiser personalizar nesta seção.
@@ -203,11 +242,11 @@ export function PropertiesPanel() {
           )}
         </div>
       ) : (
-        /* Lista: um botão por elemento */
+        /* Lista: um botão por elemento (filtrado pela aba ativa) */
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2 custom-scrollbar">
-          {groups.map((g) => {
+          {visibleGroups.map((g) => {
             const Icon = groupIcon(g.name);
-            const arr = g.fields.find((f) => f.type === "array");
+            const arr = g.shown.find((f) => f.type === "array");
             return (
               <button
                 key={g.name}
@@ -220,13 +259,84 @@ export function PropertiesPanel() {
                 <span className="flex-1 min-w-0">
                   <span className="block text-[13px] font-semibold text-zinc-800 truncate">{g.name}</span>
                   <span className="block text-[10px] text-zinc-400 font-medium truncate">
-                    {arr ? `${arrayCount(arr)} ${arrayCount(arr) === 1 ? "item" : "itens"}` : `${g.fields.length} ${g.fields.length === 1 ? "campo" : "campos"}`}
+                    {arr ? `${arrayCount(arr)} ${arrayCount(arr) === 1 ? "item" : "itens"}` : `${g.shown.length} ${g.shown.length === 1 ? "campo" : "campos"}`}
                   </span>
                 </span>
                 <ChevronRight className="w-4 h-4 text-zinc-300 group-hover/el:text-zinc-500 transition-colors shrink-0" />
               </button>
             );
           })}
+          {visibleGroups.length === 0 && (
+            <div className="py-12 text-center">
+              <p className="text-xs text-zinc-400 font-medium">
+                {tab === "style" ? "Esta seção não tem opções de estilo." : "Esta seção não tem campos de conteúdo."}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Painel de propriedades do Container: edita o bloco selecionado ou o estilo da seção.
+function ContainerProperties({ section, entry }: { section: PageSection; entry: SectionRegistryEntry }) {
+  const { selectedNodeId, selectNode, mutateContainerRows, updateSectionProps, selectSection } = useEditorStore();
+  const rows = (section.props.rows as ContainerRow[]) || [];
+  const block = selectedNodeId ? findBlock(rows, selectedNodeId) : null;
+  const breg = block ? blockRegistry[block.type] : null;
+
+  return (
+    <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
+      <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          {block ? (
+            <button onClick={() => selectNode(null)} aria-label="Voltar" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-colors shrink-0">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Layout className="w-4 h-4" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-zinc-900 text-[13px] truncate">{block && breg ? breg.label : entry.label}</h3>
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">
+              {block ? "Bloco" : "Selecione um bloco no canvas"}
+            </p>
+          </div>
+          <button onClick={() => selectSection(null)} aria-label="Fechar painel" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-zinc-100 transition-colors shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {block && breg ? (
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+          {breg.fields.map((f) => (
+            <FieldRenderer
+              key={f.key}
+              field={f}
+              value={block.props[f.key]}
+              onChange={(v) => mutateContainerRows(section.id, (r) => updateBlock(r, block.id, { [f.key]: v }), `block:${block.id}:${f.key}`)}
+            />
+          ))}
+          <div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
+            <button onClick={() => mutateContainerRows(section.id, (r) => moveBlock(r, block.id, "up"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronUp className="w-3.5 h-3.5" /> Subir</button>
+            <button onClick={() => mutateContainerRows(section.id, (r) => moveBlock(r, block.id, "down"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronDown className="w-3.5 h-3.5" /> Descer</button>
+            <button onClick={() => { mutateContainerRows(section.id, (r) => removeBlock(r, block.id)); selectNode(null); }} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-red-100 text-red-500 text-[11px] font-bold hover:bg-red-50 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+          <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              Clique num bloco no canvas para editá-lo. Use <strong>+ Bloco</strong> dentro de uma coluna e <strong>Adicionar linha</strong> para montar o layout.
+            </p>
+          </div>
+          {entry.fields.map((f) => (
+            <FieldRenderer key={f.key} field={f} value={section.props[f.key]} onChange={(v) => updateSectionProps(section.id, { [f.key]: v })} />
+          ))}
         </div>
       )}
     </div>

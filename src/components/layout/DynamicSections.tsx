@@ -11,6 +11,7 @@ import { CTABanner } from "@/components/sections/CTABanner";
 import { TextBlock } from "@/components/sections/TextBlock";
 import { Navbar } from "@/components/layout/Navbar";
 import { FooterBlock } from "@/components/sections/FooterBlock";
+import { Container } from "@/components/sections/Container";
 
 interface PageSection {
   id: string;
@@ -38,6 +39,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   cta_banner: CTABanner,
   text_block: TextBlock,
   footer: FooterBlock,
+  container: Container,
 };
 
 export function DynamicSections({ sections, settings }: DynamicSectionsProps) {

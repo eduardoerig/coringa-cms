@@ -1,14 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, PlusCircle, Layers, Palette } from "lucide-react";
+import { ArrowLeft, Plus, Layers, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEditorStore } from "@/stores/editorStore";
 
-export type StudioTab = "library" | "layers" | "palette";
+export type StudioTab = "layers" | "palette";
 
-const NAV_ITEMS: { tab: StudioTab; icon: typeof PlusCircle; label: string; title: string }[] = [
-  { tab: "library", icon: PlusCircle, label: "Adicionar", title: "Biblioteca de Seções" },
+const NAV_ITEMS: { tab: StudioTab; icon: typeof Layers; label: string; title: string }[] = [
   { tab: "layers", icon: Layers, label: "Camadas", title: "Estrutura de Camadas" },
   { tab: "palette", icon: Palette, label: "Paleta", title: "Paleta Global" },
 ];
@@ -22,10 +21,25 @@ interface StudioSidebarProps {
 }
 
 export function StudioSidebar({ activeTab, setActiveTab, collapsed, setCollapsed, hidden }: StudioSidebarProps) {
-  const { selectedSectionId, selectSection } = useEditorStore();
+  const { selectedSectionId, selectSection, openInserter } = useEditorStore();
 
   return (
-    <div className={cn("w-16 border-r border-text-100 bg-white flex flex-col items-center py-8 gap-6 z-50 shadow-[1px_0_0_rgba(0,0,0,0.05)]", hidden && "hidden")}>
+    <div className={cn("w-16 border-r border-text-100 bg-white flex flex-col items-center py-6 gap-6 z-50 shadow-[1px_0_0_rgba(0,0,0,0.05)]", hidden && "hidden")}>
+      {/* Ação principal: abrir o inseridor (galeria de seções/templates) */}
+      <div className="flex flex-col items-center gap-1 group">
+        <button
+          onClick={() => openInserter(null)}
+          aria-label="Adicionar seção"
+          title="Adicionar seção"
+          className="w-10 h-10 rounded-2xl flex items-center justify-center bg-zinc-900 text-white shadow-lg shadow-zinc-900/20 hover:scale-105 active:scale-95 transition-all"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
+        <span className="text-[10px] font-medium uppercase tracking-tight text-zinc-500">Adicionar</span>
+      </div>
+
+      <div className="w-8 h-px bg-zinc-100" />
+
       {NAV_ITEMS.map(({ tab, icon: Icon, label, title }) => {
         const isActive = activeTab === tab && !collapsed;
         return (

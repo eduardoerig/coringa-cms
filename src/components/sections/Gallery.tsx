@@ -19,6 +19,15 @@ export function Gallery({ props: editorProps }: GalleryProps) {
   const styles = getSectionStyles(editorProps || {});
   const { title, images = [] } = editorProps;
   const titleColor = (editorProps?.titleColor as string) || "";
+  const variant = (editorProps?.layout_variant as string) || "grid";
+
+  const gridClass =
+    variant === "wide"
+      ? "grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-6"
+      : variant === "compact"
+        ? "grid grid-cols-3 md:grid-cols-4 gap-3 md:gap-4"
+        : "grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5";
+  const aspectClass = variant === "wide" ? "aspect-[4/3]" : "aspect-square";
 
   if (images.length === 0) return null;
 
@@ -39,7 +48,7 @@ export function Gallery({ props: editorProps }: GalleryProps) {
           </motion.div>
         )}
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
+        <div className={gridClass}>
           {images.map((img: GalleryImage, i: number) => (
             <motion.div
               key={i}
@@ -49,7 +58,7 @@ export function Gallery({ props: editorProps }: GalleryProps) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.06, duration: 0.5, ease: "easeOut" }}
-              className={cn("group relative overflow-hidden aspect-square bg-surface-100 transition-shadow duration-300", SOFT.card, SOFT.shadow, SOFT.shadowHover, SOFT.ring)}
+              className={cn("group relative overflow-hidden bg-surface-100 transition-shadow duration-300", aspectClass, SOFT.card, SOFT.shadow, SOFT.shadowHover, SOFT.ring)}
             >
               <Image
                 src={img.url}

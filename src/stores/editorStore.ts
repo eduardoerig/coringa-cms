@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { sectionRegistry } from "@/components/editor/sections/registry";
+import type { ContainerRow } from "@/components/editor/blocks/containerModel";
 
 // ---- Types ----
 
@@ -12,6 +13,13 @@ export interface PageSection {
   type: string;
   visible: boolean;
   props: SectionProps;
+}
+
+/** Seção pré-configurada de um template (sem id — gerado na inserção). */
+export interface TemplateSection {
+  type: string;
+  props?: SectionProps;
+  visible?: boolean;
 }
 
 export interface HistoryState {
@@ -39,6 +47,8 @@ export interface EditorState {
   sections: PageSection[];
   selectedSectionId: string | null;
   selectedBlock: SelectedBlock | null;
+  /** Bloco atômico selecionado dentro de um Container (id do bloco). */
+  selectedNodeId: string | null;
   isDirty: boolean;
   isThemeDirty: boolean;
   isSaving: boolean;
@@ -49,6 +59,11 @@ export interface EditorState {
   viewport: Viewport;
   dragState: DragState | null;
 
+  // Inseridor (galeria de seções/templates)
+  inserterOpen: boolean;
+  /** Posição onde a próxima seção/template será inserida (null = anexar ao final). */
+  pendingInsertIndex: number | null;
+
   // History
   past: HistoryState[];
   future: HistoryState[];
@@ -58,13 +73,17 @@ export interface EditorState {
   reorderSections: (sections: PageSection[]) => void;
   selectSection: (id: string | null) => void;
   selectBlock: (block: SelectedBlock | null) => void;
-  addSection: (type: string, afterId?: string) => void;
-  addSectionAtIndex: (type: string, index: number) => void;
+  selectNode: (id: string | null) => void;
+  /** Aplica uma transformação imutável às linhas de um Container. */
+  mutateContainerRows: (sectionId: string, updater: (rows: ContainerRow[]) => ContainerRow[], coalesceKey?: string) => void;
+  addSection: (type: string, afterId?: string, propsOverride?: Partial<SectionProps>) => void;
+  addSectionAtIndex: (type: string, index: number, propsOverride?: Partial<SectionProps>) => void;
   removeSection: (id: string) => void;
   moveSection: (fromIndex: number, toIndex: number) => void;
   toggleVisibility: (id: string) => void;
   updateSectionProps: (id: string, props: Partial<SectionProps>) => void;
   duplicateSection: (id: string) => void;
+  addTemplate: (sections: TemplateSection[], index?: number | null) => void;
   setDirty: (dirty: boolean) => void;
   setThemeDirty: (dirty: boolean) => void;
   setSaving: (saving: boolean) => void;
@@ -77,6 +96,8 @@ export interface EditorState {
   setCanvasMode: (mode: CanvasMode) => void;
   setViewport: (viewport: Viewport) => void;
   setDragState: (drag: DragState | null) => void;
+  openInserter: (index?: number | null) => void;
+  closeInserter: () => void;
 
   // History Actions
   undo: () => void;
@@ -113,6 +134,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   sections: [],
   selectedSectionId: null,
   selectedBlock: null,
+  selectedNodeId: null,
   isDirty: false,
   isThemeDirty: false,
   isSaving: false,
@@ -121,6 +143,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   canvasMode: "edit",
   viewport: "desktop",
   dragState: null,
+
+  inserterOpen: false,
+  pendingInsertIndex: null,
 
   past: [],
   future: [],
@@ -191,19 +216,34 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ sections: newSections, isDirty: true });
   },
 
-  selectSection: (id) => set({ selectedSectionId: id, selectedBlock: null }),
+  selectSection: (id) => set({ selectedSectionId: id, selectedBlock: null, selectedNodeId: null }),
 
   selectBlock: (block) =>
     set(block ? { selectedBlock: block, selectedSectionId: block.sectionId } : { selectedBlock: null }),
 
-  addSectionAtIndex: (type, index) => {
+  selectNode: (id) => set({ selectedNodeId: id }),
+
+  mutateContainerRows: (sectionId, updater, coalesceKey) => {
+    get().saveHistory(coalesceKey);
+    const { sections } = get();
+    set({
+      sections: sections.map((s) =>
+        s.id === sectionId
+          ? { ...s, props: { ...s.props, rows: updater((s.props.rows as ContainerRow[]) ?? []) } }
+          : s
+      ),
+      isDirty: true,
+    });
+  },
+
+  addSectionAtIndex: (type, index, propsOverride) => {
     get().saveHistory();
     const { sections } = get();
     const newSection: PageSection = {
       id: generateId(),
       type,
       visible: true,
-      props: getDefaultPropsForType(type),
+      props: { ...getDefaultPropsForType(type), ...(propsOverride ?? {}) },
     };
     const clamped = Math.max(0, Math.min(index, sections.length));
     const newSections = [...sections];
@@ -211,14 +251,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ sections: newSections, isDirty: true, selectedSectionId: newSection.id, selectedBlock: null });
   },
 
-  addSection: (type, afterId) => {
+  addSection: (type, afterId, propsOverride) => {
     get().saveHistory();
     const { sections } = get();
     const newSection: PageSection = {
       id: generateId(),
       type,
       visible: true,
-      props: getDefaultPropsForType(type),
+      props: { ...getDefaultPropsForType(type), ...(propsOverride ?? {}) },
     };
 
     if (afterId) {
@@ -290,6 +330,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ sections: newSections, isDirty: true, selectedSectionId: duplicate.id });
   },
 
+  addTemplate: (tpl, index = null) => {
+    get().saveHistory();
+    const { sections } = get();
+    // Cada seção do template ganha um id novo (o template é só um molde reutilizável).
+    const clones: PageSection[] = tpl.map((s) => ({
+      id: generateId(),
+      type: s.type,
+      visible: s.visible ?? true,
+      props: JSON.parse(JSON.stringify({ ...getDefaultPropsForType(s.type), ...(s.props ?? {}) })),
+    }));
+    const newSections = [...sections];
+    const at = index == null ? newSections.length : Math.max(0, Math.min(index, newSections.length));
+    newSections.splice(at, 0, ...clones);
+    set({ sections: newSections, isDirty: true, selectedSectionId: clones[0]?.id ?? null, selectedBlock: null });
+  },
+
   setDirty: (dirty: boolean) => set({ isDirty: dirty }),
   setThemeDirty: (dirty: boolean) => set({ isThemeDirty: dirty }),
   setSaving: (saving) => set({ isSaving: saving }),
@@ -321,12 +377,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setCanvasMode: (mode) => set({ canvasMode: mode }),
   setViewport: (viewport) => set({ viewport }),
   setDragState: (drag) => set({ dragState: drag }),
+  openInserter: (index = null) => set({ inserterOpen: true, pendingInsertIndex: index }),
+  closeInserter: () => set({ inserterOpen: false, pendingInsertIndex: null }),
 
   reset: () =>
     set({
       sections: [],
       selectedSectionId: null,
       selectedBlock: null,
+      selectedNodeId: null,
       isDirty: false,
       isThemeDirty: false,
       isSaving: false,
@@ -334,6 +393,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       canvasMode: "edit",
       viewport: "desktop",
       dragState: null,
+      inserterOpen: false,
+      pendingInsertIndex: null,
       past: [],
       future: []
     }),

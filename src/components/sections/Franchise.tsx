@@ -46,6 +46,10 @@ export function Franchise({ props: editorProps }: FranchiseProps) {
   const styles = getSectionStyles(editorProps || {});
   const tint = accentColor || "var(--color-primary)";
 
+  const variant = (editorProps?.layout_variant as string) || "split";
+  const imageLeft = variant === "image_left";
+  const isCentered = variant === "centered";
+
   return (
     <section id="franquia" className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -56,14 +60,14 @@ export function Franchise({ props: editorProps }: FranchiseProps) {
             border: `1px solid ${cardBorderColor || (styles.isDark ? "rgba(255,255,255,0.08)" : `color-mix(in srgb, ${tint} 12%, transparent)`)}`,
           }}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2">
+          <div className={cn(isCentered ? "grid grid-cols-1" : "grid grid-cols-1 lg:grid-cols-2")}>
             {/* Conteúdo */}
             <motion.div
               ref={ref}
               initial={{ opacity: 0, y: 16 }}
               animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
               transition={{ duration: 0.6, ease: "easeOut" }}
-              className="p-10 md:p-14 lg:p-16 flex flex-col justify-center"
+              className={cn("p-10 md:p-14 lg:p-16 flex flex-col justify-center", imageLeft && "lg:order-2", isCentered && "items-center text-center max-w-3xl mx-auto")}
             >
               {eyebrow && (
                 <div className="mb-5">
@@ -116,17 +120,19 @@ export function Franchise({ props: editorProps }: FranchiseProps) {
               </div>
             </motion.div>
 
-            {/* Imagem */}
-            <motion.div
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.05 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              className="relative min-h-[280px] lg:min-h-full flex items-center justify-center p-8 lg:p-10"
-            >
-              <div data-field="image" className={cn("relative w-full h-full min-h-[240px] lg:min-h-[380px] overflow-hidden bg-white/40", SOFT.image, SOFT.ring)}>
-                <Image src={imageSrc} alt="Mapa de unidades" fill className="object-contain object-center" />
-              </div>
-            </motion.div>
+            {/* Imagem (oculta na variante centralizada) */}
+            {!isCentered && (
+              <motion.div
+                initial={{ opacity: 0, scale: 1.05 }}
+                animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.05 }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
+                className={cn("relative min-h-[280px] lg:min-h-full flex items-center justify-center p-8 lg:p-10", imageLeft && "lg:order-1")}
+              >
+                <div data-field="image" className={cn("relative w-full h-full min-h-[240px] lg:min-h-[380px] overflow-hidden bg-white/40", SOFT.image, SOFT.ring)}>
+                  <Image src={imageSrc} alt="Mapa de unidades" fill className="object-contain object-center" />
+                </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>

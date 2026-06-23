@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { useDroppable } from "@dnd-kit/core";
 import { generatePalette, safeCssColor, safeCssTokenId } from "@/utils/colors";
 import { cn } from "@/lib/utils";
 
@@ -31,25 +30,34 @@ function loadZoomMap(): Record<string, number> {
   }
 }
 
-// Zona de inserção entre seções — destino de drop para blocos novos da biblioteca
-function DropGap({ index }: { index: number }) {
-  const { setNodeRef, isOver } = useDroppable({ id: `gap:${index}` });
+// Inserção por posição: linha fina com botão "+" que aparece no hover e abre o
+// inseridor (galeria) já apontando para o índice certo.
+function InsertDivider({ index }: { index: number }) {
+  const openInserter = useEditorStore((s) => s.openInserter);
   return (
-    <div ref={setNodeRef} className="relative h-7 flex items-center px-8 my-0.5">
-      <div className={cn("w-full rounded-full transition-all", isOver ? "h-1.5 bg-primary shadow-[0_0_16px_rgba(37,99,235,0.5)]" : "h-0.5 bg-primary/25")} />
-      {isOver && <div className="absolute left-6 w-2.5 h-2.5 rounded-full bg-primary" />}
+    <div className="relative h-5 -my-2.5 z-20 flex items-center justify-center group/ins">
+      <div className="absolute inset-x-10 h-px bg-primary/0 group-hover/ins:bg-primary/40 transition-colors" />
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          openInserter(index);
+        }}
+        aria-label="Inserir seção aqui"
+        title="Inserir seção aqui"
+        className="relative opacity-0 group-hover/ins:opacity-100 w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/30 hover:scale-110 active:scale-95 transition-all"
+      >
+        <Plus className="w-4 h-4" />
+      </button>
     </div>
   );
 }
 
-export function EditorCanvas({ onOpenLibrary }: { onOpenLibrary?: () => void }) {
-  const { sections, selectedSectionId, selectSection, theme, viewport, canvasMode, dragState } = useEditorStore();
+export function EditorCanvas() {
+  const { sections, selectedSectionId, selectSection, theme, viewport, canvasMode, openInserter } = useEditorStore();
   // Zoom inicial = preferência salva para o viewport atual, ou o padrão do dispositivo.
   const [zoom, setZoomState] = useState(() => loadZoomMap()[viewport] ?? ZOOM_DEFAULTS[viewport]);
   const [showGrid, setShowGrid] = useState(true);
   const isPreview = canvasMode === "preview";
-  const isDraggingNew = dragState?.kind === "new";
-  const { setNodeRef: setEmptyDropRef, isOver: isEmptyDropOver } = useDroppable({ id: "gap:0" });
 
   // setZoom que persiste a escolha por viewport.
   const setZoom = useCallback(
@@ -207,14 +215,7 @@ ${customTokensCss}    }
               {/* Canvas Sections Container */}
               <div className="flex-1">
                 {sections.length === 0 ? (
-                  <div
-                    ref={setEmptyDropRef}
-                    className={cn(
-                      "flex-1 flex flex-col items-center justify-center py-40 transition-all",
-                      isDraggingNew && "border-2 border-dashed border-primary/40 rounded-3xl m-6",
-                      isEmptyDropOver && "border-primary bg-primary/5"
-                    )}
-                  >
+                  <div className="flex-1 flex flex-col items-center justify-center py-40 transition-all">
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -237,9 +238,9 @@ ${customTokensCss}    }
                       <p className="text-text-500 text-sm leading-relaxed mb-8">
                         Adicione blocos para começar a construir seu site.
                       </p>
-                      {!isPreview && onOpenLibrary && (
+                      {!isPreview && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); onOpenLibrary(); }}
+                          onClick={(e) => { e.stopPropagation(); openInserter(null); }}
                           className="group inline-flex items-center gap-2.5 px-6 py-3 bg-zinc-900 text-white rounded-full shadow-lg hover:bg-primary transition-all duration-300 active:scale-95"
                         >
                           <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
@@ -251,7 +252,7 @@ ${customTokensCss}    }
                 ) : (
                   <div className="flex flex-col">
                     <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-                      {isDraggingNew && <DropGap index={0} />}
+                      {!isPreview && <InsertDivider index={0} />}
                       {sections.map((section, index) => (
                         <div key={section.id}>
                           <SectionInCanvas
@@ -260,7 +261,7 @@ ${customTokensCss}    }
                             isSelected={selectedSectionId === section.id}
                             onSelect={() => selectSection(section.id)}
                           />
-                          {isDraggingNew && <DropGap index={index + 1} />}
+                          {!isPreview && <InsertDivider index={index + 1} />}
                         </div>
                       ))}
                     </SortableContext>
@@ -272,7 +273,7 @@ ${customTokensCss}    }
                         animate={{ opacity: 1 }}
                         className="flex justify-center py-12 border-t border-zinc-50 bg-zinc-50/50"
                       >
-                        <button onClick={onOpenLibrary} className="group flex items-center gap-3 px-6 py-3 bg-white hover:bg-zinc-900 hover:text-white rounded-full border border-zinc-200 shadow-sm transition-all duration-300">
+                        <button onClick={(e) => { e.stopPropagation(); openInserter(null); }} className="group flex items-center gap-3 px-6 py-3 bg-white hover:bg-zinc-900 hover:text-white rounded-full border border-zinc-200 shadow-sm transition-all duration-300">
                           <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
                           <span className="text-sm font-bold tracking-tight">Adicionar Seção</span>
                         </button>

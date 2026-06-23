@@ -90,6 +90,8 @@ export function Highlights({ props: editorProps, isEditor }: HighlightsProps) {
 
   const accent = accentColor || "var(--color-primary)";
   const dotActive = btnBgColor || accent;
+  const variant = (editorProps?.layout_variant as string) || "carousel";
+  const isGridVariant = variant === "grid";
 
   return (
     <section id="destaques" ref={ref} className={cn("relative overflow-hidden", styles.container)} style={styles.style}>
@@ -117,6 +119,15 @@ export function Highlights({ props: editorProps, isEditor }: HighlightsProps) {
             </div>
             <h3 className={cn("font-display font-semibold text-lg mb-1", styles.isDark ? "text-white" : "text-text-900")}>Nenhum destaque ainda</h3>
             <p className={cn("text-sm", styles.isDark ? "text-white/40" : "text-text-400")}>Os produtos em destaque aparecerão aqui.</p>
+          </div>
+        ) : isGridVariant ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {items.map((item, i) => (
+              <HighlightCard
+                key={item.id} item={item} index={i} isEditor={isEditor} isInView={isInView} isDark={styles.isDark}
+                cardBgColor={cardBgColor} cardBorderColor={cardBorderColor} tagBgColor={tagBgColor} tagTextColor={tagTextColor} accent={accent} btnColor={btnBgColor || accent} fullWidth
+              />
+            ))}
           </div>
         ) : (
           <>
@@ -175,9 +186,9 @@ function CarouselArrow({ side, onClick, isDark, accent }: { side: "left" | "righ
   );
 }
 
-function HighlightCard({ item, index, isEditor, isInView, isDark, cardBgColor, cardBorderColor, tagBgColor, tagTextColor, accent, btnColor }: {
+function HighlightCard({ item, index, isEditor, isInView, isDark, cardBgColor, cardBorderColor, tagBgColor, tagTextColor, accent, btnColor, fullWidth }: {
   item: HighlightItem; index: number; isEditor?: boolean; isInView: boolean; isDark: boolean;
-  cardBgColor: string; cardBorderColor: string; tagBgColor: string; tagTextColor: string; accent: string; btnColor: string;
+  cardBgColor: string; cardBorderColor: string; tagBgColor: string; tagTextColor: string; accent: string; btnColor: string; fullWidth?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   return (
@@ -185,7 +196,7 @@ function HighlightCard({ item, index, isEditor, isInView, isDark, cardBgColor, c
       initial={isEditor ? false : { opacity: 0, y: 30 }}
       animate={isEditor || isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
       transition={{ duration: 0.6, delay: index * 0.1, ease: "easeOut" }}
-      className={cn("group relative flex-none w-[260px] md:w-[280px] snap-start overflow-hidden transition-all duration-300", SOFT.card, SOFT.shadow)}
+      className={cn("group relative overflow-hidden transition-all duration-300", fullWidth ? "w-full" : "flex-none w-[260px] md:w-[280px] snap-start", SOFT.card, SOFT.shadow)}
       style={{
         backgroundColor: cardBgColor || (isDark ? "rgba(255,255,255,0.05)" : "#FFFFFF"),
         border: `1px solid ${cardBorderColor || (isDark ? "rgba(255,255,255,0.08)" : "var(--color-text-100)")}`,

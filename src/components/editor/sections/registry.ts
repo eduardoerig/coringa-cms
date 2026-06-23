@@ -9,6 +9,7 @@ import { CTABanner } from "@/components/sections/CTABanner";
 import { TextBlock } from "@/components/sections/TextBlock";
 import { Navbar } from "@/components/layout/Navbar";
 import { FooterBlock } from "@/components/sections/FooterBlock";
+import { Container } from "@/components/sections/Container";
 import {
   Layout,
   PanelTopOpen,
@@ -21,6 +22,7 @@ import {
   Megaphone,
   Type,
   Minus,
+  Columns3,
 } from "lucide-react";
 
 // ---- Tipos ----
@@ -67,6 +69,7 @@ export const sectionComponentMap: Record<string, React.ComponentType<any>> = {
   text_block: TextBlock,
   header: Navbar,
   footer: FooterBlock,
+  container: Container,
 };
 
 import { getSectionStyles } from "@/utils/sectionStyles";
@@ -81,6 +84,16 @@ const BTN_COLORS = (group: string): PropField[] => [
   { key: "btnBgColor", label: "Cor do botão", type: "color", placeholder: "Automático", category: "appearance", group },
   { key: "btnTextColor", label: "Cor do texto do botão", type: "color", placeholder: "Automático", category: "appearance", group },
 ];
+
+/** Campo de seletor de variante de layout (aparece no topo do bloco "Seção"). */
+const LAYOUT_VARIANT = (options: { value: string; label: string }[]): PropField => ({
+  key: "layout_variant",
+  label: "Modelo de layout",
+  type: "select",
+  category: "appearance",
+  group: "Seção",
+  options,
+});
 
 /** Bloco "Seção" (sempre por último). `extra` entra no topo do bloco. */
 const SECTION_GROUP = (extra: PropField[] = []): PropField[] => [
@@ -262,9 +275,16 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "tagBgColor", label: "Cor de fundo da tag", type: "color", placeholder: "Automático", category: "appearance", group: "Cards" },
       { key: "tagTextColor", label: "Cor do texto da tag", type: "color", placeholder: "Automático", category: "appearance", group: "Cards" },
       // Seção (cor do botão controla setas/dots)
-      ...SECTION_GROUP(BTN_COLORS("Seção")),
+      ...SECTION_GROUP([
+        LAYOUT_VARIANT([
+          { value: "carousel", label: "Carrossel (Padrão)" },
+          { value: "grid", label: "Grade estática" },
+        ]),
+        ...BTN_COLORS("Seção"),
+      ]),
     ],
     defaultProps: {
+      layout_variant: "carousel",
       eyebrow: "Destaques",
       title: "Nossos Queridinhos",
       subtitle: "Conheça os produtos em destaque da nossa marca.",
@@ -302,9 +322,17 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "pdfBtnTextColor", label: "Cor do texto", type: "color", placeholder: "Automático", category: "appearance", group: "Botão do cardápio" },
       { key: "pdfBtnBorderColor", label: "Cor da borda", type: "color", placeholder: "Automático", category: "appearance", group: "Botão do cardápio" },
       // Seção
-      ...SECTION_GROUP(BTN_COLORS("Seção")),
+      ...SECTION_GROUP([
+        LAYOUT_VARIANT([
+          { value: "grid", label: "Grade padrão (4 col.)" },
+          { value: "spacious", label: "Confortável (3 col.)" },
+          { value: "compact", label: "Compacto (5 col.)" },
+        ]),
+        ...BTN_COLORS("Seção"),
+      ]),
     ],
     defaultProps: {
+      layout_variant: "grid",
       eyebrow: "Cardápio",
       title: "Explore nosso Cardápio",
       subtitle: "Mais de 100 opções preparadas com carinho para você.",
@@ -347,9 +375,16 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "decalNumberColor", label: "Cor do número", type: "color", placeholder: "Automático", category: "appearance", group: "Selo" },
       { key: "decalTextColor", label: "Cor do texto (sub/texto)", type: "color", placeholder: "Automático", category: "appearance", group: "Selo" },
       // Seção
-      ...SECTION_GROUP(),
+      ...SECTION_GROUP([
+        LAYOUT_VARIANT([
+          { value: "image_right", label: "Imagem à direita (Padrão)" },
+          { value: "image_left", label: "Imagem à esquerda" },
+          { value: "stacked", label: "Empilhado (centralizado)" },
+        ]),
+      ]),
     ],
     defaultProps: {
+      layout_variant: "image_right",
       eyebrow: "A nossa história",
       title: "Nossa História",
       content: "<p>Conte sua história aqui...</p>",
@@ -403,9 +438,16 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "cardBgColor", label: "Cor de fundo do card", type: "color", placeholder: "Automático", category: "appearance", group: "Card" },
       { key: "cardBorderColor", label: "Cor da borda do card", type: "color", placeholder: "Automático", category: "appearance", group: "Card" },
       // Seção
-      ...SECTION_GROUP(),
+      ...SECTION_GROUP([
+        LAYOUT_VARIANT([
+          { value: "split", label: "Dividido com imagem (Padrão)" },
+          { value: "image_left", label: "Imagem à esquerda" },
+          { value: "centered", label: "Centralizado" },
+        ]),
+      ]),
     ],
     defaultProps: {
+      layout_variant: "split",
       eyebrow: "Expansão",
       title: "Seja um Franqueado",
       description: "<p>Faça parte da nossa rede de parceiros.</p>",
@@ -443,10 +485,17 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
           { key: "caption", label: "Legenda", type: "text" },
         ],
       },
-      ...SECTION_GROUP(),
+      ...SECTION_GROUP([
+        LAYOUT_VARIANT([
+          { value: "grid", label: "Grade quadrada (Padrão)" },
+          { value: "wide", label: "Destaque (2 col. largas)" },
+          { value: "compact", label: "Compacto (mosaico)" },
+        ]),
+      ]),
     ],
     defaultProps: {
       title: "Galeria",
+      layout_variant: "grid",
       images: [],
       ...COMMON_APPEARANCE_DEFAULTS,
     },
@@ -468,10 +517,17 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       { key: "buttonLink", label: "Link", type: "url", group: "Botão" },
       ...BTN_COLORS("Botão"),
       // Seção
-      ...SECTION_GROUP(),
+      ...SECTION_GROUP([
+        LAYOUT_VARIANT([
+          { value: "card", label: "Cartão centralizado (Padrão)" },
+          { value: "split", label: "Texto + botão lado a lado" },
+          { value: "band", label: "Faixa cheia" },
+        ]),
+      ]),
     ],
     defaultProps: {
       title: "Faça seu pedido agora!",
+      layout_variant: "card",
       description: "Entre em contato e saiba mais.",
       buttonText: "Pedir Agora",
       buttonLink: "#",
@@ -524,6 +580,20 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
       style: "space",
       backgroundColor: "",
       fillColor: "",
+    },
+  },
+
+  container: {
+    type: "container",
+    label: "Container (Livre)",
+    description: "Monte um layout livre com linhas, colunas e blocos",
+    icon: Columns3,
+    fields: [
+      ...SECTION_GROUP(),
+    ],
+    defaultProps: {
+      rows: [],
+      ...COMMON_APPEARANCE_DEFAULTS,
     },
   },
 
