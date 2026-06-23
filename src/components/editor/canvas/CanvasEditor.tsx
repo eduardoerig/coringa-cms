@@ -30,6 +30,7 @@ interface Props {
 }
 
 type LiveTransform = { id: string; x: number; y: number; w: number; h: number; rotation: number };
+type AlignAxis = "left" | "centerH" | "right" | "top" | "middleV" | "bottom";
 
 interface Gesture {
   mode: "move" | "resize" | "rotate";
@@ -59,6 +60,15 @@ const HANDLES: { h: ResizeHandle; pos: string; cursor: string }[] = [
   { h: "w", pos: "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2", cursor: "ew-resize" },
 ];
 
+const ALIGN_BTNS: { lbl: string; axis: AlignAxis; title: string }[] = [
+  { lbl: "E", axis: "left", title: "Alinhar à esquerda" },
+  { lbl: "C", axis: "centerH", title: "Centralizar na horizontal" },
+  { lbl: "D", axis: "right", title: "Alinhar à direita" },
+  { lbl: "T", axis: "top", title: "Alinhar ao topo" },
+  { lbl: "M", axis: "middleV", title: "Centralizar na vertical" },
+  { lbl: "B", axis: "bottom", title: "Alinhar à base" },
+];
+
 export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, grid, background }: Props) {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectNode = useEditorStore((s) => s.selectNode);
@@ -68,13 +78,29 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
   const artboardRef = useRef<HTMLDivElement | null>(null);
   const gesture = useRef<Gesture | null>(null);
   const heightGesture = useRef<{ startY: number; startH: number; scaleY: number; live: number } | null>(null);
+  const groupGesture = useRef<{ startX: number; startY: number; scaleX: number; scaleY: number; live: { dx: number; dy: number } } | null>(null);
+  const marqueeGesture = useRef<{ rectLeft: number; rectTop: number; scaleX: number; scaleY: number; startX: number; startY: number; live: { x: number; y: number; w: number; h: number } } | null>(null);
   const editingRef = useRef<HTMLElement | null>(null);
+  const selectedIdsRef = useRef<string[]>([]);
 
   const [drag, setDrag] = useState<LiveTransform | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [groupMove, setGroupMove] = useState<{ dx: number; dy: number } | null>(null);
+  const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
   const effH = dragHeight ?? H;
+
+  // Seleção efetiva: se o primário (store) está no conjunto local, usa o conjunto (multi);
+  // senão, trata como seleção simples do primário (ex.: clique numa camada do painel).
+  const primaryId = selectedNodeId;
+  const selIds = primaryId && selectedIds.includes(primaryId) ? selectedIds : primaryId ? [primaryId] : [];
+  const multi = selIds.length > 1;
+
+  // Mantém o ref em sincronia para os handlers (gesto/teclado) lerem a seleção atual.
+  useEffect(() => { selectedIdsRef.current = selIds; });
 
   const getEls = (): CanvasElement[] =>
     (useEditorStore.getState().sections.find((s) => s.id === sectionId)?.props.elements as CanvasElement[]) ?? [];
@@ -87,7 +113,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       id: genElId(),
       type,
       x: Math.round((DW - w) / 2),
-      y: Math.round((H - h) / 2),
+      y: Math.round((effH - h) / 2),
       w,
       h,
       rotation: 0,
@@ -95,30 +121,24 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       props: JSON.parse(JSON.stringify(reg.defaultProps)),
     };
     mutate(sectionId, (cur) => addElement(cur, el));
+    setSelectedIds([el.id]);
     selectNode(el.id);
   };
 
-  // ---- Início de um gesto (mover / redimensionar / girar) ----
+  // ---- Gesto de um elemento (mover / redimensionar / girar) ----
   const startGesture = (mode: Gesture["mode"], handle: ResizeHandle | null, el: CanvasElement, e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
     const rect = artboardRef.current?.getBoundingClientRect();
     if (!rect) return;
     const scaleX = rect.width / DW;
-    const scaleY = rect.height / H;
+    const scaleY = rect.height / effH;
     const start = { x: el.x, y: el.y, w: el.w, h: el.h, rotation: el.rotation };
     gesture.current = {
-      mode,
-      handle,
-      id: el.id,
-      startX: e.clientX,
-      startY: e.clientY,
-      scaleX,
-      scaleY,
+      mode, handle, id: el.id, startX: e.clientX, startY: e.clientY, scaleX, scaleY,
       cx: rect.left + (el.x + el.w / 2) * scaleX,
       cy: rect.top + (el.y + el.h / 2) * scaleY,
-      start,
-      live: { id: el.id, ...start },
+      start, live: { id: el.id, ...start },
     };
     setDrag({ id: el.id, ...start });
     window.addEventListener("pointermove", onMove);
@@ -130,10 +150,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     if (!g) return;
     const dx = (e.clientX - g.startX) / g.scaleX;
     const dy = (e.clientY - g.startY) / g.scaleY;
-
     if (g.mode === "move") {
       const others = getEls().filter((e2) => e2.id !== g.id);
-      const snap = computeMoveSnap({ x: g.start.x + dx, y: g.start.y + dy, w: g.start.w, h: g.start.h }, others, DW, H, SNAP, grid);
+      const snap = computeMoveSnap({ x: g.start.x + dx, y: g.start.y + dy, w: g.start.w, h: g.start.h }, others, DW, effH, SNAP, grid);
       g.live = { id: g.id, ...g.start, x: Math.round(snap.x), y: Math.round(snap.y) };
       setGuides(snap.guides);
     } else if (g.mode === "resize" && g.handle) {
@@ -155,7 +174,6 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     if (g) {
       const s = g.start;
       const l = g.live;
-      // Só efetiva (e empilha histórico) se houve mudança real — evita poluir o undo num clique.
       const changed = s.x !== l.x || s.y !== l.y || s.w !== l.w || s.h !== l.h || s.rotation !== l.rotation;
       if (changed) mutate(sectionId, (els) => setTransform(els, g.id, { x: l.x, y: l.y, w: l.w, h: l.h, rotation: l.rotation }));
     }
@@ -164,30 +182,97 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     setGuides([]);
   };
 
-  // ---- Arrastar a altura do artboard ----
-  const onHeightMove = (e: PointerEvent) => {
-    const g = heightGesture.current;
+  // ---- Mover o grupo (vários selecionados) ----
+  const onGroupMoveMove = (e: PointerEvent) => {
+    const g = groupGesture.current;
     if (!g) return;
-    const nh = Math.round(Math.min(2400, Math.max(200, g.startH + (e.clientY - g.startY) / g.scaleY)));
-    g.live = nh;
-    setDragHeight(nh);
+    g.live = { dx: Math.round((e.clientX - g.startX) / g.scaleX), dy: Math.round((e.clientY - g.startY) / g.scaleY) };
+    setGroupMove(g.live);
   };
-  const onHeightUp = () => {
-    window.removeEventListener("pointermove", onHeightMove);
-    const g = heightGesture.current;
-    if (g && g.live !== g.startH) updateSectionProps(sectionId, { height: g.live });
-    heightGesture.current = null;
-    setDragHeight(null);
+  const onGroupMoveUp = () => {
+    window.removeEventListener("pointermove", onGroupMoveMove);
+    const g = groupGesture.current;
+    if (g && (g.live.dx !== 0 || g.live.dy !== 0)) {
+      const ids = new Set(selectedIdsRef.current);
+      const { dx, dy } = g.live;
+      mutate(sectionId, (els) => els.map((e2) => (ids.has(e2.id) && !e2.locked ? { ...e2, x: e2.x + dx, y: e2.y + dy } : e2)));
+    }
+    groupGesture.current = null;
+    setGroupMove(null);
   };
-  const startHeightDrag = (e: React.PointerEvent) => {
+  const startGroupMove = (e: React.PointerEvent) => {
     e.stopPropagation();
     e.preventDefault();
     const rect = artboardRef.current?.getBoundingClientRect();
     if (!rect) return;
-    heightGesture.current = { startY: e.clientY, startH: H, scaleY: rect.height / H, live: H };
-    setDragHeight(H);
-    window.addEventListener("pointermove", onHeightMove);
-    window.addEventListener("pointerup", onHeightUp, { once: true });
+    groupGesture.current = { startX: e.clientX, startY: e.clientY, scaleX: rect.width / DW, scaleY: rect.height / effH, live: { dx: 0, dy: 0 } };
+    setGroupMove({ dx: 0, dy: 0 });
+    window.addEventListener("pointermove", onGroupMoveMove);
+    window.addEventListener("pointerup", onGroupMoveUp, { once: true });
+  };
+
+  // ---- Marquee (seleção por retângulo no vazio) ----
+  const onMarqueeMove = (e: PointerEvent) => {
+    const g = marqueeGesture.current;
+    if (!g) return;
+    const x0 = (g.startX - g.rectLeft) / g.scaleX;
+    const y0 = (g.startY - g.rectTop) / g.scaleY;
+    const x1 = (e.clientX - g.rectLeft) / g.scaleX;
+    const y1 = (e.clientY - g.rectTop) / g.scaleY;
+    g.live = { x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) };
+    setMarquee(g.live);
+  };
+  const onMarqueeUp = () => {
+    window.removeEventListener("pointermove", onMarqueeMove);
+    const g = marqueeGesture.current;
+    if (g) {
+      const m = g.live;
+      if (m.w > 4 || m.h > 4) {
+        const hits = getEls()
+          .filter((el) => !(el.x > m.x + m.w || el.x + el.w < m.x || el.y > m.y + m.h || el.y + el.h < m.y))
+          .map((el) => el.id);
+        setSelectedIds(hits);
+        selectNode(hits.length ? hits[hits.length - 1] : null);
+      }
+    }
+    marqueeGesture.current = null;
+    setMarquee(null);
+  };
+  const startMarquee = (e: React.PointerEvent) => {
+    const rect = artboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setSelectedIds([]);
+    selectNode(null);
+    marqueeGesture.current = {
+      rectLeft: rect.left, rectTop: rect.top, scaleX: rect.width / DW, scaleY: rect.height / effH,
+      startX: e.clientX, startY: e.clientY, live: { x: 0, y: 0, w: 0, h: 0 },
+    };
+    window.addEventListener("pointermove", onMarqueeMove);
+    window.addEventListener("pointerup", onMarqueeUp, { once: true });
+  };
+
+  // ---- Clique num elemento (simples / Shift-toggle / mover grupo) ----
+  const onElementPointerDown = (e: React.PointerEvent, el: CanvasElement) => {
+    if (editingId === el.id) return;
+    if (e.shiftKey) {
+      e.stopPropagation();
+      const cur = selectedIdsRef.current;
+      const next = cur.includes(el.id) ? cur.filter((i) => i !== el.id) : [...cur, el.id];
+      setSelectedIds(next);
+      selectNode(next.length ? next[next.length - 1] : null);
+      return;
+    }
+    const cur = selectedIdsRef.current;
+    if (cur.length > 1 && cur.includes(el.id)) {
+      selectNode(el.id);
+      if (!el.locked) startGroupMove(e);
+      else e.stopPropagation();
+      return;
+    }
+    setSelectedIds([el.id]);
+    selectNode(el.id);
+    if (!el.locked) startGesture("move", null, el, e);
+    else e.stopPropagation();
   };
 
   // ---- Edição inline de texto (duplo-clique) ----
@@ -231,7 +316,105 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     node.addEventListener("keydown", onKey);
   };
 
-  // ---- Atalhos de teclado (capture, p/ suprimir os globais quando há elemento) ----
+  // ---- Arrastar a altura do artboard ----
+  const onHeightMove = (e: PointerEvent) => {
+    const g = heightGesture.current;
+    if (!g) return;
+    const nh = Math.round(Math.min(2400, Math.max(200, g.startH + (e.clientY - g.startY) / g.scaleY)));
+    g.live = nh;
+    setDragHeight(nh);
+  };
+  const onHeightUp = () => {
+    window.removeEventListener("pointermove", onHeightMove);
+    const g = heightGesture.current;
+    if (g && g.live !== g.startH) updateSectionProps(sectionId, { height: g.live });
+    heightGesture.current = null;
+    setDragHeight(null);
+  };
+  const startHeightDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = artboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    heightGesture.current = { startY: e.clientY, startH: H, scaleY: rect.height / H, live: H };
+    setDragHeight(H);
+    window.addEventListener("pointermove", onHeightMove);
+    window.addEventListener("pointerup", onHeightUp, { once: true });
+  };
+
+  // ---- Ações de grupo ----
+  const alignGroup = (axis: AlignAxis) => {
+    const ids = selIds;
+    const sel = elements.filter((e) => ids.includes(e.id));
+    if (sel.length < 2) return;
+    const minX = Math.min(...sel.map((e) => e.x));
+    const maxX = Math.max(...sel.map((e) => e.x + e.w));
+    const cX = (minX + maxX) / 2;
+    const minY = Math.min(...sel.map((e) => e.y));
+    const maxY = Math.max(...sel.map((e) => e.y + e.h));
+    const cY = (minY + maxY) / 2;
+    const idset = new Set(ids);
+    mutate(sectionId, (els) =>
+      els.map((e) => {
+        if (!idset.has(e.id)) return e;
+        switch (axis) {
+          case "left": return { ...e, x: Math.round(minX) };
+          case "centerH": return { ...e, x: Math.round(cX - e.w / 2) };
+          case "right": return { ...e, x: Math.round(maxX - e.w) };
+          case "top": return { ...e, y: Math.round(minY) };
+          case "middleV": return { ...e, y: Math.round(cY - e.h / 2) };
+          case "bottom": return { ...e, y: Math.round(maxY - e.h) };
+          default: return e;
+        }
+      })
+    );
+  };
+
+  const distributeGroup = (axis: "h" | "v") => {
+    const ids = selIds;
+    const sel = elements.filter((e) => ids.includes(e.id));
+    if (sel.length < 3) return;
+    const center = (e: CanvasElement) => (axis === "h" ? e.x + e.w / 2 : e.y + e.h / 2);
+    const sorted = [...sel].sort((a, b) => center(a) - center(b));
+    const first = center(sorted[0]);
+    const last = center(sorted[sorted.length - 1]);
+    const step = (last - first) / (sorted.length - 1);
+    const target = new Map<string, number>();
+    sorted.forEach((e, i) => target.set(e.id, first + i * step));
+    mutate(sectionId, (els) =>
+      els.map((e) => {
+        const c = target.get(e.id);
+        if (c == null) return e;
+        return axis === "h" ? { ...e, x: Math.round(c - e.w / 2) } : { ...e, y: Math.round(c - e.h / 2) };
+      })
+    );
+  };
+
+  const duplicateGroup = () => {
+    const idset = new Set(selIds);
+    const copies: CanvasElement[] = [];
+    elements.forEach((e) => { if (idset.has(e.id)) copies.push({ ...JSON.parse(JSON.stringify(e)), id: genElId(), x: e.x + 16, y: e.y + 16 }); });
+    if (!copies.length) return;
+    mutate(sectionId, (els) => [...els, ...copies]);
+    setSelectedIds(copies.map((c) => c.id));
+    selectNode(copies[copies.length - 1].id);
+  };
+
+  const deleteGroup = () => {
+    const idset = new Set(selIds);
+    mutate(sectionId, (els) => els.filter((e) => !idset.has(e.id)));
+    setSelectedIds([]);
+    selectNode(null);
+  };
+
+  const dupSelected = (el: CanvasElement) => {
+    const copy: CanvasElement = { ...JSON.parse(JSON.stringify(el)), id: genElId(), x: el.x + 16, y: el.y + 16 };
+    mutate(sectionId, (cur) => addElement(cur, copy));
+    setSelectedIds([copy.id]);
+    selectNode(copy.id);
+  };
+
+  // ---- Atalhos de teclado (capture, p/ suprimir os globais quando há seleção) ----
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const ae = document.activeElement;
@@ -239,36 +422,37 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       if (ae?.tagName === "INPUT" || ae?.tagName === "TEXTAREA" || editable) return;
       const st = useEditorStore.getState();
       if (st.selectedSectionId !== sectionId) return;
-      const id = st.selectedNodeId;
+      const ids = selectedIdsRef.current;
 
       if (e.key === "Escape") {
-        if (id) { e.preventDefault(); e.stopPropagation(); st.selectNode(null); }
+        if (ids.length) { e.preventDefault(); e.stopPropagation(); setSelectedIds([]); st.selectNode(null); }
         return;
       }
-      if (!id) return;
-      const els = getEls();
-      const el = findElement(els, id);
-      if (!el) return;
+      if (!ids.length) return;
+      const idset = new Set(ids);
 
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault(); e.stopPropagation();
-        mutate(sectionId, (cur) => removeElement(cur, id));
-        st.selectNode(null);
+        mutate(sectionId, (els) => els.filter((e2) => !idset.has(e2.id)));
+        setSelectedIds([]); st.selectNode(null);
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
         e.preventDefault(); e.stopPropagation();
-        const copy: CanvasElement = { ...JSON.parse(JSON.stringify(el)), id: genElId(), x: el.x + 16, y: el.y + 16 };
-        mutate(sectionId, (cur) => addElement(cur, copy));
-        st.selectNode(copy.id);
+        const copies: CanvasElement[] = [];
+        getEls().forEach((e2) => { if (idset.has(e2.id)) copies.push({ ...JSON.parse(JSON.stringify(e2)), id: genElId(), x: e2.x + 16, y: e2.y + 16 }); });
+        if (copies.length) {
+          mutate(sectionId, (els) => [...els, ...copies]);
+          setSelectedIds(copies.map((c) => c.id));
+          st.selectNode(copies[copies.length - 1].id);
+        }
       } else if (e.key.startsWith("Arrow")) {
-        if (el.locked) return;
         e.preventDefault(); e.stopPropagation();
         const step = e.shiftKey ? 10 : 1;
         const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-        mutate(sectionId, (cur) => setTransform(cur, id, { x: el.x + dx, y: el.y + dy }), `nudge:${id}`);
+        mutate(sectionId, (els) => els.map((e2) => (idset.has(e2.id) && !e2.locked ? { ...e2, x: e2.x + dx, y: e2.y + dy } : e2)), `nudge:group`);
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "]" || e.key === "[")) {
-        e.preventDefault(); e.stopPropagation();
-        mutate(sectionId, (cur) => moveZ(cur, id, e.key === "]" ? "forward" : "backward"));
+        const pid = st.selectedNodeId;
+        if (pid) { e.preventDefault(); e.stopPropagation(); mutate(sectionId, (els) => moveZ(els, pid, e.key === "]" ? "forward" : "backward")); }
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -276,19 +460,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId]);
 
-  // ---- Ações da barra de seleção ----
-  const dupSelected = (el: CanvasElement) => {
-    const copy: CanvasElement = { ...JSON.parse(JSON.stringify(el)), id: genElId(), x: el.x + 16, y: el.y + 16 };
-    mutate(sectionId, (cur) => addElement(cur, copy));
-    selectNode(copy.id);
-  };
-
-  const eff = (el: CanvasElement): LiveTransform | CanvasElement => (drag && drag.id === el.id ? drag : el);
-
-  // ---- Render de uma alça ----
+  // ---- Render das alças de um elemento (só na seleção simples) ----
   const renderHandles = (el: CanvasElement) => (
     <>
-      {/* Alça de rotação */}
       <div
         onPointerDown={(e) => startGesture("rotate", null, el, e)}
         className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[26px] w-5 h-5 rounded-full bg-white border border-zinc-300 shadow flex items-center justify-center cursor-grab active:cursor-grabbing"
@@ -297,7 +471,6 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
         <RotateCw className="w-3 h-3 text-zinc-600" />
       </div>
       <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[26px] h-[26px] w-px bg-zinc-300 pointer-events-none" />
-      {/* Alças de resize */}
       {HANDLES.map((hd) => (
         <div
           key={hd.h}
@@ -310,6 +483,19 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
   );
 
   const selectedEl = findElement(elements, selectedNodeId);
+
+  // Bounding box do grupo (com offset ao vivo do arrasto de grupo).
+  const selEls = elements.filter((e) => selIds.includes(e.id));
+  const gm = groupMove ?? { dx: 0, dy: 0 };
+  const gb =
+    multi && selEls.length
+      ? {
+          minX: Math.min(...selEls.map((e) => e.x)) + gm.dx,
+          minY: Math.min(...selEls.map((e) => e.y)) + gm.dy,
+          maxX: Math.max(...selEls.map((e) => e.x + e.w)) + gm.dx,
+          maxY: Math.max(...selEls.map((e) => e.y + e.h)) + gm.dy,
+        }
+      : null;
 
   return (
     <div className="select-none">
@@ -335,7 +521,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       {/* Artboard */}
       <div
         ref={artboardRef}
-        onPointerDown={(e) => { if (e.target === artboardRef.current) selectNode(null); }}
+        onPointerDown={(e) => { if (e.target === artboardRef.current) startMarquee(e); }}
         className="relative w-full bg-white outline-dashed outline-1 outline-zinc-200"
         style={{ aspectRatio: `${DW} / ${effH}`, containerType: "inline-size", ...background }}
       >
@@ -350,27 +536,25 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           />
         )}
         {elements.map((el) => {
-          const t = eff(el);
-          const selected = el.id === selectedNodeId;
+          const isSel = selIds.includes(el.id);
+          const isPrimary = el.id === selectedNodeId;
           const isEditing = editingId === el.id;
+          let ex = el.x, ey = el.y, ew = el.w, eh = el.h, erot = el.rotation;
+          if (drag && drag.id === el.id) { ex = drag.x; ey = drag.y; ew = drag.w; eh = drag.h; erot = drag.rotation; }
+          else if (groupMove && isSel) { ex = el.x + groupMove.dx; ey = el.y + groupMove.dy; }
           return (
             <div
               key={el.id}
               data-el-id={el.id}
-              onPointerDown={(e) => {
-                if (isEditing) return;
-                selectNode(el.id);
-                if (!el.locked) startGesture("move", null, el, e);
-                else e.stopPropagation();
-              }}
+              onPointerDown={(e) => onElementPointerDown(e, el)}
               onDoubleClick={(e) => onElementDoubleClick(e, el)}
-              className={cn("absolute", selected && "z-[1000]")}
+              className={cn("absolute", isSel && "z-[1000]")}
               style={{
-                left: `${(t.x / DW) * 100}%`,
-                top: `${(t.y / effH) * 100}%`,
-                width: `${(t.w / DW) * 100}%`,
-                height: `${(t.h / effH) * 100}%`,
-                transform: `rotate(${t.rotation}deg)`,
+                left: `${(ex / DW) * 100}%`,
+                top: `${(ey / effH) * 100}%`,
+                width: `${(ew / DW) * 100}%`,
+                height: `${(eh / effH) * 100}%`,
+                transform: `rotate(${erot}deg)`,
                 opacity: el.opacity ?? 1,
                 cursor: el.locked ? "default" : isEditing ? "text" : "move",
                 touchAction: "none",
@@ -379,16 +563,28 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
               <div
                 className={cn(
                   "w-full h-full",
-                  selected ? "outline outline-2 outline-zinc-900" : "outline outline-1 outline-transparent hover:outline-zinc-400/60"
+                  isPrimary && !multi
+                    ? "outline outline-2 outline-zinc-900"
+                    : isSel
+                      ? "outline outline-2 outline-blue-500"
+                      : "outline outline-1 outline-transparent hover:outline-zinc-400/60"
                 )}
                 style={{ outlineOffset: "1px" }}
               >
                 <CanvasElementRenderer element={el} designWidth={DW} />
               </div>
-              {selected && !isEditing && renderHandles(el)}
+              {!multi && isPrimary && !isEditing && !el.locked && renderHandles(el)}
             </div>
           );
         })}
+
+        {/* Caixa do grupo (multi-seleção) */}
+        {gb && (
+          <div
+            className="absolute border-2 border-blue-500/70 pointer-events-none z-[1050]"
+            style={{ left: `${(gb.minX / DW) * 100}%`, top: `${(gb.minY / effH) * 100}%`, width: `${((gb.maxX - gb.minX) / DW) * 100}%`, height: `${((gb.maxY - gb.minY) / effH) * 100}%` }}
+          />
+        )}
 
         {/* Linhas-guia de snapping */}
         {guides.map((g, i) =>
@@ -399,8 +595,16 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           )
         )}
 
-        {/* Barra de ações do elemento selecionado */}
-        {selectedEl && !editingId && (
+        {/* Retângulo do marquee */}
+        {marquee && (
+          <div
+            className="absolute bg-blue-500/10 border border-blue-500/60 pointer-events-none z-[1150]"
+            style={{ left: `${(marquee.x / DW) * 100}%`, top: `${(marquee.y / effH) * 100}%`, width: `${(marquee.w / DW) * 100}%`, height: `${(marquee.h / effH) * 100}%` }}
+          />
+        )}
+
+        {/* Barra de ações — seleção simples */}
+        {selectedEl && !multi && !editingId && (
           <div className="absolute top-2 right-2 z-[1200] flex items-center gap-0.5 p-1 bg-zinc-900 text-white rounded-xl shadow-lg">
             <button onClick={() => dupSelected(selectedEl)} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar"><Copy className="w-3.5 h-3.5" /></button>
             <button onClick={() => mutate(sectionId, (cur) => moveZ(cur, selectedEl.id, "front"))} className="p-1.5 rounded-lg hover:bg-white/15" title="Trazer para frente"><BringToFront className="w-3.5 h-3.5" /></button>
@@ -410,6 +614,27 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
             </button>
             <div className="w-px h-4 bg-white/20 mx-0.5" />
             <button onClick={() => { mutate(sectionId, (cur) => removeElement(cur, selectedEl.id)); selectNode(null); }} className="p-1.5 rounded-lg hover:bg-red-500" title="Excluir"><Trash2 className="w-3.5 h-3.5" /></button>
+          </div>
+        )}
+
+        {/* Barra de ações — grupo (multi-seleção) */}
+        {multi && !editingId && (
+          <div className="absolute top-2 right-2 z-[1200] flex items-center gap-0.5 p-1 bg-zinc-900 text-white rounded-xl shadow-lg">
+            <span className="text-[10px] font-bold px-1 text-white/70">{selIds.length}</span>
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+            {ALIGN_BTNS.map((b) => (
+              <button key={b.axis} onClick={() => alignGroup(b.axis)} title={b.title} className="w-6 h-6 rounded-lg text-[10px] font-bold hover:bg-white/15">{b.lbl}</button>
+            ))}
+            {selIds.length >= 3 && (
+              <>
+                <div className="w-px h-4 bg-white/20 mx-0.5" />
+                <button onClick={() => distributeGroup("h")} title="Distribuir na horizontal" className="w-6 h-6 rounded-lg text-[13px] hover:bg-white/15">↔</button>
+                <button onClick={() => distributeGroup("v")} title="Distribuir na vertical" className="w-6 h-6 rounded-lg text-[13px] hover:bg-white/15">↕</button>
+              </>
+            )}
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+            <button onClick={duplicateGroup} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar grupo"><Copy className="w-3.5 h-3.5" /></button>
+            <button onClick={deleteGroup} className="p-1.5 rounded-lg hover:bg-red-500" title="Excluir grupo"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         )}
 
@@ -429,7 +654,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       </div>
 
       <p className="text-center text-[10px] text-zinc-400 mt-2">
-        Arraste para mover · alças para redimensionar/girar · duplo-clique no texto para editar
+        Arraste para mover · Shift+clique ou arraste no vazio para selecionar vários · duplo-clique no texto para editar
       </p>
     </div>
   );
