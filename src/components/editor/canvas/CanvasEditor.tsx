@@ -16,7 +16,8 @@ import {
 } from "./canvasModel";
 import { canvasElementRegistry, canvasElementTypes } from "./canvasElementRegistry";
 import { CanvasElementRenderer } from "./CanvasElementRenderer";
-import { resizeBox, angleFromCenter, snapAngle, snapTo, type ResizeHandle, type Box } from "./transform";
+import { resizeBox, angleFromCenter, snapAngle, type ResizeHandle, type Box } from "./transform";
+import { computeMoveSnap, type Guide } from "./snapping";
 import { Copy, Trash2, Lock, Unlock, BringToFront, SendToBack, RotateCw } from "lucide-react";
 
 interface Props {
@@ -24,10 +25,11 @@ interface Props {
   designWidth: number;
   height: number;
   elements: CanvasElement[];
+  grid: number;
+  background: React.CSSProperties;
 }
 
 type LiveTransform = { id: string; x: number; y: number; w: number; h: number; rotation: number };
-type Guide = { axis: "x" | "y"; pos: number };
 
 interface Gesture {
   mode: "move" | "resize" | "rotate";
@@ -57,18 +59,22 @@ const HANDLES: { h: ResizeHandle; pos: string; cursor: string }[] = [
   { h: "w", pos: "top-1/2 left-0 -translate-x-1/2 -translate-y-1/2", cursor: "ew-resize" },
 ];
 
-export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }: Props) {
+export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, grid, background }: Props) {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectNode = useEditorStore((s) => s.selectNode);
   const mutate = useEditorStore((s) => s.mutateCanvasElements);
+  const updateSectionProps = useEditorStore((s) => s.updateSectionProps);
 
   const artboardRef = useRef<HTMLDivElement | null>(null);
   const gesture = useRef<Gesture | null>(null);
+  const heightGesture = useRef<{ startY: number; startH: number; scaleY: number; live: number } | null>(null);
   const editingRef = useRef<HTMLElement | null>(null);
 
   const [drag, setDrag] = useState<LiveTransform | null>(null);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [dragHeight, setDragHeight] = useState<number | null>(null);
+  const effH = dragHeight ?? H;
 
   const getEls = (): CanvasElement[] =>
     (useEditorStore.getState().sections.find((s) => s.id === sectionId)?.props.elements as CanvasElement[]) ?? [];
@@ -126,16 +132,10 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }
     const dy = (e.clientY - g.startY) / g.scaleY;
 
     if (g.mode === "move") {
-      let nx = g.start.x + dx;
-      let ny = g.start.y + dy;
-      const nextGuides: Guide[] = [];
-      // Snapping do eixo X: borda esquerda, centro, borda direita.
-      const sx = snapTo(nx, [0, (DW - g.start.w) / 2, DW - g.start.w], SNAP);
-      if (sx.guide != null) { nx = sx.value; nextGuides.push({ axis: "x", pos: nx + g.start.w / 2 }); }
-      const sy = snapTo(ny, [0, (H - g.start.h) / 2, H - g.start.h], SNAP);
-      if (sy.guide != null) { ny = sy.value; nextGuides.push({ axis: "y", pos: ny + g.start.h / 2 }); }
-      g.live = { id: g.id, ...g.start, x: Math.round(nx), y: Math.round(ny) };
-      setGuides(nextGuides);
+      const others = getEls().filter((e2) => e2.id !== g.id);
+      const snap = computeMoveSnap({ x: g.start.x + dx, y: g.start.y + dy, w: g.start.w, h: g.start.h }, others, DW, H, SNAP, grid);
+      g.live = { id: g.id, ...g.start, x: Math.round(snap.x), y: Math.round(snap.y) };
+      setGuides(snap.guides);
     } else if (g.mode === "resize" && g.handle) {
       const box: Box = resizeBox(g.start, g.handle, dx, dy, e.shiftKey);
       g.live = { id: g.id, rotation: g.start.rotation, x: Math.round(box.x), y: Math.round(box.y), w: Math.round(box.w), h: Math.round(box.h) };
@@ -162,6 +162,32 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }
     gesture.current = null;
     setDrag(null);
     setGuides([]);
+  };
+
+  // ---- Arrastar a altura do artboard ----
+  const onHeightMove = (e: PointerEvent) => {
+    const g = heightGesture.current;
+    if (!g) return;
+    const nh = Math.round(Math.min(2400, Math.max(200, g.startH + (e.clientY - g.startY) / g.scaleY)));
+    g.live = nh;
+    setDragHeight(nh);
+  };
+  const onHeightUp = () => {
+    window.removeEventListener("pointermove", onHeightMove);
+    const g = heightGesture.current;
+    if (g && g.live !== g.startH) updateSectionProps(sectionId, { height: g.live });
+    heightGesture.current = null;
+    setDragHeight(null);
+  };
+  const startHeightDrag = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = artboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    heightGesture.current = { startY: e.clientY, startH: H, scaleY: rect.height / H, live: H };
+    setDragHeight(H);
+    window.addEventListener("pointermove", onHeightMove);
+    window.addEventListener("pointerup", onHeightUp, { once: true });
   };
 
   // ---- Edição inline de texto (duplo-clique) ----
@@ -311,8 +337,18 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }
         ref={artboardRef}
         onPointerDown={(e) => { if (e.target === artboardRef.current) selectNode(null); }}
         className="relative w-full bg-white outline-dashed outline-1 outline-zinc-200"
-        style={{ aspectRatio: `${DW} / ${H}`, containerType: "inline-size" }}
+        style={{ aspectRatio: `${DW} / ${effH}`, containerType: "inline-size", ...background }}
       >
+        {grid > 0 && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage:
+                "linear-gradient(to right, rgba(0,0,0,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.06) 1px, transparent 1px)",
+              backgroundSize: `${(grid / DW) * 100}cqw ${(grid / DW) * 100}cqw`,
+            }}
+          />
+        )}
         {elements.map((el) => {
           const t = eff(el);
           const selected = el.id === selectedNodeId;
@@ -331,9 +367,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }
               className={cn("absolute", selected && "z-[1000]")}
               style={{
                 left: `${(t.x / DW) * 100}%`,
-                top: `${(t.y / H) * 100}%`,
+                top: `${(t.y / effH) * 100}%`,
                 width: `${(t.w / DW) * 100}%`,
-                height: `${(t.h / H) * 100}%`,
+                height: `${(t.h / effH) * 100}%`,
                 transform: `rotate(${t.rotation}deg)`,
                 opacity: el.opacity ?? 1,
                 cursor: el.locked ? "default" : isEditing ? "text" : "move",
@@ -359,7 +395,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }
           g.axis === "x" ? (
             <div key={i} className="absolute top-0 bottom-0 w-px bg-rose-500 pointer-events-none z-[1100]" style={{ left: `${(g.pos / DW) * 100}%` }} />
           ) : (
-            <div key={i} className="absolute left-0 right-0 h-px bg-rose-500 pointer-events-none z-[1100]" style={{ top: `${(g.pos / H) * 100}%` }} />
+            <div key={i} className="absolute left-0 right-0 h-px bg-rose-500 pointer-events-none z-[1100]" style={{ top: `${(g.pos / effH) * 100}%` }} />
           )
         )}
 
@@ -383,6 +419,13 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements }
             <p className="text-sm text-zinc-300 font-medium">Tela vazia — adicione um elemento acima</p>
           </div>
         )}
+
+        {/* Alça para arrastar a altura da tela */}
+        <div
+          onPointerDown={startHeightDrag}
+          className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-12 h-2.5 rounded-full bg-white border border-zinc-300 shadow cursor-ns-resize z-[1200]"
+          title="Arrastar altura da tela"
+        />
       </div>
 
       <p className="text-center text-[10px] text-zinc-400 mt-2">

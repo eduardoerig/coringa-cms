@@ -377,6 +377,8 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
   const elements = (section.props.elements as CanvasElement[]) || [];
   const el = findElement(elements, selectedNodeId);
   const reg = el ? canvasElementRegistry[el.type] : null;
+  const cw = Number(section.props.designWidth) || 1200;
+  const ch = Number(section.props.height) || 600;
 
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
@@ -430,6 +432,22 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
             </div>
           </div>
 
+          <div className="pt-2 border-t border-zinc-100">
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Alinhar na tela</p>
+            <div className="grid grid-cols-3 gap-1.5">
+              {[
+                { label: "Esq.", t: { x: 0 } },
+                { label: "Centro", t: { x: Math.round((cw - el.w) / 2) } },
+                { label: "Dir.", t: { x: cw - el.w } },
+                { label: "Topo", t: { y: 0 } },
+                { label: "Meio", t: { y: Math.round((ch - el.h) / 2) } },
+                { label: "Base", t: { y: ch - el.h } },
+              ].map(({ label, t }) => (
+                <button key={label} onClick={() => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, t))} className="py-1.5 rounded-lg border border-zinc-200 text-zinc-500 text-[10px] font-bold hover:bg-zinc-50 transition-all">{label}</button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
             <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, el.id, "front"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronUp className="w-3.5 h-3.5" /> Frente</button>
             <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, el.id, "back"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronDown className="w-3.5 h-3.5" /> Trás</button>
@@ -443,9 +461,46 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
               Use a barra acima da tela para adicionar elementos. Clique num elemento para editá-lo, arraste para mover e use as alças para redimensionar/girar.
             </p>
           </div>
+
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Proporção da tela</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { label: "Banner", h: Math.round(cw / 3) },
+                { label: "16:9", h: Math.round((cw * 9) / 16) },
+                { label: "4:3", h: Math.round((cw * 3) / 4) },
+                { label: "1:1", h: cw },
+              ].map((p) => (
+                <button key={p.label} onClick={() => updateSectionProps(section.id, { height: p.h })} className="py-1.5 rounded-lg border border-zinc-200 text-zinc-500 text-[10px] font-bold hover:bg-zinc-50 transition-all">{p.label}</button>
+              ))}
+            </div>
+          </div>
+
           {entry.fields.map((f) => (
             <FieldRenderer key={f.key} field={f} value={section.props[f.key]} onChange={(v) => updateSectionProps(section.id, { [f.key]: v })} />
           ))}
+
+          {elements.length > 0 && (
+            <div className="pt-2 border-t border-zinc-100">
+              <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Camadas</p>
+              <div className="space-y-1">
+                {[...elements].reverse().map((le) => {
+                  const LayerIcon = canvasElementRegistry[le.type].icon;
+                  const name = le.type === "text" ? (String(le.props.text || "").trim().slice(0, 22) || "Texto") : canvasElementRegistry[le.type].label;
+                  return (
+                    <div key={le.id} className="flex items-center gap-1.5">
+                      <button onClick={() => selectNode(le.id)} className="flex-1 flex items-center gap-2 px-2 py-1.5 rounded-lg border border-zinc-100 text-left hover:bg-zinc-50 transition-all min-w-0">
+                        <LayerIcon className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                        <span className="text-[11px] font-medium text-zinc-700 truncate">{name}</span>
+                      </button>
+                      <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, le.id, "forward"))} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 transition-all shrink-0" title="Subir"><ChevronUp className="w-3.5 h-3.5" /></button>
+                      <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, le.id, "backward"))} className="w-7 h-7 flex items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 transition-all shrink-0" title="Descer"><ChevronDown className="w-3.5 h-3.5" /></button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

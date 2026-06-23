@@ -1,6 +1,7 @@
 import type { PropField } from "../sections/registry";
 import type { CanvasElementType } from "./canvasModel";
-import { Type, Image as ImageIcon, Square, MousePointerClick } from "lucide-react";
+import { Type, Image as ImageIcon, Square, MousePointerClick, Sparkles } from "lucide-react";
+import { CANVAS_ICON_OPTIONS } from "./canvasIcons";
 
 // Registry dos elementos da Tela Livre (mesmo padrão do blockRegistry).
 // `defaultSize` é o tamanho inicial em design-px ao adicionar o elemento.
@@ -138,6 +139,18 @@ export const canvasElementRegistry: Record<CanvasElementType, CanvasElementRegis
     ],
     defaultProps: { label: "Clique aqui", href: "#", fontSize: 16, radius: "full", bgColor: "", textColor: "" },
     defaultSize: { w: 190, h: 54 },
+  },
+
+  icon: {
+    type: "icon",
+    label: "Ícone",
+    icon: Sparkles,
+    fields: [
+      { key: "name", label: "Ícone", type: "select", options: CANVAS_ICON_OPTIONS },
+      { key: "color", label: "Cor", type: "color", placeholder: "Automático", category: "appearance" },
+    ],
+    defaultProps: { name: "Star", color: "" },
+    defaultSize: { w: 96, h: 96 },
   },
 };
 

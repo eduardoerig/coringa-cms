@@ -22,6 +22,15 @@ export function CanvasSection({ props: editorProps, isEditor, sectionId }: Canva
   const H = Number(editorProps?.height) || 600;
   const fullWidth = !!editorProps?.fullWidth;
   const elements = (editorProps?.elements as CanvasElement[]) || [];
+  const grid = Number(editorProps?.grid) || 0;
+
+  const background: React.CSSProperties = {};
+  if (editorProps?.bgColor) background.backgroundColor = editorProps.bgColor as string;
+  if (editorProps?.bgImage) {
+    background.backgroundImage = `url(${editorProps.bgImage as string})`;
+    background.backgroundSize = "cover";
+    background.backgroundPosition = "center";
+  }
 
   const selectedSectionId = useEditorStore((s) => s.selectedSectionId);
   const editing = !!isEditor && !!sectionId && selectedSectionId === sectionId;
@@ -31,7 +40,7 @@ export function CanvasSection({ props: editorProps, isEditor, sectionId }: Canva
 
   const inner = (
     <div style={{ containerType: "inline-size", width: "100%" }}>
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${DW} / ${H}` }}>
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${DW} / ${H}`, ...background }}>
         {elements.map((el) => (
           <div
             key={el.id}
@@ -56,7 +65,7 @@ export function CanvasSection({ props: editorProps, isEditor, sectionId }: Canva
     <section className={cn("relative", styles.container)} style={styles.style}>
       <div className={cn(fullWidth ? "w-full" : "max-w-7xl mx-auto px-6")}>
         {editing && sectionId ? (
-          <CanvasEditor sectionId={sectionId} designWidth={DW} height={H} elements={elements} />
+          <CanvasEditor sectionId={sectionId} designWidth={DW} height={H} elements={elements} grid={grid} background={background} />
         ) : (
           <>
             {inner}

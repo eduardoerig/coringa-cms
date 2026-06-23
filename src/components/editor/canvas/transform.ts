@@ -51,17 +51,3 @@ export function angleFromCenter(cx: number, cy: number, px: number, py: number):
 export function snapAngle(deg: number, step = 15): number {
   return Math.round(deg / step) * step;
 }
-
-/**
- * Snapping simples: aproxima `value` de cada alvo dentro do limiar (design-px).
- * Retorna o valor ajustado e a linha-guia (alvo) acionada, se houver.
- */
-export function snapTo(value: number, targets: number[], threshold: number): { value: number; guide: number | null } {
-  let best: number | null = null;
-  let bestDist = threshold;
-  for (const t of targets) {
-    const d = Math.abs(value - t);
-    if (d <= bestDist) { bestDist = d; best = t; }
-  }
-  return best == null ? { value, guide: null } : { value: best, guide: best };
-}

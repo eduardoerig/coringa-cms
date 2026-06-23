@@ -1,6 +1,7 @@
 "use client";
 
 import type { CanvasElement } from "./canvasModel";
+import { CANVAS_ICONS } from "./canvasIcons";
 
 // Render puro do CONTEÚDO de um elemento (preenche 100% da caixa). O posicionamento
 // absoluto + rotação ficam no wrapper (CanvasSection no público, CanvasEditor no editor).
@@ -88,6 +89,15 @@ export function CanvasElementRenderer({ element, designWidth }: { element: Canva
             border: bw > 0 ? `${u(bw)} solid ${(p.borderColor as string) || "transparent"}` : undefined,
           }}
         />
+      );
+    }
+
+    case "icon": {
+      const Cmp = CANVAS_ICONS[(p.name as string)] ?? CANVAS_ICONS.Star;
+      return (
+        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: (p.color as string) || "var(--color-primary)" }}>
+          <Cmp style={{ width: "100%", height: "100%" }} />
+        </div>
       );
     }
 
