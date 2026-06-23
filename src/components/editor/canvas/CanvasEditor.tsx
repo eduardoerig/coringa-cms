@@ -23,7 +23,7 @@ import { canvasElementRegistry, canvasElementTypes } from "./canvasElementRegist
 import { CanvasElementRenderer } from "./CanvasElementRenderer";
 import { resizeBox, angleFromCenter, snapAngle, type ResizeHandle, type Box } from "./transform";
 import { computeMoveSnap, type Guide } from "./snapping";
-import { Copy, Trash2, Lock, Unlock, BringToFront, SendToBack, RotateCw, Eye, EyeOff } from "lucide-react";
+import { Copy, Trash2, Lock, Unlock, BringToFront, SendToBack, RotateCw, Eye, EyeOff, Pencil } from "lucide-react";
 
 interface Props {
   sectionId: string;
@@ -90,6 +90,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
   const heightGesture = useRef<{ startY: number; startH: number; scaleY: number; live: number } | null>(null);
   const groupGesture = useRef<{ startX: number; startY: number; scaleX: number; scaleY: number; live: { dx: number; dy: number } } | null>(null);
   const marqueeGesture = useRef<{ rectLeft: number; rectTop: number; scaleX: number; scaleY: number; startX: number; startY: number; live: { x: number; y: number; w: number; h: number } } | null>(null);
+  const drawRef = useRef<{ rectLeft: number; rectTop: number; scaleX: number; scaleY: number; pts: { x: number; y: number }[] } | null>(null);
   const editingRef = useRef<HTMLElement | null>(null);
   const selectedIdsRef = useRef<string[]>([]);
 
@@ -100,6 +101,8 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [groupMove, setGroupMove] = useState<{ dx: number; dy: number } | null>(null);
   const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [drawing, setDrawing] = useState(false);
+  const [drawPts, setDrawPts] = useState<{ x: number; y: number }[] | null>(null);
 
   const H = resolveHeight(heights, viewport);
   const effH = dragHeight ?? H;
@@ -263,6 +266,52 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
     };
     window.addEventListener("pointermove", onMarqueeMove);
     window.addEventListener("pointerup", onMarqueeUp, { once: true });
+  };
+
+  // ---- Desenho à mão ----
+  const drawMove = (e: PointerEvent) => {
+    const g = drawRef.current;
+    if (!g) return;
+    g.pts.push({ x: (e.clientX - g.rectLeft) / g.scaleX, y: (e.clientY - g.rectTop) / g.scaleY });
+    setDrawPts([...g.pts]);
+  };
+  const drawUp = () => {
+    window.removeEventListener("pointermove", drawMove);
+    const g = drawRef.current;
+    if (g && g.pts.length >= 2) {
+      const xs = g.pts.map((p) => p.x);
+      const ys = g.pts.map((p) => p.y);
+      const minX = Math.min(...xs), minY = Math.min(...ys), maxX = Math.max(...xs), maxY = Math.max(...ys);
+      const origW = maxX - minX, origH = maxY - minY;
+      if (origW >= 2 || origH >= 2) {
+        const local = g.pts.map((p) => ({ x: Math.round((p.x - minX) * 100) / 100, y: Math.round((p.y - minY) * 100) / 100 }));
+        const elNew: CanvasElement = {
+          id: genElId(), type: "draw",
+          x: Math.round(minX), y: Math.round(minY),
+          w: Math.max(Math.round(origW), 8), h: Math.max(Math.round(origH), 8),
+          rotation: 0, opacity: 1,
+          props: { points: local, vw: Math.max(origW, 1), vh: Math.max(origH, 1), stroke: "", strokeWidth: 6 },
+        };
+        mutate(sectionId, (els) => addElement(els, elNew));
+        setSelectedIds([elNew.id]);
+        selectNode(elNew.id);
+      }
+    }
+    drawRef.current = null;
+    setDrawPts(null);
+  };
+  const startDraw = (e: React.PointerEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = artboardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const scaleX = rect.width / DW;
+    const scaleY = rect.height / effH;
+    const p0 = { x: (e.clientX - rect.left) / scaleX, y: (e.clientY - rect.top) / scaleY };
+    drawRef.current = { rectLeft: rect.left, rectTop: rect.top, scaleX, scaleY, pts: [p0] };
+    setDrawPts([p0]);
+    window.addEventListener("pointermove", drawMove);
+    window.addEventListener("pointerup", drawUp, { once: true });
   };
 
   const onElementPointerDown = (e: React.PointerEvent, el: CanvasElement) => {
@@ -524,7 +573,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
       {/* Toolbar: adicionar elementos */}
       <div className="flex justify-center items-center gap-3 mb-3">
         <div className="inline-flex items-center gap-1 p-1 bg-zinc-900 text-white rounded-2xl shadow-lg">
-          {canvasElementTypes.map((reg) => {
+          {canvasElementTypes.filter((reg) => reg.type !== "draw").map((reg) => {
             const Icon = reg.icon;
             return (
               <button
@@ -537,6 +586,14 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
               </button>
             );
           })}
+          <div className="w-px h-4 bg-white/20 mx-0.5" />
+          <button
+            onClick={() => setDrawing((d) => !d)}
+            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-colors", drawing ? "bg-white text-zinc-900" : "hover:bg-white/15")}
+            title="Desenhar à mão"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Desenhar
+          </button>
         </div>
         {!isDesktop && (
           <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
@@ -548,7 +605,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
       {/* Artboard */}
       <div
         ref={artboardRef}
-        onPointerDown={(e) => { if (e.target === artboardRef.current) startMarquee(e); }}
+        onPointerDown={(e) => { if (!drawing && e.target === artboardRef.current) startMarquee(e); }}
         className="relative w-full bg-white outline-dashed outline-1 outline-zinc-200"
         style={{ aspectRatio: `${DW} / ${effH}`, containerType: "inline-size", ...background }}
       >
@@ -561,6 +618,15 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
               backgroundSize: `${(grid / DW) * 100}cqw ${(grid / DW) * 100}cqw`,
             }}
           />
+        )}
+        {/* Captura do desenho à mão (sobre tudo, quando o modo está ativo) */}
+        {drawing && (
+          <div className="absolute inset-0 z-[1140]" style={{ cursor: "crosshair" }} onPointerDown={startDraw} />
+        )}
+        {drawPts && drawPts.length > 1 && (
+          <svg className="absolute inset-0 pointer-events-none z-[1145]" viewBox={`0 0 ${DW} ${effH}`} preserveAspectRatio="none" style={{ width: "100%", height: "100%" }}>
+            <path d={drawPts.map((pt, i) => `${i === 0 ? "M" : "L"}${pt.x} ${pt.y}`).join(" ")} fill="none" stroke="var(--color-primary)" strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+          </svg>
         )}
         {elements.map((el) => {
           const isSel = selIds.includes(el.id);

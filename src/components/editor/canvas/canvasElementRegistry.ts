@@ -1,6 +1,6 @@
 import type { PropField } from "../sections/registry";
 import type { CanvasElementType } from "./canvasModel";
-import { Type, Image as ImageIcon, Square, MousePointerClick, Sparkles, Video } from "lucide-react";
+import { Type, Image as ImageIcon, Square, MousePointerClick, Sparkles, Video, Pencil } from "lucide-react";
 import { CANVAS_ICON_OPTIONS } from "./canvasIcons";
 
 // Registry dos elementos da Tela Livre (mesmo padrão do blockRegistry).
@@ -173,6 +173,19 @@ export const canvasElementRegistry: Record<CanvasElementType, CanvasElementRegis
     ],
     defaultProps: { url: "", rounded: "md" },
     defaultSize: { w: 480, h: 270 },
+  },
+
+  // Criado pelo modo "Desenhar" (não aparece na barra de adicionar).
+  draw: {
+    type: "draw",
+    label: "Desenho",
+    icon: Pencil,
+    fields: [
+      { key: "stroke", label: "Cor do traço", type: "color", placeholder: "Automático", category: "appearance" },
+      { key: "strokeWidth", label: "Espessura", type: "number", min: 1, max: 60, step: 1, unit: "px", category: "appearance" },
+    ],
+    defaultProps: { points: [], vw: 1, vh: 1, stroke: "", strokeWidth: 6 },
+    defaultSize: { w: 100, h: 100 },
   },
 };
 

@@ -146,6 +146,26 @@ export function CanvasElementRenderer({ element, designWidth, editor = false }: 
       );
     }
 
+    case "draw": {
+      const pts = (p.points as { x: number; y: number }[]) || [];
+      const vw = Number(p.vw) || 1;
+      const vh = Number(p.vh) || 1;
+      const d = pts.map((pt, i) => `${i === 0 ? "M" : "L"}${pt.x} ${pt.y}`).join(" ");
+      return (
+        <svg viewBox={`0 0 ${vw} ${vh}`} preserveAspectRatio="none" style={{ width: "100%", height: "100%", overflow: "visible", display: "block" }}>
+          <path
+            d={d}
+            fill="none"
+            stroke={(p.stroke as string) || "var(--color-primary)"}
+            strokeWidth={Number(p.strokeWidth) || 6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            vectorEffect="non-scaling-stroke"
+          />
+        </svg>
+      );
+    }
+
     case "button":
       return (
         <div style={{ width: "100%", height: "100%" }}>
