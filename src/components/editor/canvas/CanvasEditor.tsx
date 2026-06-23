@@ -6,11 +6,16 @@ import { useRef, useState, useEffect } from "react";
 import {
   type CanvasElement,
   type CanvasElementType,
+  type Viewport,
   genElId,
   addElement,
   removeElement,
   updateElementProps,
   setTransform,
+  setDeviceTransform,
+  applyDeviceTransform,
+  resolveElement,
+  resolveHeight,
   moveZ,
   findElement,
 } from "./canvasModel";
@@ -18,12 +23,12 @@ import { canvasElementRegistry, canvasElementTypes } from "./canvasElementRegist
 import { CanvasElementRenderer } from "./CanvasElementRenderer";
 import { resizeBox, angleFromCenter, snapAngle, type ResizeHandle, type Box } from "./transform";
 import { computeMoveSnap, type Guide } from "./snapping";
-import { Copy, Trash2, Lock, Unlock, BringToFront, SendToBack, RotateCw } from "lucide-react";
+import { Copy, Trash2, Lock, Unlock, BringToFront, SendToBack, RotateCw, Eye, EyeOff } from "lucide-react";
 
 interface Props {
   sectionId: string;
   designWidth: number;
-  height: number;
+  heights: { desktop: number; tablet?: number; mobile?: number };
   elements: CanvasElement[];
   grid: number;
   background: React.CSSProperties;
@@ -38,17 +43,16 @@ interface Gesture {
   id: string;
   startX: number;
   startY: number;
-  scaleX: number; // px de tela por design-px (horizontal)
+  scaleX: number;
   scaleY: number;
-  cx: number; // centro do elemento em px de tela (para rotação)
+  cx: number;
   cy: number;
   start: { x: number; y: number; w: number; h: number; rotation: number };
   live: LiveTransform;
 }
 
-const SNAP = 7; // limiar de snapping, em design-px
+const SNAP = 7;
 
-// Alças de redimensionamento (posição + cursor).
 const HANDLES: { h: ResizeHandle; pos: string; cursor: string }[] = [
   { h: "nw", pos: "top-0 left-0 -translate-x-1/2 -translate-y-1/2", cursor: "nwse-resize" },
   { h: "n", pos: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/2", cursor: "ns-resize" },
@@ -69,11 +73,17 @@ const ALIGN_BTNS: { lbl: string; axis: AlignAxis; title: string }[] = [
   { lbl: "B", axis: "bottom", title: "Alinhar à base" },
 ];
 
-export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, grid, background }: Props) {
+const VIEWPORT_LABEL: Record<Viewport, string> = { desktop: "Desktop", tablet: "Tablet", mobile: "Celular" };
+const HEIGHT_KEY: Record<Viewport, "height" | "heightTablet" | "heightMobile"> = {
+  desktop: "height", tablet: "heightTablet", mobile: "heightMobile",
+};
+
+export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, grid, background }: Props) {
   const selectedNodeId = useEditorStore((s) => s.selectedNodeId);
   const selectNode = useEditorStore((s) => s.selectNode);
   const mutate = useEditorStore((s) => s.mutateCanvasElements);
   const updateSectionProps = useEditorStore((s) => s.updateSectionProps);
+  const viewport = useEditorStore((s) => s.viewport) as Viewport;
 
   const artboardRef = useRef<HTMLDivElement | null>(null);
   const gesture = useRef<Gesture | null>(null);
@@ -91,33 +101,27 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
   const [groupMove, setGroupMove] = useState<{ dx: number; dy: number } | null>(null);
   const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
+  const H = resolveHeight(heights, viewport);
   const effH = dragHeight ?? H;
+  const isDesktop = viewport === "desktop";
 
-  // Seleção efetiva: se o primário (store) está no conjunto local, usa o conjunto (multi);
-  // senão, trata como seleção simples do primário (ex.: clique numa camada do painel).
   const primaryId = selectedNodeId;
   const selIds = primaryId && selectedIds.includes(primaryId) ? selectedIds : primaryId ? [primaryId] : [];
   const multi = selIds.length > 1;
 
-  // Mantém o ref em sincronia para os handlers (gesto/teclado) lerem a seleção atual.
   useEffect(() => { selectedIdsRef.current = selIds; });
 
   const getEls = (): CanvasElement[] =>
     (useEditorStore.getState().sections.find((s) => s.id === sectionId)?.props.elements as CanvasElement[]) ?? [];
 
-  // ---- Adicionar elemento (no centro da tela) ----
+  // ---- Adicionar elemento (no centro, sempre na base/desktop) ----
   const addEl = (type: CanvasElementType) => {
     const reg = canvasElementRegistry[type];
     const { w, h } = reg.defaultSize;
     const el: CanvasElement = {
-      id: genElId(),
-      type,
-      x: Math.round((DW - w) / 2),
-      y: Math.round((effH - h) / 2),
-      w,
-      h,
-      rotation: 0,
-      opacity: 1,
+      id: genElId(), type,
+      x: Math.round((DW - w) / 2), y: Math.round((effH - h) / 2),
+      w, h, rotation: 0, opacity: 1,
       props: JSON.parse(JSON.stringify(reg.defaultProps)),
     };
     mutate(sectionId, (cur) => addElement(cur, el));
@@ -133,11 +137,12 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     if (!rect) return;
     const scaleX = rect.width / DW;
     const scaleY = rect.height / effH;
-    const start = { x: el.x, y: el.y, w: el.w, h: el.h, rotation: el.rotation };
+    const r = resolveElement(el, viewport);
+    const start = { x: r.x, y: r.y, w: r.w, h: r.h, rotation: r.rotation };
     gesture.current = {
       mode, handle, id: el.id, startX: e.clientX, startY: e.clientY, scaleX, scaleY,
-      cx: rect.left + (el.x + el.w / 2) * scaleX,
-      cy: rect.top + (el.y + el.h / 2) * scaleY,
+      cx: rect.left + (r.x + r.w / 2) * scaleX,
+      cy: rect.top + (r.y + r.h / 2) * scaleY,
       start, live: { id: el.id, ...start },
     };
     setDrag({ id: el.id, ...start });
@@ -151,7 +156,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     const dx = (e.clientX - g.startX) / g.scaleX;
     const dy = (e.clientY - g.startY) / g.scaleY;
     if (g.mode === "move") {
-      const others = getEls().filter((e2) => e2.id !== g.id);
+      const others = getEls()
+        .filter((e2) => e2.id !== g.id)
+        .map((e2) => { const r = resolveElement(e2, viewport); return { ...e2, x: r.x, y: r.y, w: r.w, h: r.h }; });
       const snap = computeMoveSnap({ x: g.start.x + dx, y: g.start.y + dy, w: g.start.w, h: g.start.h }, others, DW, effH, SNAP, grid);
       g.live = { id: g.id, ...g.start, x: Math.round(snap.x), y: Math.round(snap.y) };
       setGuides(snap.guides);
@@ -175,14 +182,14 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       const s = g.start;
       const l = g.live;
       const changed = s.x !== l.x || s.y !== l.y || s.w !== l.w || s.h !== l.h || s.rotation !== l.rotation;
-      if (changed) mutate(sectionId, (els) => setTransform(els, g.id, { x: l.x, y: l.y, w: l.w, h: l.h, rotation: l.rotation }));
+      if (changed) mutate(sectionId, (els) => setDeviceTransform(els, g.id, viewport, { x: l.x, y: l.y, w: l.w, h: l.h, rotation: l.rotation }));
     }
     gesture.current = null;
     setDrag(null);
     setGuides([]);
   };
 
-  // ---- Mover o grupo (vários selecionados) ----
+  // ---- Mover o grupo ----
   const onGroupMoveMove = (e: PointerEvent) => {
     const g = groupGesture.current;
     if (!g) return;
@@ -195,7 +202,13 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     if (g && (g.live.dx !== 0 || g.live.dy !== 0)) {
       const ids = new Set(selectedIdsRef.current);
       const { dx, dy } = g.live;
-      mutate(sectionId, (els) => els.map((e2) => (ids.has(e2.id) && !e2.locked ? { ...e2, x: e2.x + dx, y: e2.y + dy } : e2)));
+      mutate(sectionId, (els) =>
+        els.map((e2) => {
+          if (!ids.has(e2.id) || e2.locked) return e2;
+          const r = resolveElement(e2, viewport);
+          return applyDeviceTransform(e2, viewport, { x: r.x + dx, y: r.y + dy });
+        })
+      );
     }
     groupGesture.current = null;
     setGroupMove(null);
@@ -211,7 +224,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     window.addEventListener("pointerup", onGroupMoveUp, { once: true });
   };
 
-  // ---- Marquee (seleção por retângulo no vazio) ----
+  // ---- Marquee ----
   const onMarqueeMove = (e: PointerEvent) => {
     const g = marqueeGesture.current;
     if (!g) return;
@@ -229,8 +242,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       const m = g.live;
       if (m.w > 4 || m.h > 4) {
         const hits = getEls()
-          .filter((el) => !(el.x > m.x + m.w || el.x + el.w < m.x || el.y > m.y + m.h || el.y + el.h < m.y))
-          .map((el) => el.id);
+          .map((el) => ({ el, r: resolveElement(el, viewport) }))
+          .filter(({ r }) => !(r.x > m.x + m.w || r.x + r.w < m.x || r.y > m.y + m.h || r.y + r.h < m.y))
+          .map(({ el }) => el.id);
         setSelectedIds(hits);
         selectNode(hits.length ? hits[hits.length - 1] : null);
       }
@@ -251,7 +265,6 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     window.addEventListener("pointerup", onMarqueeUp, { once: true });
   };
 
-  // ---- Clique num elemento (simples / Shift-toggle / mover grupo) ----
   const onElementPointerDown = (e: React.PointerEvent, el: CanvasElement) => {
     if (editingId === el.id) return;
     if (e.shiftKey) {
@@ -316,7 +329,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     node.addEventListener("keydown", onKey);
   };
 
-  // ---- Arrastar a altura do artboard ----
+  // ---- Arrastar a altura do artboard (por dispositivo) ----
   const onHeightMove = (e: PointerEvent) => {
     const g = heightGesture.current;
     if (!g) return;
@@ -327,7 +340,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
   const onHeightUp = () => {
     window.removeEventListener("pointermove", onHeightMove);
     const g = heightGesture.current;
-    if (g && g.live !== g.startH) updateSectionProps(sectionId, { height: g.live });
+    if (g && g.live !== g.startH) updateSectionProps(sectionId, { [HEIGHT_KEY[viewport]]: g.live });
     heightGesture.current = null;
     setDragHeight(null);
   };
@@ -342,28 +355,28 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     window.addEventListener("pointerup", onHeightUp, { once: true });
   };
 
-  // ---- Ações de grupo ----
+  // ---- Ações de grupo (cientes do dispositivo) ----
   const alignGroup = (axis: AlignAxis) => {
-    const ids = selIds;
-    const sel = elements.filter((e) => ids.includes(e.id));
+    const idset = new Set(selIds);
+    const sel = elements.filter((e) => idset.has(e.id)).map((e) => resolveElement(e, viewport));
     if (sel.length < 2) return;
-    const minX = Math.min(...sel.map((e) => e.x));
-    const maxX = Math.max(...sel.map((e) => e.x + e.w));
+    const minX = Math.min(...sel.map((r) => r.x));
+    const maxX = Math.max(...sel.map((r) => r.x + r.w));
     const cX = (minX + maxX) / 2;
-    const minY = Math.min(...sel.map((e) => e.y));
-    const maxY = Math.max(...sel.map((e) => e.y + e.h));
+    const minY = Math.min(...sel.map((r) => r.y));
+    const maxY = Math.max(...sel.map((r) => r.y + r.h));
     const cY = (minY + maxY) / 2;
-    const idset = new Set(ids);
     mutate(sectionId, (els) =>
       els.map((e) => {
         if (!idset.has(e.id)) return e;
+        const r = resolveElement(e, viewport);
         switch (axis) {
-          case "left": return { ...e, x: Math.round(minX) };
-          case "centerH": return { ...e, x: Math.round(cX - e.w / 2) };
-          case "right": return { ...e, x: Math.round(maxX - e.w) };
-          case "top": return { ...e, y: Math.round(minY) };
-          case "middleV": return { ...e, y: Math.round(cY - e.h / 2) };
-          case "bottom": return { ...e, y: Math.round(maxY - e.h) };
+          case "left": return applyDeviceTransform(e, viewport, { x: Math.round(minX) });
+          case "centerH": return applyDeviceTransform(e, viewport, { x: Math.round(cX - r.w / 2) });
+          case "right": return applyDeviceTransform(e, viewport, { x: Math.round(maxX - r.w) });
+          case "top": return applyDeviceTransform(e, viewport, { y: Math.round(minY) });
+          case "middleV": return applyDeviceTransform(e, viewport, { y: Math.round(cY - r.h / 2) });
+          case "bottom": return applyDeviceTransform(e, viewport, { y: Math.round(maxY - r.h) });
           default: return e;
         }
       })
@@ -371,21 +384,24 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
   };
 
   const distributeGroup = (axis: "h" | "v") => {
-    const ids = selIds;
-    const sel = elements.filter((e) => ids.includes(e.id));
+    const idset = new Set(selIds);
+    const sel = elements.filter((e) => idset.has(e.id)).map((e) => ({ e, r: resolveElement(e, viewport) }));
     if (sel.length < 3) return;
-    const center = (e: CanvasElement) => (axis === "h" ? e.x + e.w / 2 : e.y + e.h / 2);
-    const sorted = [...sel].sort((a, b) => center(a) - center(b));
-    const first = center(sorted[0]);
-    const last = center(sorted[sorted.length - 1]);
+    const center = (r: { x: number; y: number; w: number; h: number }) => (axis === "h" ? r.x + r.w / 2 : r.y + r.h / 2);
+    const sorted = [...sel].sort((a, b) => center(a.r) - center(b.r));
+    const first = center(sorted[0].r);
+    const last = center(sorted[sorted.length - 1].r);
     const step = (last - first) / (sorted.length - 1);
     const target = new Map<string, number>();
-    sorted.forEach((e, i) => target.set(e.id, first + i * step));
+    sorted.forEach((s, i) => target.set(s.e.id, first + i * step));
     mutate(sectionId, (els) =>
       els.map((e) => {
         const c = target.get(e.id);
         if (c == null) return e;
-        return axis === "h" ? { ...e, x: Math.round(c - e.w / 2) } : { ...e, y: Math.round(c - e.h / 2) };
+        const r = resolveElement(e, viewport);
+        return axis === "h"
+          ? applyDeviceTransform(e, viewport, { x: Math.round(c - r.w / 2) })
+          : applyDeviceTransform(e, viewport, { y: Math.round(c - r.h / 2) });
       })
     );
   };
@@ -414,7 +430,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     selectNode(copy.id);
   };
 
-  // ---- Atalhos de teclado (capture, p/ suprimir os globais quando há seleção) ----
+  // ---- Atalhos de teclado ----
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const ae = document.activeElement;
@@ -422,6 +438,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       if (ae?.tagName === "INPUT" || ae?.tagName === "TEXTAREA" || editable) return;
       const st = useEditorStore.getState();
       if (st.selectedSectionId !== sectionId) return;
+      const vp = st.viewport as Viewport;
       const ids = selectedIdsRef.current;
 
       if (e.key === "Escape") {
@@ -449,7 +466,12 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
         const step = e.shiftKey ? 10 : 1;
         const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-        mutate(sectionId, (els) => els.map((e2) => (idset.has(e2.id) && !e2.locked ? { ...e2, x: e2.x + dx, y: e2.y + dy } : e2)), `nudge:group`);
+        mutate(sectionId, (els) =>
+          els.map((e2) => {
+            if (!idset.has(e2.id) || e2.locked) return e2;
+            const r = resolveElement(e2, vp);
+            return applyDeviceTransform(e2, vp, { x: r.x + dx, y: r.y + dy });
+          }), `nudge:group`);
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "]" || e.key === "[")) {
         const pid = st.selectedNodeId;
         if (pid) { e.preventDefault(); e.stopPropagation(); mutate(sectionId, (els) => moveZ(els, pid, e.key === "]" ? "forward" : "backward")); }
@@ -460,7 +482,6 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sectionId]);
 
-  // ---- Render das alças de um elemento (só na seleção simples) ----
   const renderHandles = (el: CanvasElement) => (
     <>
       <div
@@ -483,24 +504,25 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
   );
 
   const selectedEl = findElement(elements, selectedNodeId);
+  const selRes = selectedEl ? resolveElement(selectedEl, viewport) : null;
 
-  // Bounding box do grupo (com offset ao vivo do arrasto de grupo).
-  const selEls = elements.filter((e) => selIds.includes(e.id));
+  // Bounding box do grupo (resolvido + offset ao vivo).
+  const selRes2 = elements.filter((e) => selIds.includes(e.id)).map((e) => resolveElement(e, viewport));
   const gm = groupMove ?? { dx: 0, dy: 0 };
   const gb =
-    multi && selEls.length
+    multi && selRes2.length
       ? {
-          minX: Math.min(...selEls.map((e) => e.x)) + gm.dx,
-          minY: Math.min(...selEls.map((e) => e.y)) + gm.dy,
-          maxX: Math.max(...selEls.map((e) => e.x + e.w)) + gm.dx,
-          maxY: Math.max(...selEls.map((e) => e.y + e.h)) + gm.dy,
+          minX: Math.min(...selRes2.map((r) => r.x)) + gm.dx,
+          minY: Math.min(...selRes2.map((r) => r.y)) + gm.dy,
+          maxX: Math.max(...selRes2.map((r) => r.x + r.w)) + gm.dx,
+          maxY: Math.max(...selRes2.map((r) => r.y + r.h)) + gm.dy,
         }
       : null;
 
   return (
     <div className="select-none">
       {/* Toolbar: adicionar elementos */}
-      <div className="flex justify-center mb-3">
+      <div className="flex justify-center items-center gap-3 mb-3">
         <div className="inline-flex items-center gap-1 p-1 bg-zinc-900 text-white rounded-2xl shadow-lg">
           {canvasElementTypes.map((reg) => {
             const Icon = reg.icon;
@@ -516,6 +538,11 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
             );
           })}
         </div>
+        {!isDesktop && (
+          <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
+            Ajustes só para {VIEWPORT_LABEL[viewport]}
+          </span>
+        )}
       </div>
 
       {/* Artboard */}
@@ -539,9 +566,11 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           const isSel = selIds.includes(el.id);
           const isPrimary = el.id === selectedNodeId;
           const isEditing = editingId === el.id;
-          let ex = el.x, ey = el.y, ew = el.w, eh = el.h, erot = el.rotation;
+          const r = resolveElement(el, viewport);
+          let ex = r.x, ey = r.y, ew = r.w, eh = r.h, erot = r.rotation;
           if (drag && drag.id === el.id) { ex = drag.x; ey = drag.y; ew = drag.w; eh = drag.h; erot = drag.rotation; }
-          else if (groupMove && isSel) { ex = el.x + groupMove.dx; ey = el.y + groupMove.dy; }
+          else if (groupMove && isSel) { ex = r.x + groupMove.dx; ey = r.y + groupMove.dy; }
+          const baseOpacity = el.opacity ?? 1;
           return (
             <div
               key={el.id}
@@ -555,7 +584,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
                 width: `${(ew / DW) * 100}%`,
                 height: `${(eh / effH) * 100}%`,
                 transform: `rotate(${erot}deg)`,
-                opacity: el.opacity ?? 1,
+                opacity: r.hidden ? baseOpacity * 0.3 : baseOpacity,
                 cursor: el.locked ? "default" : isEditing ? "text" : "move",
                 touchAction: "none",
               }}
@@ -573,12 +602,14 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
               >
                 <CanvasElementRenderer element={el} designWidth={DW} editor />
               </div>
+              {r.hidden && (
+                <div className="absolute top-0 left-0 bg-zinc-900/80 text-white text-[8px] font-black px-1 py-0.5 rounded-br pointer-events-none">OCULTO</div>
+              )}
               {!multi && isPrimary && !isEditing && !el.locked && renderHandles(el)}
             </div>
           );
         })}
 
-        {/* Caixa do grupo (multi-seleção) */}
         {gb && (
           <div
             className="absolute border-2 border-blue-500/70 pointer-events-none z-[1050]"
@@ -586,7 +617,6 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           />
         )}
 
-        {/* Linhas-guia de snapping */}
         {guides.map((g, i) =>
           g.axis === "x" ? (
             <div key={i} className="absolute top-0 bottom-0 w-px bg-rose-500 pointer-events-none z-[1100]" style={{ left: `${(g.pos / DW) * 100}%` }} />
@@ -595,7 +625,6 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           )
         )}
 
-        {/* Retângulo do marquee */}
         {marquee && (
           <div
             className="absolute bg-blue-500/10 border border-blue-500/60 pointer-events-none z-[1150]"
@@ -609,6 +638,11 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
             <button onClick={() => dupSelected(selectedEl)} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar"><Copy className="w-3.5 h-3.5" /></button>
             <button onClick={() => mutate(sectionId, (cur) => moveZ(cur, selectedEl.id, "front"))} className="p-1.5 rounded-lg hover:bg-white/15" title="Trazer para frente"><BringToFront className="w-3.5 h-3.5" /></button>
             <button onClick={() => mutate(sectionId, (cur) => moveZ(cur, selectedEl.id, "back"))} className="p-1.5 rounded-lg hover:bg-white/15" title="Enviar para trás"><SendToBack className="w-3.5 h-3.5" /></button>
+            {!isDesktop && (
+              <button onClick={() => mutate(sectionId, (cur) => setDeviceTransform(cur, selectedEl.id, viewport, { hidden: !selRes?.hidden }))} className="p-1.5 rounded-lg hover:bg-white/15" title={selRes?.hidden ? `Mostrar no ${VIEWPORT_LABEL[viewport]}` : `Ocultar no ${VIEWPORT_LABEL[viewport]}`}>
+                {selRes?.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            )}
             <button onClick={() => mutate(sectionId, (cur) => setTransform(cur, selectedEl.id, { locked: !selectedEl.locked }))} className="p-1.5 rounded-lg hover:bg-white/15" title={selectedEl.locked ? "Desbloquear" : "Bloquear"}>
               {selectedEl.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
             </button>
@@ -617,7 +651,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           </div>
         )}
 
-        {/* Barra de ações — grupo (multi-seleção) */}
+        {/* Barra de ações — grupo */}
         {multi && !editingId && (
           <div className="absolute top-2 right-2 z-[1200] flex items-center gap-0.5 p-1 bg-zinc-900 text-white rounded-xl shadow-lg">
             <span className="text-[10px] font-bold px-1 text-white/70">{selIds.length}</span>
@@ -638,14 +672,12 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
           </div>
         )}
 
-        {/* Vazio */}
         {elements.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <p className="text-sm text-zinc-300 font-medium">Tela vazia — adicione um elemento acima</p>
           </div>
         )}
 
-        {/* Alça para arrastar a altura da tela */}
         <div
           onPointerDown={startHeightDrag}
           className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 w-12 h-2.5 rounded-full bg-white border border-zinc-300 shadow cursor-ns-resize z-[1200]"
@@ -654,7 +686,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, height: H, elements, 
       </div>
 
       <p className="text-center text-[10px] text-zinc-400 mt-2">
-        Arraste para mover · Shift+clique ou arraste no vazio para selecionar vários · duplo-clique no texto para editar
+        {isDesktop
+          ? "Arraste para mover · Shift+clique ou arraste no vazio p/ selecionar vários · duplo-clique no texto p/ editar"
+          : `Editando ${VIEWPORT_LABEL[viewport]} — posições e visibilidade aqui não afetam os outros dispositivos`}
       </p>
     </div>
   );

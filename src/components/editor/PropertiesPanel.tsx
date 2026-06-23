@@ -6,11 +6,11 @@ import { ImageUploader } from "./ImageUploader";
 import { blockRegistry } from "./blocks/blockRegistry";
 import { findBlock, updateBlock, removeBlock, moveBlock, type ContainerRow } from "./blocks/containerModel";
 import { canvasElementRegistry } from "./canvas/canvasElementRegistry";
-import { findElement, setTransform, updateElementProps, removeElement, moveZ, type CanvasElement } from "./canvas/canvasModel";
+import { findElement, setTransform, setDeviceTransform, resolveElement, resolveHeight, updateElementProps, removeElement, moveZ, type CanvasElement, type Viewport } from "./canvas/canvasModel";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
-import { X, Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Palette, Settings2, Layout, ChevronDown as Down, Keyboard, RotateCcw, Type, MousePointerClick, Image as ImageIcon, Tag, LayoutGrid, SlidersHorizontal, Store, Share2, Square } from "lucide-react";
+import { X, Plus, Trash2, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Palette, Settings2, Layout, ChevronDown as Down, Keyboard, RotateCcw, Type, MousePointerClick, Image as ImageIcon, Tag, LayoutGrid, SlidersHorizontal, Store, Share2, Square, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -373,12 +373,19 @@ function NumField({ label, value, onChange, min, max, step = 1, unit }: { label:
 
 // Painel da Tela Livre: edita o elemento selecionado (conteúdo + posição/tamanho) ou a tela.
 function CanvasProperties({ section, entry }: { section: PageSection; entry: SectionRegistryEntry }) {
-  const { selectedNodeId, selectNode, mutateCanvasElements, updateSectionProps, selectSection } = useEditorStore();
+  const { selectedNodeId, selectNode, mutateCanvasElements, updateSectionProps, selectSection, viewport } = useEditorStore();
+  const vp = viewport as Viewport;
+  const isDesktop = vp === "desktop";
+  const deviceLabel = vp === "tablet" ? "Tablet" : "Celular";
   const elements = (section.props.elements as CanvasElement[]) || [];
   const el = findElement(elements, selectedNodeId);
   const reg = el ? canvasElementRegistry[el.type] : null;
+  const r = el ? resolveElement(el, vp) : null;
   const cw = Number(section.props.designWidth) || 1200;
-  const ch = Number(section.props.height) || 600;
+  const num = (v: unknown) => (v != null && v !== "" ? Number(v) : undefined);
+  const heights = { desktop: Number(section.props.height) || 600, tablet: num(section.props.heightTablet), mobile: num(section.props.heightMobile) };
+  const ch = resolveHeight(heights, vp);
+  const heightKey: "height" | "heightTablet" | "heightMobile" = vp === "desktop" ? "height" : vp === "tablet" ? "heightTablet" : "heightMobile";
 
   return (
     <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
@@ -395,7 +402,7 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
           )}
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-zinc-900 text-[13px] truncate">{el && reg ? reg.label : entry.label}</h3>
-            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">{el ? "Elemento" : "Selecione um elemento na tela"}</p>
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">{el ? (isDesktop ? "Elemento" : `Elemento · ${deviceLabel}`) : "Selecione um elemento na tela"}</p>
           </div>
           <button onClick={() => selectSection(null)} aria-label="Fechar painel" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-zinc-100 transition-colors shrink-0">
             <X className="w-4 h-4" />
@@ -415,13 +422,13 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
           ))}
 
           <div className="pt-2 border-t border-zinc-100">
-            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Posição & Tamanho</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Posição & Tamanho{!isDesktop && <span className="text-blue-500"> · {deviceLabel}</span>}</p>
             <div className="grid grid-cols-2 gap-2">
-              <NumField label="X" value={el.x} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { x: v }), `tf:${el.id}`)} />
-              <NumField label="Y" value={el.y} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { y: v }), `tf:${el.id}`)} />
-              <NumField label="Largura" value={el.w} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { w: Math.max(12, v) }), `tf:${el.id}`)} />
-              <NumField label="Altura" value={el.h} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { h: Math.max(12, v) }), `tf:${el.id}`)} />
-              <NumField label="Rotação" value={el.rotation} unit="°" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { rotation: v }), `tf:${el.id}`)} />
+              <NumField label="X" value={r!.x} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, { x: v }), `tf:${el.id}`)} />
+              <NumField label="Y" value={r!.y} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, { y: v }), `tf:${el.id}`)} />
+              <NumField label="Largura" value={r!.w} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, { w: Math.max(12, v) }), `tf:${el.id}`)} />
+              <NumField label="Altura" value={r!.h} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, { h: Math.max(12, v) }), `tf:${el.id}`)} />
+              <NumField label="Rotação" value={r!.rotation} unit="°" onChange={(v) => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, { rotation: v }), `tf:${el.id}`)} />
             </div>
             <div className="mt-3">
               <FieldRenderer
@@ -437,13 +444,13 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
             <div className="grid grid-cols-3 gap-1.5">
               {[
                 { label: "Esq.", t: { x: 0 } },
-                { label: "Centro", t: { x: Math.round((cw - el.w) / 2) } },
-                { label: "Dir.", t: { x: cw - el.w } },
+                { label: "Centro", t: { x: Math.round((cw - r!.w) / 2) } },
+                { label: "Dir.", t: { x: cw - r!.w } },
                 { label: "Topo", t: { y: 0 } },
-                { label: "Meio", t: { y: Math.round((ch - el.h) / 2) } },
-                { label: "Base", t: { y: ch - el.h } },
+                { label: "Meio", t: { y: Math.round((ch - r!.h) / 2) } },
+                { label: "Base", t: { y: ch - r!.h } },
               ].map(({ label, t }) => (
-                <button key={label} onClick={() => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, t))} className="py-1.5 rounded-lg border border-zinc-200 text-zinc-500 text-[10px] font-bold hover:bg-zinc-50 transition-all">{label}</button>
+                <button key={label} onClick={() => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, t))} className="py-1.5 rounded-lg border border-zinc-200 text-zinc-500 text-[10px] font-bold hover:bg-zinc-50 transition-all">{label}</button>
               ))}
             </div>
           </div>
@@ -451,6 +458,11 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
           <div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
             <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, el.id, "front"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronUp className="w-3.5 h-3.5" /> Frente</button>
             <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, el.id, "back"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronDown className="w-3.5 h-3.5" /> Trás</button>
+            {!isDesktop && (
+              <button onClick={() => mutateCanvasElements(section.id, (els) => setDeviceTransform(els, el.id, vp, { hidden: !r!.hidden }))} className="flex items-center justify-center px-3 py-2 rounded-xl border border-zinc-200 text-zinc-500 hover:bg-zinc-50 transition-all" title={r!.hidden ? `Mostrar no ${deviceLabel}` : `Ocultar no ${deviceLabel}`}>
+                {r!.hidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            )}
             <button onClick={() => { mutateCanvasElements(section.id, (els) => removeElement(els, el.id)); selectNode(null); }} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-red-100 text-red-500 text-[11px] font-bold hover:bg-red-50 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
@@ -463,7 +475,7 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
           </div>
 
           <div>
-            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Proporção da tela</p>
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Proporção da tela{!isDesktop && <span className="text-blue-500"> · {deviceLabel}</span>}</p>
             <div className="grid grid-cols-4 gap-1.5">
               {[
                 { label: "Banner", h: Math.round(cw / 3) },
@@ -471,7 +483,7 @@ function CanvasProperties({ section, entry }: { section: PageSection; entry: Sec
                 { label: "4:3", h: Math.round((cw * 3) / 4) },
                 { label: "1:1", h: cw },
               ].map((p) => (
-                <button key={p.label} onClick={() => updateSectionProps(section.id, { height: p.h })} className="py-1.5 rounded-lg border border-zinc-200 text-zinc-500 text-[10px] font-bold hover:bg-zinc-50 transition-all">{p.label}</button>
+                <button key={p.label} onClick={() => updateSectionProps(section.id, { [heightKey]: p.h })} className="py-1.5 rounded-lg border border-zinc-200 text-zinc-500 text-[10px] font-bold hover:bg-zinc-50 transition-all">{p.label}</button>
               ))}
             </div>
           </div>

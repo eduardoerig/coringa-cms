@@ -4,10 +4,22 @@
 
 export type CanvasElementType = "text" | "image" | "shape" | "button" | "icon" | "embed";
 
+export type Viewport = "desktop" | "tablet" | "mobile";
+
+/** Override de transform/visibilidade por dispositivo (tablet/mobile). */
+export interface RespOverride {
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+  rotation?: number;
+  hidden?: boolean;
+}
+
 export interface CanvasElement {
   id: string;
   type: CanvasElementType;
-  /** Posição/tamanho em design-px. x/w são relativos a designWidth; y/h à altura da tela. */
+  /** Posição/tamanho em design-px (desktop). x/w relativos a designWidth; y/h à altura. */
   x: number;
   y: number;
   w: number;
@@ -15,7 +27,42 @@ export interface CanvasElement {
   rotation: number; // graus
   opacity: number; // 0..1
   locked?: boolean;
+  /** Ajustes por dispositivo (cascata: mobile herda de tablet, que herda do desktop). */
+  responsive?: { tablet?: RespOverride; mobile?: RespOverride };
   props: Record<string, unknown>;
+}
+
+export interface ResolvedTransform { x: number; y: number; w: number; h: number; rotation: number; hidden: boolean }
+
+/** Resolve posição/tamanho/visibilidade efetivos do elemento para um dispositivo. */
+export function resolveElement(el: CanvasElement, viewport: Viewport): ResolvedTransform {
+  const base: ResolvedTransform = { x: el.x, y: el.y, w: el.w, h: el.h, rotation: el.rotation, hidden: false };
+  if (viewport === "desktop" || !el.responsive) return base;
+  const t = el.responsive.tablet ?? {};
+  if (viewport === "tablet") return { ...base, ...t };
+  const m = el.responsive.mobile ?? {};
+  return { ...base, ...t, ...m };
+}
+
+/** Aplica um override a UM elemento no dispositivo informado (desktop = base). */
+export function applyDeviceTransform(el: CanvasElement, viewport: Viewport, t: RespOverride): CanvasElement {
+  if (viewport === "desktop") return { ...el, ...t };
+  const prev = el.responsive?.[viewport] ?? {};
+  return { ...el, responsive: { ...el.responsive, [viewport]: { ...prev, ...t } } };
+}
+
+export function setDeviceTransform(els: CanvasElement[], id: string, viewport: Viewport, t: RespOverride): CanvasElement[] {
+  return els.map((e) => (e.id === id ? applyDeviceTransform(e, viewport, t) : e));
+}
+
+export function resolveHeight(heights: { desktop: number; tablet?: number; mobile?: number }, viewport: Viewport): number {
+  if (viewport === "tablet") return heights.tablet ?? heights.desktop;
+  if (viewport === "mobile") return heights.mobile ?? heights.tablet ?? heights.desktop;
+  return heights.desktop;
+}
+
+export function hasResponsive(els: CanvasElement[]): boolean {
+  return els.some((e) => !!e.responsive && (!!e.responsive.tablet || !!e.responsive.mobile));
 }
 
 export function genElId(prefix = "el"): string {
