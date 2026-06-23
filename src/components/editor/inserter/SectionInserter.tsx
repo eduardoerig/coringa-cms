@@ -12,6 +12,7 @@ import { SectionThumb } from "./SectionThumb";
 import { pageTemplates, type PageTemplate } from "./templates";
 import { blockRegistry } from "../blocks/blockRegistry";
 import { regenerateRowIds, genId, type ContainerRow } from "../blocks/containerModel";
+import { regenerateElementIds, type CanvasElement } from "../canvas/canvasModel";
 import { deleteSavedBlock, fetchSavedBlocks, type SavedBlock } from "@/utils/savedBlocks";
 
 // Categoria de cada tipo de seção (fonte única para os filtros da galeria).
@@ -21,6 +22,7 @@ const SECTION_CATEGORY: Record<string, string> = {
   divider: "Estrutura",
   footer: "Estrutura",
   container: "Estrutura",
+  canvas: "Estrutura",
   highlights: "Conteúdo",
   menu: "Conteúdo",
   gallery: "Conteúdo",
@@ -32,7 +34,7 @@ const SECTION_CATEGORY: Record<string, string> = {
 const CATEGORY_ORDER = ["Estrutura", "Conteúdo", "Conversão"] as const;
 
 // Ordem de prioridade na lista de seções (estes vêm primeiro).
-const SECTION_PRIORITY = ["container", "text_block", "divider"];
+const SECTION_PRIORITY = ["container", "canvas", "text_block", "divider"];
 function sectionRank(type: string): number {
   const i = SECTION_PRIORITY.indexOf(type);
   return i === -1 ? SECTION_PRIORITY.length : i;
@@ -279,6 +281,8 @@ export function SectionInserter() {
       let props = saved.props;
       if (saved.type === "container") {
         props = { ...props, rows: regenerateRowIds((props.rows as ContainerRow[]) ?? []) };
+      } else if (saved.type === "canvas") {
+        props = { ...props, elements: regenerateElementIds((props.elements as CanvasElement[]) ?? []) };
       }
       if (pendingInsertIndex == null) addSection(saved.type, undefined, props);
       else addSectionAtIndex(saved.type, pendingInsertIndex, props);

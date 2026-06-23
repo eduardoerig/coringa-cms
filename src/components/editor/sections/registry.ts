@@ -10,6 +10,7 @@ import { TextBlock } from "@/components/sections/TextBlock";
 import { Navbar } from "@/components/layout/Navbar";
 import { FooterBlock } from "@/components/sections/FooterBlock";
 import { Container } from "@/components/sections/Container";
+import { CanvasSection } from "@/components/sections/CanvasSection";
 import {
   Layout,
   PanelTopOpen,
@@ -23,6 +24,7 @@ import {
   Type,
   Minus,
   Columns3,
+  Frame,
 } from "lucide-react";
 
 // ---- Tipos ----
@@ -30,7 +32,7 @@ import {
 export interface PropField {
   key: string;
   label: string;
-  type: "text" | "textarea" | "richtext" | "image" | "url" | "color" | "select" | "array";
+  type: "text" | "textarea" | "richtext" | "image" | "url" | "color" | "select" | "array" | "number" | "range";
   placeholder?: string;
   options?: { value: string; label: string }[];
   /** Para type: "array" — define os campos de cada item */
@@ -39,6 +41,11 @@ export interface PropField {
   category?: "content" | "appearance";
   /** Elemento (bloco) a que o campo pertence no painel. Ex.: "Título", "Botão", "Seção". */
   group?: string;
+  /** Para type: "number" | "range" */
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
 }
 
 export interface SectionRegistryEntry {
@@ -70,6 +77,7 @@ export const sectionComponentMap: Record<string, React.ComponentType<any>> = {
   header: Navbar,
   footer: FooterBlock,
   container: Container,
+  canvas: CanvasSection,
 };
 
 import { getSectionStyles } from "@/utils/sectionStyles";
@@ -593,6 +601,35 @@ export const sectionRegistry: Record<string, SectionRegistryEntry> = {
     ],
     defaultProps: {
       rows: [],
+      ...COMMON_APPEARANCE_DEFAULTS,
+    },
+  },
+
+  canvas: {
+    type: "canvas",
+    label: "Tela Livre",
+    description: "Posicione textos, imagens, formas e botões livremente, como no Canva",
+    icon: Frame,
+    fields: [
+      { key: "height", label: "Altura da tela", type: "number", category: "appearance", group: "Tela", min: 200, max: 2400, step: 10, unit: "px" },
+      {
+        key: "fullWidth",
+        label: "Largura",
+        type: "select",
+        category: "appearance",
+        group: "Tela",
+        options: [
+          { value: "", label: "Contida (recomendado)" },
+          { value: "1", label: "Largura total" },
+        ],
+      },
+      ...SECTION_GROUP(),
+    ],
+    defaultProps: {
+      elements: [],
+      designWidth: 1200,
+      height: 600,
+      fullWidth: "",
       ...COMMON_APPEARANCE_DEFAULTS,
     },
   },

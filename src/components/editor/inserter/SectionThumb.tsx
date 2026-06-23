@@ -134,6 +134,16 @@ export function SectionThumb({ type }: { type: string }) {
           </div>
         </div>
       );
+    case "canvas":
+      return (
+        <div className="relative w-full h-full">
+          <div className="absolute top-1 left-2 h-2 w-10 rounded bg-zinc-300" />
+          <div className="absolute top-5 left-1 w-7 h-6 rounded bg-zinc-300" />
+          <div className="absolute top-2 right-1 w-4 h-4 rounded-full bg-zinc-200" />
+          <div className="absolute bottom-3 left-1/2 w-5 h-5 rotate-12 rounded bg-zinc-200" />
+          <div className="absolute bottom-1 right-2 h-2.5 w-8 rounded-full bg-zinc-400" />
+        </div>
+      );
     case "footer":
       return (
         <div className="w-full h-full flex flex-col justify-end gap-2">

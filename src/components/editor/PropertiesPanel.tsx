@@ -5,6 +5,8 @@ import { RichTextEditor } from "./RichTextEditor";
 import { ImageUploader } from "./ImageUploader";
 import { blockRegistry } from "./blocks/blockRegistry";
 import { findBlock, updateBlock, removeBlock, moveBlock, type ContainerRow } from "./blocks/containerModel";
+import { canvasElementRegistry } from "./canvas/canvasElementRegistry";
+import { findElement, setTransform, updateElementProps, removeElement, moveZ, type CanvasElement } from "./canvas/canvasModel";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
@@ -146,6 +148,11 @@ export function PropertiesPanel() {
   // Container (layout livre): painel dedicado de blocos.
   if (selectedSection.type === "container") {
     return <ContainerProperties section={selectedSection} entry={entry} />;
+  }
+
+  // Tela Livre (canvas): painel dedicado de elemento/tela.
+  if (selectedSection.type === "canvas") {
+    return <CanvasProperties section={selectedSection} entry={entry} />;
   }
 
   // Agrupar campos por elemento (group), preservando a ordem de primeira aparição.
@@ -332,6 +339,108 @@ function ContainerProperties({ section, entry }: { section: PageSection; entry: 
           <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
             <p className="text-[11px] text-zinc-500 leading-relaxed">
               Clique num bloco no canvas para editá-lo. Use <strong>+ Bloco</strong> dentro de uma coluna e <strong>Adicionar linha</strong> para montar o layout.
+            </p>
+          </div>
+          {entry.fields.map((f) => (
+            <FieldRenderer key={f.key} field={f} value={section.props[f.key]} onChange={(v) => updateSectionProps(section.id, { [f.key]: v })} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Campo numérico compacto (transform da Tela Livre).
+function NumField({ label, value, onChange, min, max, step = 1, unit }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; unit?: string; }) {
+  return (
+    <div className="space-y-1">
+      <label className="text-[10px] font-medium text-zinc-500 block">{label}</label>
+      <div className="relative">
+        <input
+          type="number"
+          value={Number.isFinite(value) ? value : 0}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(e) => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+          className="w-full px-2.5 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all"
+        />
+        {unit && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 pointer-events-none">{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+// Painel da Tela Livre: edita o elemento selecionado (conteúdo + posição/tamanho) ou a tela.
+function CanvasProperties({ section, entry }: { section: PageSection; entry: SectionRegistryEntry }) {
+  const { selectedNodeId, selectNode, mutateCanvasElements, updateSectionProps, selectSection } = useEditorStore();
+  const elements = (section.props.elements as CanvasElement[]) || [];
+  const el = findElement(elements, selectedNodeId);
+  const reg = el ? canvasElementRegistry[el.type] : null;
+
+  return (
+    <div className="w-full bg-white flex flex-col h-full overflow-hidden select-none">
+      <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50/50 sticky top-0 z-10">
+        <div className="flex items-center gap-3">
+          {el ? (
+            <button onClick={() => selectNode(null)} aria-label="Voltar" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-500 hover:bg-zinc-100 transition-colors shrink-0">
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          ) : (
+            <div className="w-9 h-9 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-sm shrink-0">
+              <Layout className="w-4 h-4" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-zinc-900 text-[13px] truncate">{el && reg ? reg.label : entry.label}</h3>
+            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">{el ? "Elemento" : "Selecione um elemento na tela"}</p>
+          </div>
+          <button onClick={() => selectSection(null)} aria-label="Fechar painel" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-zinc-100 transition-colors shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {el && reg ? (
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+          {reg.fields.map((f) => (
+            <FieldRenderer
+              key={f.key}
+              field={f}
+              value={el.props[f.key]}
+              onChange={(v) => mutateCanvasElements(section.id, (els) => updateElementProps(els, el.id, { [f.key]: v }), `el:${el.id}:${f.key}`)}
+            />
+          ))}
+
+          <div className="pt-2 border-t border-zinc-100">
+            <p className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2">Posição & Tamanho</p>
+            <div className="grid grid-cols-2 gap-2">
+              <NumField label="X" value={el.x} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { x: v }), `tf:${el.id}`)} />
+              <NumField label="Y" value={el.y} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { y: v }), `tf:${el.id}`)} />
+              <NumField label="Largura" value={el.w} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { w: Math.max(12, v) }), `tf:${el.id}`)} />
+              <NumField label="Altura" value={el.h} unit="px" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { h: Math.max(12, v) }), `tf:${el.id}`)} />
+              <NumField label="Rotação" value={el.rotation} unit="°" onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { rotation: v }), `tf:${el.id}`)} />
+            </div>
+            <div className="mt-3">
+              <FieldRenderer
+                field={{ key: "opacity", label: "Opacidade", type: "range", min: 0, max: 100, step: 1, unit: "%" }}
+                value={Math.round((el.opacity ?? 1) * 100)}
+                onChange={(v) => mutateCanvasElements(section.id, (els) => setTransform(els, el.id, { opacity: Number(v) / 100 }), `tf:${el.id}`)}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-2 border-t border-zinc-100">
+            <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, el.id, "front"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronUp className="w-3.5 h-3.5" /> Frente</button>
+            <button onClick={() => mutateCanvasElements(section.id, (els) => moveZ(els, el.id, "back"))} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-zinc-200 text-zinc-500 text-[11px] font-bold hover:bg-zinc-50 transition-all"><ChevronDown className="w-3.5 h-3.5" /> Trás</button>
+            <button onClick={() => { mutateCanvasElements(section.id, (els) => removeElement(els, el.id)); selectNode(null); }} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-red-100 text-red-500 text-[11px] font-bold hover:bg-red-50 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 custom-scrollbar">
+          <div className="p-3 bg-zinc-50 border border-zinc-100 rounded-xl">
+            <p className="text-[11px] text-zinc-500 leading-relaxed">
+              Use a barra acima da tela para adicionar elementos. Clique num elemento para editá-lo, arraste para mover e use as alças para redimensionar/girar.
             </p>
           </div>
           {entry.fields.map((f) => (
@@ -586,6 +695,42 @@ function FieldRenderer({ field, value, onChange }: { field: PropField; value: un
         <div className="space-y-1.5">
           <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
           <input type="text" value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder={field.placeholder || "https://..."} className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all" />
+        </div>
+      );
+    case "number":
+      return (
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-zinc-500 block">{field.label}</label>
+          <div className="relative">
+            <input
+              type="number"
+              value={value === "" || value === undefined || value === null ? "" : Number(value)}
+              min={field.min}
+              max={field.max}
+              step={field.step}
+              onChange={(e) => onChange(e.target.value === "" ? "" : Number(e.target.value))}
+              className="w-full px-3 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-zinc-900/10 focus:border-zinc-400 transition-all"
+            />
+            {field.unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-zinc-400 pointer-events-none">{field.unit}</span>}
+          </div>
+        </div>
+      );
+    case "range":
+      return (
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-[11px] font-medium text-zinc-500">{field.label}</label>
+            <span className="text-[11px] font-mono text-zinc-400">{Number(value) || 0}{field.unit || ""}</span>
+          </div>
+          <input
+            type="range"
+            min={field.min ?? 0}
+            max={field.max ?? 100}
+            step={field.step ?? 1}
+            value={Number(value) || 0}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full accent-zinc-900"
+          />
         </div>
       );
     case "array":

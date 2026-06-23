@@ -12,6 +12,7 @@ import { TextBlock } from "@/components/sections/TextBlock";
 import { Navbar } from "@/components/layout/Navbar";
 import { FooterBlock } from "@/components/sections/FooterBlock";
 import { Container } from "@/components/sections/Container";
+import { CanvasSection } from "@/components/sections/CanvasSection";
 
 interface PageSection {
   id: string;
@@ -40,6 +41,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
   text_block: TextBlock,
   footer: FooterBlock,
   container: Container,
+  canvas: CanvasSection,
 };
 
 export function DynamicSections({ sections, settings }: DynamicSectionsProps) {

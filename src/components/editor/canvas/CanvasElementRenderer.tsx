@@ -1,0 +1,124 @@
+"use client";
+
+import type { CanvasElement } from "./canvasModel";
+
+// Render puro do CONTEÚDO de um elemento (preenche 100% da caixa). O posicionamento
+// absoluto + rotação ficam no wrapper (CanvasSection no público, CanvasEditor no editor).
+// Tamanhos que devem escalar usam `cqw` (1cqw = 1% da largura do container do artboard),
+// garantindo WYSIWYG idêntico no editor e no público sem JS.
+
+type Align = "left" | "center" | "right";
+function align(v: unknown): Align {
+  return v === "center" || v === "right" ? v : "left";
+}
+
+const ROUNDED_PX: Record<string, number> = { none: 0, md: 12, xl: 28 };
+
+export function CanvasElementRenderer({ element, designWidth }: { element: CanvasElement; designWidth: number }) {
+  const p = element.props || {};
+  const u = (px: number) => `${(px / designWidth) * 100}cqw`;
+
+  switch (element.type) {
+    case "text":
+      return (
+        <div
+          data-canvas-text
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            fontSize: u(Number(p.fontSize) || 24),
+            fontWeight: Number(p.fontWeight) || 700,
+            lineHeight: p.lineHeight ? String(p.lineHeight) : "1.2",
+            color: (p.color as string) || "var(--color-text-900)",
+            textAlign: align(p.align),
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+            overflow: "hidden",
+          }}
+        >
+          {(p.text as string) ?? ""}
+        </div>
+      );
+
+    case "image": {
+      const src = (p.src as string) || "";
+      const rounded = (p.rounded as string) || "md";
+      const radius = rounded === "full" ? "9999px" : u(ROUNDED_PX[rounded] ?? 12);
+      if (!src) {
+        return (
+          <div
+            className="w-full h-full bg-surface-100 flex items-center justify-center text-text-300 font-medium"
+            style={{ borderRadius: radius, fontSize: u(13) }}
+          >
+            Sem imagem
+          </div>
+        );
+      }
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={(p.alt as string) || ""}
+          style={{ width: "100%", height: "100%", objectFit: (p.fit as "cover" | "contain") || "cover", borderRadius: radius, display: "block" }}
+        />
+      );
+    }
+
+    case "shape": {
+      const shape = (p.shape as string) || "rect";
+      const fill = (p.fill as string) || "var(--color-primary)";
+      if (shape === "line") {
+        return (
+          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center" }}>
+            <div style={{ width: "100%", height: u(Number(p.strokeWidth) || 4), background: fill, borderRadius: "9999px" }} />
+          </div>
+        );
+      }
+      const bw = Number(p.borderWidth) || 0;
+      return (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            background: fill,
+            borderRadius: shape === "ellipse" ? "9999px" : u(Number(p.radius) || 0),
+            border: bw > 0 ? `${u(bw)} solid ${(p.borderColor as string) || "transparent"}` : undefined,
+          }}
+        />
+      );
+    }
+
+    case "button":
+      return (
+        <div style={{ width: "100%", height: "100%" }}>
+          <a
+            href={(p.href as string) || "#"}
+            style={{
+              width: "100%",
+              height: "100%",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: u(8),
+              padding: `0 ${u(24)}`,
+              fontWeight: 600,
+              fontSize: u(Number(p.fontSize) || 16),
+              borderRadius: p.radius === "full" ? "9999px" : u(ROUNDED_PX[(p.radius as string)] ?? 28),
+              backgroundColor: (p.bgColor as string) || "var(--color-primary)",
+              color: (p.textColor as string) || "#FFFFFF",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {(p.label as string) || "Clique aqui"}
+          </a>
+        </div>
+      );
+
+    default:
+      return null;
+  }
+}

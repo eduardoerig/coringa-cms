@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { sectionRegistry } from "@/components/editor/sections/registry";
 import type { ContainerRow } from "@/components/editor/blocks/containerModel";
+import type { CanvasElement } from "@/components/editor/canvas/canvasModel";
 import type { SavedBlock } from "@/utils/savedBlocks";
 
 // ---- Types ----
@@ -80,6 +81,8 @@ export interface EditorState {
   selectNode: (id: string | null) => void;
   /** Aplica uma transformação imutável às linhas de um Container. */
   mutateContainerRows: (sectionId: string, updater: (rows: ContainerRow[]) => ContainerRow[], coalesceKey?: string) => void;
+  /** Aplica uma transformação imutável aos elementos de uma Tela Livre (com histórico). */
+  mutateCanvasElements: (sectionId: string, updater: (els: CanvasElement[]) => CanvasElement[], coalesceKey?: string) => void;
   addSection: (type: string, afterId?: string, propsOverride?: Partial<SectionProps>) => void;
   addSectionAtIndex: (type: string, index: number, propsOverride?: Partial<SectionProps>) => void;
   removeSection: (id: string) => void;
@@ -236,6 +239,21 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       sections: sections.map((s) =>
         s.id === sectionId
           ? { ...s, props: { ...s.props, rows: updater((s.props.rows as ContainerRow[]) ?? []) } }
+          : s
+      ),
+      isDirty: true,
+    });
+  },
+
+  // Durante o arrasto, o transform vive em estado local do CanvasEditor (re-render só do
+  // canvas); o commit acontece uma vez no pointerup via esta ação, gerando 1 undo por gesto.
+  mutateCanvasElements: (sectionId, updater, coalesceKey) => {
+    get().saveHistory(coalesceKey);
+    const { sections } = get();
+    set({
+      sections: sections.map((s) =>
+        s.id === sectionId
+          ? { ...s, props: { ...s.props, elements: updater((s.props.elements as CanvasElement[]) ?? []) } }
           : s
       ),
       isDirty: true,
