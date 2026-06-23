@@ -10,6 +10,7 @@ import { sectionTypes, sectionRegistry, type SectionRegistryEntry, type PropFiel
 import { SectionCard } from "./SectionCard";
 import { SectionThumb } from "./SectionThumb";
 import { pageTemplates, type PageTemplate } from "./templates";
+import { canvasTemplates, type CanvasTemplate } from "../canvas/canvasTemplates";
 import { blockRegistry } from "../blocks/blockRegistry";
 import { regenerateRowIds, genId, type ContainerRow } from "../blocks/containerModel";
 import { regenerateElementIds, type CanvasElement } from "../canvas/canvasModel";
@@ -59,6 +60,30 @@ function TemplateCard({ tpl, onInsert }: { tpl: PageTemplate; onInsert: (t: Page
         <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 text-white">
           {tpl.sections.length} {tpl.sections.length === 1 ? "bloco" : "blocos"}
         </span>
+        <div className="absolute inset-0 bg-zinc-900/0 group-hover:bg-zinc-900/30 transition-colors flex items-center justify-center">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-zinc-900 text-[11px] font-black uppercase tracking-wider opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all shadow-lg">
+            <Plus className="w-3.5 h-3.5" /> Inserir
+          </span>
+        </div>
+      </div>
+      <div className="px-3 py-3">
+        <div className="text-[13px] font-bold text-zinc-900 leading-tight">{tpl.name}</div>
+        <div className="text-[11px] text-zinc-400 font-medium leading-snug mt-0.5 line-clamp-2">{tpl.description}</div>
+      </div>
+    </button>
+  );
+}
+
+function CanvasTemplateCard({ tpl, onInsert }: { tpl: CanvasTemplate; onInsert: (t: CanvasTemplate) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onInsert(tpl)}
+      className="group relative flex flex-col text-left rounded-2xl border border-zinc-200 bg-white overflow-hidden transition-all hover:border-zinc-900 hover:shadow-xl hover:-translate-y-0.5"
+    >
+      <div className="relative w-full h-32 flex items-center justify-center bg-gradient-to-br from-zinc-100 to-zinc-50">
+        <span className="text-4xl">{tpl.glyph}</span>
+        <span className="absolute top-2 right-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-zinc-900 text-white">Tela</span>
         <div className="absolute inset-0 bg-zinc-900/0 group-hover:bg-zinc-900/30 transition-colors flex items-center justify-center">
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white text-zinc-900 text-[11px] font-black uppercase tracking-wider opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0 transition-all shadow-lg">
             <Plus className="w-3.5 h-3.5" /> Inserir
@@ -270,6 +295,19 @@ export function SectionInserter() {
     close();
   };
 
+  const filteredCanvasTemplates = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return canvasTemplates;
+    return canvasTemplates.filter((t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+  }, [query]);
+
+  const handleInsertCanvasTemplate = (tpl: CanvasTemplate) => {
+    const props = { ...tpl.props, elements: regenerateElementIds((tpl.props.elements as CanvasElement[]) ?? []) };
+    if (pendingInsertIndex == null) addSection("canvas", undefined, props);
+    else addSectionAtIndex("canvas", pendingInsertIndex, props);
+    close();
+  };
+
   const filteredSaved = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return savedBlocks;
@@ -440,11 +478,28 @@ export function SectionInserter() {
                       <EmptyState query={query} />
                     )
                   ) : tab === "templates" ? (
-                    filteredTemplates.length > 0 ? (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {filteredTemplates.map((tpl) => (
-                          <TemplateCard key={tpl.id} tpl={tpl} onInsert={handleInsertTemplate} />
-                        ))}
+                    filteredCanvasTemplates.length > 0 || filteredTemplates.length > 0 ? (
+                      <div className="space-y-6">
+                        {filteredCanvasTemplates.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2.5">Telas prontas (Tela Livre)</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                              {filteredCanvasTemplates.map((tpl) => (
+                                <CanvasTemplateCard key={tpl.id} tpl={tpl} onInsert={handleInsertCanvasTemplate} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {filteredTemplates.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2.5">Combos de página</p>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                              {filteredTemplates.map((tpl) => (
+                                <TemplateCard key={tpl.id} tpl={tpl} onInsert={handleInsertTemplate} />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <EmptyState query={query} />
