@@ -2,6 +2,7 @@
 
 import type { CanvasElement } from "./canvasModel";
 import { CANVAS_ICONS } from "./canvasIcons";
+import { safeUrl } from "@/lib/url";
 
 // Render puro do CONTEÚDO de um elemento (preenche 100% da caixa). O posicionamento
 // absoluto + rotação ficam no wrapper (CanvasSection no público, CanvasEditor no editor).
@@ -69,7 +70,7 @@ export function CanvasElementRenderer({ element, designWidth, editor = false }: 
       );
 
     case "image": {
-      const src = (p.src as string) || "";
+      const src = safeUrl(p.src, "", true);
       const rounded = (p.rounded as string) || "md";
       const radius = rounded === "full" ? "9999px" : u(ROUNDED_PX[rounded] ?? 12);
       if (!src) {
@@ -117,7 +118,7 @@ export function CanvasElementRenderer({ element, designWidth, editor = false }: 
     }
 
     case "embed": {
-      const url = embedUrl((p.url as string) || "");
+      const url = safeUrl(embedUrl((p.url as string) || ""));
       const radius = u(ROUNDED_PX[(p.rounded as string)] ?? 12);
       if (!url) {
         return (
@@ -170,7 +171,7 @@ export function CanvasElementRenderer({ element, designWidth, editor = false }: 
       return (
         <div style={{ width: "100%", height: "100%" }}>
           <a
-            href={(p.href as string) || "#"}
+            href={safeUrl(p.href, "#")}
             style={{
               width: "100%",
               height: "100%",

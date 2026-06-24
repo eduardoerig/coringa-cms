@@ -2,6 +2,7 @@
 
 import DOMPurify from "isomorphic-dompurify";
 import { cn } from "@/lib/utils";
+import { safeUrl } from "@/lib/url";
 import type { ContainerBlock } from "./containerModel";
 
 const ROUNDED: Record<string, string> = { none: "", md: "rounded-lg", xl: "rounded-2xl", full: "rounded-full" };
@@ -59,7 +60,7 @@ export function BlockRenderer({ block }: { block: ContainerBlock }) {
       return (
         <div style={{ textAlign: align(p.align) }}>
           <a
-            href={(p.href as string) || "#"}
+            href={safeUrl(p.href, "#")}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold text-sm transition-transform hover:scale-105"
             style={{ backgroundColor: (p.bgColor as string) || "var(--color-primary)", color: (p.textColor as string) || "#FFFFFF" }}
           >
