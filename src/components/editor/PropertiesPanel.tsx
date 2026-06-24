@@ -111,7 +111,7 @@ export function PropertiesPanel() {
           <div className="p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
             <p className="text-[10px] text-zinc-500 flex items-center gap-1.5 mb-2 font-bold"><Keyboard className="w-3 h-3" /> Atalhos</p>
             <div className="space-y-1.5">
-              {[["Ctrl+S", "Salvar"], ["Ctrl+D", "Duplicar seção"], ["Delete", "Remover seção"], ["Esc", "Desselecionar"]].map(([k, v]) => (
+              {[["Ctrl+K", "Adicionar seção"], ["Ctrl+S", "Salvar"], ["Ctrl+D", "Duplicar seção"], ["Delete", "Remover seção"], ["Esc", "Desselecionar"]].map(([k, v]) => (
                 <div key={k} className="flex items-center justify-between">
                   <span className="text-[10px] text-zinc-400">{v}</span>
                   <kbd className="text-[9px] font-black bg-white border border-zinc-200 px-1.5 py-0.5 rounded-md text-zinc-600 shadow-sm">{k}</kbd>
@@ -134,7 +134,7 @@ export function PropertiesPanel() {
         <p className="text-[13px] font-black text-zinc-900 mb-2">Nada selecionado</p>
         <p className="text-xs text-zinc-400 leading-relaxed max-w-[200px] mb-6">Clique em uma seção no canvas para editar suas propriedades.</p>
         <div className="w-full max-w-[220px] space-y-1.5 text-left">
-          {[["Ctrl+S", "Salvar alterações"], ["Ctrl+D", "Duplicar seção"], ["Delete", "Remover seção"], ["Esc", "Desselecionar"]].map(([k, v]) => (
+          {[["Ctrl+K", "Adicionar seção"], ["Ctrl+S", "Salvar alterações"], ["Ctrl+D", "Duplicar seção"], ["Delete", "Remover seção"], ["Esc", "Desselecionar"]].map(([k, v]) => (
             <div key={k} className="flex items-center justify-between bg-zinc-50 rounded-xl px-3 py-2 border border-zinc-100">
               <span className="text-[10px] text-zinc-500 font-medium">{v}</span>
               <kbd className="text-[9px] font-black bg-white border border-zinc-200 px-1.5 py-0.5 rounded-md text-zinc-600">{k}</kbd>
@@ -191,13 +191,19 @@ export function PropertiesPanel() {
           )}
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-zinc-900 text-[13px] truncate">{activeGroup ? activeGroup.name : entry.label}</h3>
-            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">
-              {activeGroup ? (
-                <span className="text-zinc-600">{entry.label}</span>
-              ) : (
-                "Escolha um elemento p/ editar"
-              )}
-            </p>
+            {activeGroup ? (
+              <p className="flex items-center gap-1 text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">
+                <button onClick={() => setOpenGroup(null)} className="text-zinc-500 hover:text-zinc-900 transition-colors truncate" title="Voltar para a lista de elementos">
+                  {entry.label}
+                </button>
+                <ChevronRight className="w-3 h-3 shrink-0 text-zinc-300" />
+                <span className="text-zinc-700 truncate">{activeGroup.name}</span>
+              </p>
+            ) : (
+              <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest truncate">
+                Escolha um elemento p/ editar
+              </p>
+            )}
           </div>
           <button onClick={() => selectSection(null)} aria-label="Fechar painel" className="w-8 h-8 rounded-xl flex items-center justify-center text-zinc-400 hover:bg-zinc-100 transition-colors shrink-0">
             <X className="w-4 h-4" />
@@ -630,6 +636,7 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
 
   const [editing, setEditing] = useState(false);
   const [hexInput, setHexInput] = useState(displayHex);
+  const [hexError, setHexError] = useState(false);
 
   // Mantém o input em sincronia quando o valor externo muda (ajuste durante render).
   const [prevDisplayHex, setPrevDisplayHex] = useState(displayHex);
@@ -638,8 +645,19 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
     setHexInput(displayHex);
   }
 
+  // Aceita: vazio (herda do tema), var(--token), #RGB ou #RRGGBB.
+  const isValidColor = (v: string) => {
+    const t = v.trim();
+    return t === "" || t.startsWith("var(--") || /^#[0-9A-Fa-f]{3}$/.test(t) || /^#[0-9A-Fa-f]{6}$/.test(t);
+  };
+
   const handleHexCommit = () => {
     const clean = hexInput.trim();
+    if (!isValidColor(clean)) {
+      setHexError(true);
+      return; // mantém em edição para correção
+    }
+    setHexError(false);
     onChange(clean);
     setEditing(false);
   };
@@ -671,11 +689,17 @@ function InlineColorPicker({ label, placeholder, value, onChange }: { label: str
             <input
               type="text"
               value={hexInput}
-              onChange={(e) => setHexInput(e.target.value)}
+              onChange={(e) => { setHexInput(e.target.value); if (hexError) setHexError(false); }}
               onBlur={handleHexCommit}
               onKeyDown={(e) => e.key === "Enter" && handleHexCommit()}
               autoFocus
-              className="w-full px-1.5 py-0.5 text-[11px] font-mono font-bold text-zinc-700 bg-zinc-50 border border-zinc-200 rounded-md focus:outline-none focus:border-zinc-400"
+              aria-invalid={hexError}
+              className={cn(
+                "w-full px-1.5 py-0.5 text-[11px] font-mono font-bold rounded-md focus:outline-none",
+                hexError
+                  ? "text-red-600 bg-red-50 border border-red-400 focus:border-red-500"
+                  : "text-zinc-700 bg-zinc-50 border border-zinc-200 focus:border-zinc-400"
+              )}
             />
           ) : (
             <button

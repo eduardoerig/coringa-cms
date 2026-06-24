@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { usePersistentPanel } from "@/hooks/usePersistentPanel";
 import { ArrowLeft, Save, Globe, Loader2, Check, LayoutPanelLeft, AlertTriangle, Undo2, Redo2, Monitor, Tablet, Smartphone, Eye, EyeOff, Pencil, Plus } from "lucide-react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -92,8 +93,17 @@ export default function FocusedEditorPage() {
   const [publishedSections, setPublishedSections] = useState<PageSection[]>([]);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [leftSidebarCollapsed, setLeftSidebarCollapsed] = useState(false);
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const leftPanel = usePersistentPanel("studio.leftPanel", { defaultWidth: 360, min: 280, max: 520 });
+  const rightPanel = usePersistentPanel("studio.rightPanel", { defaultWidth: 420, min: 320, max: 560 });
+  const {
+    width: leftWidth, setWidth: setLeftWidth,
+    collapsed: leftSidebarCollapsed, setCollapsed: setLeftSidebarCollapsed,
+  } = leftPanel;
+  const {
+    width: rightWidth, setWidth: setRightWidth,
+    collapsed: rightSidebarCollapsed, setCollapsed: setRightSidebarCollapsed,
+  } = rightPanel;
+  const [resizing, setResizing] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [now, setNow] = useState(0); // ts atual p/ "salvo há X"; 0 até o 1º tick
   const supabase = createClient();
@@ -126,6 +136,27 @@ export default function FocusedEditorPage() {
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3500);
   }, []);
+
+  // Redimensionamento dos painéis laterais por arraste.
+  const startResize = useCallback(
+    (side: "left" | "right", startX: number, startWidth: number) => {
+      setResizing(true);
+      const onMove = (e: PointerEvent) => {
+        const delta = side === "left" ? e.clientX - startX : startX - e.clientX;
+        const next = startWidth + delta;
+        if (side === "left") setLeftWidth(next);
+        else setRightWidth(next);
+      };
+      const onUp = () => {
+        setResizing(false);
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+      window.addEventListener("pointermove", onMove);
+      window.addEventListener("pointerup", onUp);
+    },
+    [setLeftWidth, setRightWidth]
+  );
 
   useEffect(() => {
     async function load() {
@@ -281,6 +312,12 @@ export default function FocusedEditorPage() {
         handleSave();
       }
 
+      // Ctrl/Cmd+K — abre a galeria de seções (inseridor)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        openInserter(null);
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) {
@@ -335,7 +372,7 @@ export default function FocusedEditorPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [handleSave, undo, redo, confirm, removeSection]);
+  }, [handleSave, undo, redo, confirm, removeSection, openInserter]);
 
   if (loading) {
     return (
@@ -483,7 +520,7 @@ export default function FocusedEditorPage() {
             <div className="h-6 w-px bg-text-100 mx-1" />
             <button
               onClick={() => openInserter(null)}
-              title="Adicionar uma nova seção"
+              title="Adicionar uma nova seção (Ctrl+K)"
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-zinc-900 text-white hover:bg-primary transition-all active:scale-95 shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" /> Adicionar Seção
@@ -603,13 +640,22 @@ export default function FocusedEditorPage() {
           {/* Focused Side Panel Content */}
           <motion.div
             initial={false}
-            animate={{ width: leftSidebarCollapsed ? 0 : 360 }}
+            animate={{ width: leftSidebarCollapsed ? 0 : leftWidth }}
+            transition={resizing ? { duration: 0 } : undefined}
             className={cn("flex-shrink-0 z-40 shadow-[20px_0_40px_rgba(0,0,0,0.02)] overflow-hidden flex bg-white relative", isPreview && "hidden")}
           >
-            <div className="w-[360px] h-full overflow-y-auto custom-scrollbar">
+            <div style={{ width: leftWidth }} className="h-full overflow-y-auto custom-scrollbar">
               {activeTab === "layers" && <LayerPanel />}
               {activeTab === "palette" && <ColorPalettePanel />}
             </div>
+            {/* Alça de redimensionamento */}
+            {!leftSidebarCollapsed && (
+              <div
+                onPointerDown={(e) => startResize("left", e.clientX, leftWidth)}
+                className="absolute right-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-zinc-200 active:bg-zinc-300 transition-colors z-50"
+                title="Arraste para redimensionar"
+              />
+            )}
           </motion.div>
 
           {/* Main Canvas Area */}
@@ -633,10 +679,19 @@ export default function FocusedEditorPage() {
           {/* Right Properties Panel */}
           <motion.div
             initial={false}
-            animate={{ width: rightSidebarCollapsed ? 0 : 420 }}
-            className={cn("flex-shrink-0 overflow-hidden border-l border-text-100 bg-white z-40 shadow-[-20px_0_40px_rgba(0,0,0,0.02)]", isPreview && "hidden")}
+            animate={{ width: rightSidebarCollapsed ? 0 : rightWidth }}
+            transition={resizing ? { duration: 0 } : undefined}
+            className={cn("relative flex-shrink-0 overflow-hidden border-l border-text-100 bg-white z-40 shadow-[-20px_0_40px_rgba(0,0,0,0.02)]", isPreview && "hidden")}
           >
-            <div className="w-[420px] h-full overflow-y-auto custom-scrollbar">
+            {/* Alça de redimensionamento */}
+            {!rightSidebarCollapsed && (
+              <div
+                onPointerDown={(e) => startResize("right", e.clientX, rightWidth)}
+                className="absolute left-0 top-0 h-full w-1.5 cursor-col-resize hover:bg-zinc-200 active:bg-zinc-300 transition-colors z-50"
+                title="Arraste para redimensionar"
+              />
+            )}
+            <div style={{ width: rightWidth }} className="h-full overflow-y-auto custom-scrollbar">
               <PropertiesPanel key={selectedSectionId ?? "none"} />
             </div>
           </motion.div>
