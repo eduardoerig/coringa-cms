@@ -13,13 +13,18 @@ interface ImageUploaderProps {
 export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
   const handleUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) return;
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Arquivo não é uma imagem.");
+      return;
+    }
 
     setUploading(true);
+    setUploadError("");
     try {
       const ext = file.name.split(".").pop();
       const fileName = `editor/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -30,7 +35,8 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
 
       if (error) {
         console.error("Upload error:", error);
-        alert("Erro ao fazer upload da imagem.");
+        // Mostra a causa real (permissão, URL errada, rede) em vez de mensagem genérica.
+        setUploadError(`Falha no upload: ${error.message}`);
         return;
       }
 
@@ -41,6 +47,8 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
       onChange(urlData.publicUrl);
     } catch (err) {
       console.error("Upload failed:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      setUploadError(`Falha no upload: ${msg}`);
     } finally {
       setUploading(false);
     }
@@ -151,6 +159,12 @@ export function ImageUploader({ value, onChange, label }: ImageUploaderProps) {
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {uploadError && (
+        <p className="text-xs font-medium text-red-600 bg-red-500/10 rounded-lg px-2.5 py-1.5 break-words">
+          {uploadError}
+        </p>
+      )}
     </div>
   );
 }

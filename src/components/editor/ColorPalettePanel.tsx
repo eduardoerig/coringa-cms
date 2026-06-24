@@ -12,7 +12,7 @@ export interface DesignToken {
 }
 
 export function ColorPalettePanel() {
-  const { theme, updateTheme } = useEditorStore();
+  const { theme, updateTheme, sections } = useEditorStore();
   const { confirm, confirmState, respondConfirm } = useConfirm();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -26,6 +26,16 @@ export function ColorPalettePanel() {
       return [];
     }
   }, [theme]);
+
+  // Conta em quantas seções cada token é referenciado (via var(--<id>)).
+  const usageById = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const token of tokens) {
+      const ref = `var(--${token.id})`;
+      counts[token.id] = sections.filter((s) => JSON.stringify(s.props ?? {}).includes(ref)).length;
+    }
+    return counts;
+  }, [tokens, sections]);
 
   const saveTokens = (newTokens: DesignToken[]) => {
     updateTheme("theme_custom_colors", JSON.stringify(newTokens));
@@ -42,9 +52,14 @@ export function ColorPalettePanel() {
   };
 
   const handleRemoveToken = async (id: string) => {
+    const uses = usageById[id] ?? 0;
+    const message =
+      uses === 0
+        ? "Esta cor não está em uso em nenhuma seção. Remover mesmo assim?"
+        : `Esta cor é usada em ${uses} ${uses === 1 ? "seção" : "seções"}. Removê-la fará essas seções voltarem à cor padrão.`;
     const ok = await confirm({
       title: "Remover cor?",
-      message: "Isso pode afetar componentes que a utilizam.",
+      message,
       variant: "danger",
       confirmLabel: "Remover",
     });
@@ -206,17 +221,22 @@ export function ColorPalettePanel() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-between group">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       <div
-                        className="w-6 h-6 rounded-full shadow-sm border border-zinc-200"
+                        className="w-6 h-6 rounded-full shadow-sm border border-zinc-200 shrink-0"
                         style={{ backgroundColor: token.hex }}
                       />
-                      <div>
-                        <p className="text-[11px] font-bold text-zinc-900 leading-none mb-1">{token.name}</p>
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-bold text-zinc-900 leading-none mb-1 truncate">{token.name}</p>
                         <p className="text-[9px] uppercase font-mono text-zinc-400 leading-none">{token.hex}</p>
                       </div>
                     </div>
-                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {(usageById[token.id] ?? 0) > 0 && (
+                      <span className="ml-2 shrink-0 text-[8px] font-black uppercase tracking-wide text-zinc-400 bg-white border border-zinc-100 px-1.5 py-0.5 rounded-full group-hover:hidden" title={`Usada em ${usageById[token.id]} ${usageById[token.id] === 1 ? "seção" : "seções"}`}>
+                        {usageById[token.id]} uso{usageById[token.id] === 1 ? "" : "s"}
+                      </span>
+                    )}
+                    <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                       <button
                         onClick={() => startEditing(token)}
                         className="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-900 transition-colors"

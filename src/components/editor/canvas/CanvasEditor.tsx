@@ -7,6 +7,7 @@ import {
   type CanvasElement,
   type CanvasElementType,
   type Viewport,
+  type RespOverride,
   genElId,
   addElement,
   removeElement,
@@ -123,7 +124,9 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
     const { w, h } = reg.defaultSize;
     const el: CanvasElement = {
       id: genElId(), type,
-      x: Math.round((DW - w) / 2), y: Math.round((effH - h) / 2),
+      // Posição é gravada em coordenadas-base (desktop); centraliza pela altura desktop
+      // para o elemento não nascer deslocado ao adicionar editando tablet/celular.
+      x: Math.round((DW - w) / 2), y: Math.round((heights.desktop - h) / 2),
       w, h, rotation: 0, opacity: 1,
       props: JSON.parse(JSON.stringify(reg.defaultProps)),
     };
@@ -415,21 +418,27 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
     const minY = Math.min(...sel.map((r) => r.y));
     const maxY = Math.max(...sel.map((r) => r.y + r.h));
     const cY = (minY + maxY) / 2;
-    mutate(sectionId, (els) =>
-      els.map((e) => {
-        if (!idset.has(e.id)) return e;
-        const r = resolveElement(e, viewport);
-        switch (axis) {
-          case "left": return applyDeviceTransform(e, viewport, { x: Math.round(minX) });
-          case "centerH": return applyDeviceTransform(e, viewport, { x: Math.round(cX - r.w / 2) });
-          case "right": return applyDeviceTransform(e, viewport, { x: Math.round(maxX - r.w) });
-          case "top": return applyDeviceTransform(e, viewport, { y: Math.round(minY) });
-          case "middleV": return applyDeviceTransform(e, viewport, { y: Math.round(cY - r.h / 2) });
-          case "bottom": return applyDeviceTransform(e, viewport, { y: Math.round(maxY - r.h) });
-          default: return e;
-        }
-      })
-    );
+    // Calcula o override de cada elemento e só aplica se algo muda de fato (sem undo vazio).
+    const overrides = new Map<string, RespOverride>();
+    elements.forEach((e) => {
+      if (!idset.has(e.id)) return;
+      const r = resolveElement(e, viewport);
+      let t: RespOverride | null = null;
+      switch (axis) {
+        case "left": t = { x: Math.round(minX) }; break;
+        case "centerH": t = { x: Math.round(cX - r.w / 2) }; break;
+        case "right": t = { x: Math.round(maxX - r.w) }; break;
+        case "top": t = { y: Math.round(minY) }; break;
+        case "middleV": t = { y: Math.round(cY - r.h / 2) }; break;
+        case "bottom": t = { y: Math.round(maxY - r.h) }; break;
+      }
+      if (t && ((t.x != null && t.x !== r.x) || (t.y != null && t.y !== r.y))) overrides.set(e.id, t);
+    });
+    if (!overrides.size) return;
+    mutate(sectionId, (els) => els.map((e) => {
+      const t = overrides.get(e.id);
+      return t ? applyDeviceTransform(e, viewport, t) : e;
+    }));
   };
 
   const distributeGroup = (axis: "h" | "v") => {
@@ -441,42 +450,38 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
     const first = center(sorted[0].r);
     const last = center(sorted[sorted.length - 1].r);
     const step = (last - first) / (sorted.length - 1);
-    const target = new Map<string, number>();
-    sorted.forEach((s, i) => target.set(s.e.id, first + i * step));
-    mutate(sectionId, (els) =>
-      els.map((e) => {
-        const c = target.get(e.id);
-        if (c == null) return e;
-        const r = resolveElement(e, viewport);
-        return axis === "h"
-          ? applyDeviceTransform(e, viewport, { x: Math.round(c - r.w / 2) })
-          : applyDeviceTransform(e, viewport, { y: Math.round(c - r.h / 2) });
-      })
-    );
+    // Override por elemento; só aplica os que realmente mudam (evita undo vazio).
+    const overrides = new Map<string, RespOverride>();
+    sorted.forEach((s, i) => {
+      const c = first + i * step;
+      const r = s.r;
+      const t: RespOverride = axis === "h" ? { x: Math.round(c - r.w / 2) } : { y: Math.round(c - r.h / 2) };
+      if ((t.x != null && t.x !== r.x) || (t.y != null && t.y !== r.y)) overrides.set(s.e.id, t);
+    });
+    if (!overrides.size) return;
+    mutate(sectionId, (els) => els.map((e) => {
+      const t = overrides.get(e.id);
+      return t ? applyDeviceTransform(e, viewport, t) : e;
+    }));
   };
 
-  const duplicateGroup = () => {
-    const idset = new Set(selIds);
+  // Duplicar / excluir por ids — fonte única usada pelas barras de ação E pelos atalhos.
+  const duplicateIds = (ids: string[]) => {
+    const idset = new Set(ids);
     const copies: CanvasElement[] = [];
-    elements.forEach((e) => { if (idset.has(e.id)) copies.push({ ...JSON.parse(JSON.stringify(e)), id: genElId(), x: e.x + 16, y: e.y + 16 }); });
+    getEls().forEach((e) => { if (idset.has(e.id)) copies.push({ ...JSON.parse(JSON.stringify(e)), id: genElId(), x: e.x + 16, y: e.y + 16 }); });
     if (!copies.length) return;
     mutate(sectionId, (els) => [...els, ...copies]);
     setSelectedIds(copies.map((c) => c.id));
     selectNode(copies[copies.length - 1].id);
   };
 
-  const deleteGroup = () => {
-    const idset = new Set(selIds);
+  const deleteIds = (ids: string[]) => {
+    if (!ids.length) return;
+    const idset = new Set(ids);
     mutate(sectionId, (els) => els.filter((e) => !idset.has(e.id)));
     setSelectedIds([]);
     selectNode(null);
-  };
-
-  const dupSelected = (el: CanvasElement) => {
-    const copy: CanvasElement = { ...JSON.parse(JSON.stringify(el)), id: genElId(), x: el.x + 16, y: el.y + 16 };
-    mutate(sectionId, (cur) => addElement(cur, copy));
-    setSelectedIds([copy.id]);
-    selectNode(copy.id);
   };
 
   // ---- Atalhos de teclado ----
@@ -499,17 +504,10 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
 
       if (e.key === "Delete" || e.key === "Backspace") {
         e.preventDefault(); e.stopPropagation();
-        mutate(sectionId, (els) => els.filter((e2) => !idset.has(e2.id)));
-        setSelectedIds([]); st.selectNode(null);
+        deleteIds(ids);
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
         e.preventDefault(); e.stopPropagation();
-        const copies: CanvasElement[] = [];
-        getEls().forEach((e2) => { if (idset.has(e2.id)) copies.push({ ...JSON.parse(JSON.stringify(e2)), id: genElId(), x: e2.x + 16, y: e2.y + 16 }); });
-        if (copies.length) {
-          mutate(sectionId, (els) => [...els, ...copies]);
-          setSelectedIds(copies.map((c) => c.id));
-          st.selectNode(copies[copies.length - 1].id);
-        }
+        duplicateIds(ids);
       } else if (e.key.startsWith("Arrow")) {
         e.preventDefault(); e.stopPropagation();
         const step = e.shiftKey ? 10 : 1;
@@ -542,12 +540,16 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
       </div>
       <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-[26px] h-[26px] w-px bg-zinc-300 pointer-events-none" />
       {HANDLES.map((hd) => (
+        // Alvo de clique maior (20px) com o ponto visual (10px) centralizado — o translate
+        // de `hd.pos` é relativo ao tamanho da própria alça, então o ponto fica no canto.
         <div
           key={hd.h}
           onPointerDown={(e) => startGesture("resize", hd.h, el, e)}
-          className={cn("absolute w-2.5 h-2.5 bg-white border border-zinc-400 rounded-sm shadow-sm", hd.pos)}
-          style={{ cursor: hd.cursor }}
-        />
+          className={cn("absolute w-5 h-5 flex items-center justify-center", hd.pos)}
+          style={{ cursor: hd.cursor, touchAction: "none" }}
+        >
+          <div className="w-2.5 h-2.5 bg-white border border-zinc-400 rounded-sm shadow-sm pointer-events-none" />
+        </div>
       ))}
     </>
   );
@@ -569,7 +571,10 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
       : null;
 
   return (
-    <div className="select-none">
+    // Impede que o clique dentro do editor borbulhe até o container da seção
+    // (SectionInCanvas), cujo onClick chamaria selectSection e zeraria selectedNodeId,
+    // desselecionando o elemento recém-clicado. A seção já está selecionada aqui.
+    <div className="select-none" onClick={(e) => e.stopPropagation()}>
       {/* Toolbar: adicionar elementos */}
       <div className="flex justify-center items-center gap-3 mb-3">
         <div className="inline-flex items-center gap-1 p-1 bg-zinc-900 text-white rounded-2xl shadow-lg">
@@ -701,7 +706,7 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
         {/* Barra de ações — seleção simples */}
         {selectedEl && !multi && !editingId && (
           <div className="absolute top-2 right-2 z-[1200] flex items-center gap-0.5 p-1 bg-zinc-900 text-white rounded-xl shadow-lg">
-            <button onClick={() => dupSelected(selectedEl)} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar"><Copy className="w-3.5 h-3.5" /></button>
+            <button onClick={() => duplicateIds([selectedEl.id])} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar"><Copy className="w-3.5 h-3.5" /></button>
             <button onClick={() => mutate(sectionId, (cur) => moveZ(cur, selectedEl.id, "front"))} className="p-1.5 rounded-lg hover:bg-white/15" title="Trazer para frente"><BringToFront className="w-3.5 h-3.5" /></button>
             <button onClick={() => mutate(sectionId, (cur) => moveZ(cur, selectedEl.id, "back"))} className="p-1.5 rounded-lg hover:bg-white/15" title="Enviar para trás"><SendToBack className="w-3.5 h-3.5" /></button>
             {!isDesktop && (
@@ -733,8 +738,8 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
               </>
             )}
             <div className="w-px h-4 bg-white/20 mx-0.5" />
-            <button onClick={duplicateGroup} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar grupo"><Copy className="w-3.5 h-3.5" /></button>
-            <button onClick={deleteGroup} className="p-1.5 rounded-lg hover:bg-red-500" title="Excluir grupo"><Trash2 className="w-3.5 h-3.5" /></button>
+            <button onClick={() => duplicateIds(selIds)} className="p-1.5 rounded-lg hover:bg-white/15" title="Duplicar grupo"><Copy className="w-3.5 h-3.5" /></button>
+            <button onClick={() => deleteIds(selIds)} className="p-1.5 rounded-lg hover:bg-red-500" title="Excluir grupo"><Trash2 className="w-3.5 h-3.5" /></button>
           </div>
         )}
 
