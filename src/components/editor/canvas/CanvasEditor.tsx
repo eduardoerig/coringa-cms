@@ -571,7 +571,10 @@ export function CanvasEditor({ sectionId, designWidth: DW, heights, elements, gr
       : null;
 
   return (
-    <div className="select-none">
+    // Impede que o clique dentro do editor borbulhe até o container da seção
+    // (SectionInCanvas), cujo onClick chamaria selectSection e zeraria selectedNodeId,
+    // desselecionando o elemento recém-clicado. A seção já está selecionada aqui.
+    <div className="select-none" onClick={(e) => e.stopPropagation()}>
       {/* Toolbar: adicionar elementos */}
       <div className="flex justify-center items-center gap-3 mb-3">
         <div className="inline-flex items-center gap-1 p-1 bg-zinc-900 text-white rounded-2xl shadow-lg">

@@ -172,6 +172,8 @@ export function CanvasElementRenderer({ element, designWidth, editor = false }: 
         <div style={{ width: "100%", height: "100%" }}>
           <a
             href={safeUrl(p.href, "#")}
+            // Hover só no site público; no editor ficaria animando ao mover/selecionar.
+            className={editor ? undefined : "transition-[transform,filter] duration-200 hover:scale-[1.03] hover:brightness-105"}
             style={{
               width: "100%",
               height: "100%",
